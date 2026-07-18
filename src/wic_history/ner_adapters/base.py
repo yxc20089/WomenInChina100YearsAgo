@@ -66,7 +66,9 @@ class IssueSplitManifest(StrictModel):
         splits_by_issue: dict[str, set[str]] = {}
         for item in self.assignments:
             splits_by_issue.setdefault(item.issue_id, set()).add(item.split)
-        leaked = sorted(issue for issue, splits in splits_by_issue.items() if len(splits) > 1)
+        leaked = sorted(
+            issue for issue, splits in splits_by_issue.items() if len(splits) > 1
+        )
         if leaked:
             raise ValueError(
                 "an issue cannot cross benchmark splits: " + ", ".join(leaked[:10])
@@ -118,9 +120,13 @@ def benchmark_eligibility_failures(
             f"Dataset has {len(unique_snippets)} snippets; at least 500 are required."
         )
     if len(unique_issues) < 30:
-        failures.append(f"Dataset has {len(unique_issues)} issues; at least 30 are required.")
+        failures.append(
+            f"Dataset has {len(unique_issues)} issues; at least 30 are required."
+        )
     if present_splits != {"train", "development", "test"}:
-        failures.append("Dataset must contain train, development and test issue splits.")
+        failures.append(
+            "Dataset must contain train, development and test issue splits."
+        )
     if input_variants != {"raw_ocr", "corrected_text"}:
         failures.append(
             "Scientific selection requires paired raw_ocr and corrected_text inputs."
@@ -179,7 +185,9 @@ class NERBenchmarkDataset(StrictModel):
         input_ids = [item.input_id for item in self.inputs]
         if len(set(input_ids)) != len(input_ids):
             raise ValueError("benchmark input IDs must be unique")
-        by_snippet_variant = [(item.snippet_id, item.input_variant) for item in self.inputs]
+        by_snippet_variant = [
+            (item.snippet_id, item.input_variant) for item in self.inputs
+        ]
         if len(set(by_snippet_variant)) != len(by_snippet_variant):
             raise ValueError("each snippet may appear once per input variant")
         issue_splits: dict[str, set[str]] = {}
@@ -191,9 +199,13 @@ class NERBenchmarkDataset(StrictModel):
             set(self.reported_entity_types), key=lambda item: item.value
         )
         if self.reported_entity_types != expected_reported_types:
-            raise ValueError("reported entity types must be unique and canonically ordered")
+            raise ValueError(
+                "reported entity types must be unique and canonically ordered"
+            )
         if set(self.locked_test_mentions_by_type) != set(self.reported_entity_types):
-            raise ValueError("locked test counts must cover exactly the reported entity types")
+            raise ValueError(
+                "locked test counts must cover exactly the reported entity types"
+            )
         if any(count < 0 for count in self.locked_test_mentions_by_type.values()):
             raise ValueError("locked test mention counts must be nonnegative")
         expected_failures = benchmark_eligibility_failures(
@@ -202,7 +214,9 @@ class NERBenchmarkDataset(StrictModel):
             self.locked_test_mentions_by_type,
         )
         if self.eligibility_failures != expected_failures:
-            raise ValueError("benchmark eligibility failures disagree with dataset evidence")
+            raise ValueError(
+                "benchmark eligibility failures disagree with dataset evidence"
+            )
         if self.benchmark_eligible != (not expected_failures):
             raise ValueError(
                 "benchmark_eligible must be true exactly when eligibility_failures is empty"
@@ -218,7 +232,13 @@ def benchmark_dataset_sha256(dataset: NERBenchmarkDataset) -> str:
 class AdapterIdentity(StrictModel):
     adapter_id: str = Field(min_length=1, max_length=200)
     family: Literal[
-        "rules", "gliner", "w2ner", "global_pointer", "crf", "open_ner", "structured_generation"
+        "rules",
+        "gliner",
+        "w2ner",
+        "global_pointer",
+        "crf",
+        "open_ner",
+        "structured_generation",
     ]
     model_name: str = Field(min_length=1, max_length=500)
     model_revision: str = Field(min_length=7, max_length=200)
@@ -239,17 +259,14 @@ class AdapterIdentity(StrictModel):
     device: str = Field(min_length=1, max_length=100)
     dtype: str = Field(min_length=1, max_length=100)
     ontology_version: str = Field(min_length=1, max_length=100)
-    prompt_schema_revision: str | None = Field(
-        default=None, pattern=r"^[0-9a-f]{64}$"
-    )
+    prompt_schema_revision: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     configuration: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_pins(self) -> "AdapterIdentity":
         forbidden = {"main", "master", "latest", "nightly", "dev"}
         revision_parts = {
-            part.lower()
-            for part in self.model_revision.replace("\\", "/").split("/")
+            part.lower() for part in self.model_revision.replace("\\", "/").split("/")
         }
         if revision_parts & forbidden:
             raise ValueError("model_revision must be immutable, not a moving label")
@@ -260,7 +277,9 @@ class AdapterIdentity(StrictModel):
                 "downloaded model_revision must be an immutable hexadecimal commit"
             )
         if self.family != "rules" and len(self.model_revision) != 40:
-            raise ValueError("downloaded model_revision must be a full 40-character commit")
+            raise ValueError(
+                "downloaded model_revision must be a full 40-character commit"
+            )
         if self.base_model_revision is not None and (
             len(self.base_model_revision) != 40
             or not all(
@@ -280,7 +299,10 @@ class AdapterIdentity(StrictModel):
             raise ValueError(
                 "supervised adapters require head-code, trained-head and training-data hashes"
             )
-        if self.family == "structured_generation" and self.prompt_schema_revision is None:
+        if (
+            self.family == "structured_generation"
+            and self.prompt_schema_revision is None
+        ):
             raise ValueError("structured generation requires a prompt/schema revision")
         return self
 
@@ -297,6 +319,11 @@ class BenchmarkResult(StrictModel):
     abstention_reason: str | None = Field(default=None, max_length=2000)
     latency_seconds: float = Field(ge=0)
     raw_output_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    prompt_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    finish_reason: str | None = Field(default=None, max_length=200)
+    prompt_tokens: int | None = Field(default=None, ge=0)
+    completion_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
     invalid_outputs: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")
@@ -314,11 +341,17 @@ class BenchmarkResult(StrictModel):
         ):
             raise ValueError("result mentions must cite the result benchmark input")
         if any(
-            mention.attributes.get("source_ocr_run_id")
-            != str(self.source_ocr_run_id)
+            mention.attributes.get("source_ocr_run_id") != str(self.source_ocr_run_id)
             for mention in self.mentions
         ):
             raise ValueError("result mentions must cite the result source OCR run")
+        if (
+            self.prompt_tokens is not None
+            and self.completion_tokens is not None
+            and self.total_tokens is not None
+            and self.prompt_tokens + self.completion_tokens != self.total_tokens
+        ):
+            raise ValueError("benchmark result token usage does not reconcile")
         return self
 
 
@@ -366,10 +399,14 @@ class BenchmarkPredictionArtifact(StrictModel):
             raise ValueError("results must cover every input exactly once and in order")
         source_region_ids = [result.source_ocr_region_id for result in self.results]
         if len(set(source_region_ids)) != len(source_region_ids):
-            raise ValueError("a benchmark split/variant may contain each source region once")
+            raise ValueError(
+                "a benchmark split/variant may contain each source region once"
+            )
         result_source_runs = {result.source_ocr_run_id for result in self.results}
         if result_source_runs != set(self.source_ocr_run_ids):
-            raise ValueError("artifact source OCR runs must exactly cover result provenance")
+            raise ValueError(
+                "artifact source OCR runs must exactly cover result provenance"
+            )
         expected_input_sha256 = canonical_sha256(
             [
                 {
@@ -392,10 +429,23 @@ class BenchmarkPredictionArtifact(StrictModel):
             self.run.configuration.get(key) != value
             for key, value in expected_run_configuration.items()
         ):
-            raise ValueError("benchmark run configuration disagrees with artifact scope")
-        result_mentions = [mention for result in self.results for mention in result.mentions]
+            raise ValueError(
+                "benchmark run configuration disagrees with artifact scope"
+            )
+        result_mentions = [
+            mention for result in self.results for mention in result.mentions
+        ]
         if result_mentions != self.mentions:
-            raise ValueError("top-level mentions must exactly flatten per-input results")
+            raise ValueError(
+                "top-level mentions must exactly flatten per-input results"
+            )
         if any(mention.run_id != self.run.run_id for mention in self.mentions):
             raise ValueError("all benchmark mentions must cite the benchmark run")
+        if self.adapter.family == "structured_generation" and any(
+            result.raw_output_sha256 is None or result.prompt_sha256 is None
+            for result in self.results
+        ):
+            raise ValueError(
+                "structured generation results require prompt and raw-output hashes"
+            )
         return self

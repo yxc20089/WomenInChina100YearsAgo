@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,6 +28,7 @@ from .ner_adapters.base import (
     benchmark_eligibility_failures,
     canonical_sha256,
 )
+from .ner_adapters.output import AdapterBatchOutput, AdapterItemOutput
 from .ner_gold import NERGoldSet
 from .ner_pipeline import (
     GLiNERPredictor,
@@ -36,6 +38,16 @@ from .ner_pipeline import (
     SpanCandidate,
     merge_candidates,
 )
+from .ner_structured import (
+    STRUCTURED_NER_PROMPT_SCHEMA_SHA256,
+    STRUCTURED_NER_RESPONSE_FORMAT_SHA256,
+    StructuredGenerationBenchmarkAdapter,
+    validate_local_artifact,
+    verify_ollama_model_digest,
+)
+from .generation import OpenAICompatibleGenerator
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -150,7 +162,7 @@ def prepare_benchmark_dataset(
 class BenchmarkAdapter(Protocol):
     identity: AdapterIdentity
 
-    def predict(self, texts: list[str]) -> tuple[list[list[SpanCandidate]], list[float]]: ...
+    def predict(self, texts: list[str]) -> "AdapterBatchOutput": ...
 
 
 class PredictorBenchmarkAdapter:
@@ -171,18 +183,26 @@ class PredictorBenchmarkAdapter:
         self.threshold = threshold
         self.batch_size = batch_size
 
-    def predict(self, texts: list[str]) -> tuple[list[list[SpanCandidate]], list[float]]:
+    def predict(self, texts: list[str]) -> AdapterBatchOutput:
         all_candidates: list[list[SpanCandidate]] = []
         latencies = []
         for start in range(0, len(texts), self.batch_size):
             batch = texts[start : start + self.batch_size]
             began = time.perf_counter()
-            outputs = [predictor.predict(batch, self.threshold) for predictor in self.predictors]
+            outputs = [
+                predictor.predict(batch, self.threshold)
+                for predictor in self.predictors
+            ]
             merged = merge_candidates(*outputs)
             elapsed = time.perf_counter() - began
             all_candidates.extend(merged)
             latencies.extend([elapsed / len(batch)] * len(batch))
-        return all_candidates, latencies
+        return AdapterBatchOutput(
+            [
+                AdapterItemOutput(spans=spans, latency_seconds=latency)
+                for spans, latency in zip(all_candidates, latencies, strict=True)
+            ]
+        )
 
 
 def _percentile(values: list[float], percentile: float) -> float | None:
@@ -203,7 +223,8 @@ def execute_benchmark(
 ) -> BenchmarkPredictionArtifact:
     if not dataset.benchmark_eligible and not allow_ineligible_technical_run:
         raise ValueError(
-            "benchmark dataset is ineligible: " + "; ".join(dataset.eligibility_failures)
+            "benchmark dataset is ineligible: "
+            + "; ".join(dataset.eligibility_failures)
         )
     if adapter.identity.ontology_version != dataset.ontology_version:
         raise ValueError("adapter ontology does not match the benchmark dataset")
@@ -217,16 +238,19 @@ def execute_benchmark(
     texts = [item.text for item in inputs]
     run_id = uuid4()
     started_at = datetime.now(timezone.utc)
-    candidates, latencies = adapter.predict(texts)
-    if len(candidates) != len(inputs) or len(latencies) != len(inputs):
+    batch_output = adapter.predict(texts)
+    if len(batch_output.items) != len(inputs):
         raise ValueError("adapter output count does not match benchmark inputs")
+    latencies = [item.latency_seconds for item in batch_output.items]
+    if any(latency < 0 or not math.isfinite(latency) for latency in latencies):
+        raise ValueError("adapter latency must be finite and nonnegative")
     completed_at = datetime.now(timezone.utc)
     results = []
     all_mentions = []
-    for item, spans, latency in zip(inputs, candidates, latencies, strict=True):
+    for item, adapter_output in zip(inputs, batch_output.items, strict=True):
         mentions = []
-        invalid_outputs = 0
-        for span in spans:
+        invalid_outputs = adapter_output.invalid_outputs
+        for span in adapter_output.spans:
             if not 0 <= span.start < span.end <= len(item.text):
                 invalid_outputs += 1
                 continue
@@ -240,7 +264,7 @@ def execute_benchmark(
                 source=item.source.model_copy(
                     update={"text_start": span.start, "text_end": span.end}
                 ),
-                confidence=span.score,
+                confidence=span.score if span.confidence_available else None,
                 run_id=run_id,
                 attributes={
                     "benchmark_input_id": item.input_id,
@@ -253,6 +277,11 @@ def execute_benchmark(
                     ],
                     "candidate_only": True,
                     "calibrated": False,
+                    "confidence_semantics": (
+                        "uncalibrated_candidate_score"
+                        if span.confidence_available
+                        else "not_provided_by_adapter"
+                    ),
                 },
             )
             mentions.append(mention)
@@ -267,8 +296,10 @@ def execute_benchmark(
                 source_ocr_region_id=item.source_ocr_region_id,
                 input_text_sha256=item.text_sha256,
                 mentions=mentions,
-                latency_seconds=latency,
-                raw_output_sha256=canonical_sha256(
+                abstention_reason=adapter_output.abstention_reason,
+                latency_seconds=adapter_output.latency_seconds,
+                raw_output_sha256=adapter_output.raw_output_sha256
+                or canonical_sha256(
                     [
                         {
                             "start": span.start,
@@ -278,15 +309,26 @@ def execute_benchmark(
                             "score": span.score,
                             "extractor": span.extractor,
                         }
-                        for span in spans
+                        for span in adapter_output.spans
                     ]
                 ),
+                prompt_sha256=adapter_output.prompt_sha256,
+                finish_reason=adapter_output.finish_reason,
+                prompt_tokens=adapter_output.prompt_tokens,
+                completion_tokens=adapter_output.completion_tokens,
+                total_tokens=adapter_output.total_tokens,
                 invalid_outputs=invalid_outputs,
             )
         )
     input_sha256 = canonical_sha256(
-        [{"input_id": item.input_id, "text_sha256": item.text_sha256} for item in inputs]
+        [
+            {"input_id": item.input_id, "text_sha256": item.text_sha256}
+            for item in inputs
+        ]
     )
+    prompt_token_values = [result.prompt_tokens for result in results]
+    completion_token_values = [result.completion_tokens for result in results]
+    total_token_values = [result.total_tokens for result in results]
     run = ProcessingRun(
         run_id=run_id,
         kind=RunKind.NER,
@@ -306,6 +348,27 @@ def execute_benchmark(
             "device": adapter.identity.device,
             "dtype": adapter.identity.dtype,
             "invalid_outputs": sum(result.invalid_outputs for result in results),
+            "prompt_tokens": (
+                sum(prompt_token_values)
+                if all(value is not None for value in prompt_token_values)
+                else None
+            ),
+            "completion_tokens": (
+                sum(completion_token_values)
+                if all(value is not None for value in completion_token_values)
+                else None
+            ),
+            "total_tokens": (
+                sum(total_token_values)
+                if all(value is not None for value in total_token_values)
+                else None
+            ),
+            "token_usage_complete_results": sum(
+                result.prompt_tokens is not None
+                and result.completion_tokens is not None
+                and result.total_tokens is not None
+                for result in results
+            ),
         },
         started_at=started_at,
         completed_at=completed_at,
@@ -330,9 +393,7 @@ def execute_benchmark(
         ontology_version=dataset.ontology_version,
         adapter=adapter.identity,
         run=run,
-        source_ocr_run_ids=sorted(
-            {item.source_ocr_run_id for item in inputs}, key=str
-        ),
+        source_ocr_run_ids=sorted({item.source_ocr_run_id for item in inputs}, key=str),
         input_ids=[item.input_id for item in inputs],
         results=results,
         mentions=all_mentions,
@@ -340,7 +401,7 @@ def execute_benchmark(
     )
 
 
-def _adapter_from_args(args: argparse.Namespace) -> PredictorBenchmarkAdapter:
+def _adapter_from_args(args: argparse.Namespace) -> BenchmarkAdapter:
     if args.adapter == "rules":
         identity = AdapterIdentity(
             adapter_id="historical-women-zh-rules-v1",
@@ -357,7 +418,7 @@ def _adapter_from_args(args: argparse.Namespace) -> PredictorBenchmarkAdapter:
             configuration={"threshold": args.threshold},
         )
         predictors: list[BatchPredictor] = [RulePredictor()]
-    else:
+    elif args.adapter == "gliner":
         if not args.model or not args.revision or not args.license:
             raise ValueError("GLiNER requires --model, --revision and --license")
         identity = AdapterIdentity(
@@ -390,6 +451,101 @@ def _adapter_from_args(args: argparse.Namespace) -> PredictorBenchmarkAdapter:
                 multi_label=True,
             )
         ]
+        return PredictorBenchmarkAdapter(
+            identity, predictors, threshold=args.threshold, batch_size=args.batch_size
+        )
+    else:
+        required = {
+            "--model": args.model,
+            "--revision": args.revision,
+            "--license": args.license,
+            "--base-url": args.base_url,
+            "--served-model": args.served_model,
+            "--runtime-version": args.runtime_version,
+            "--local-artifact-sha256": args.local_artifact_sha256,
+            "--quantization": args.quantization,
+        }
+        missing = [name for name, value in required.items() if not value]
+        if missing:
+            raise ValueError(
+                "structured generation requires " + ", ".join(sorted(missing))
+            )
+        local_artifact_sha256 = args.local_artifact_sha256
+        generator = OpenAICompatibleGenerator(
+            args.base_url,
+            args.served_model,
+            api_key=os.environ.get("NER_LLM_API_KEY"),
+            model_revision=local_artifact_sha256,
+            timeout_seconds=args.timeout_seconds,
+            max_output_tokens=args.max_output_tokens,
+            seed=args.seed,
+            allow_remote=args.allow_remote_model_endpoint,
+        )
+        runtime_verification: dict[str, object]
+        if args.runtime_name == "ollama":
+            if not args.ollama_manifest_digest:
+                raise ValueError(
+                    "Ollama structured generation requires --ollama-manifest-digest"
+                )
+            verification = verify_ollama_model_digest(
+                generator,
+                args.ollama_manifest_digest,
+                args.runtime_version,
+            )
+            if verification.observed_digest[7:] != local_artifact_sha256:
+                raise ValueError(
+                    "Ollama manifest digest must equal local artifact SHA-256"
+                )
+            runtime_verification = verification.model_dump(mode="json")
+        else:
+            if args.local_model_artifact is None:
+                raise ValueError(
+                    "LM Studio structured generation requires --local-model-artifact"
+                )
+            validate_local_artifact(args.local_model_artifact, local_artifact_sha256)
+            runtime_verification = {
+                "artifact_path": str(args.local_model_artifact.resolve()),
+                "artifact_sha256": local_artifact_sha256,
+            }
+        identity = AdapterIdentity(
+            adapter_id=f"structured-ner:{args.runtime_name}:{args.served_model}",
+            family="structured_generation",
+            model_name=args.model,
+            model_revision=args.revision,
+            license=args.license,
+            modalities=["text"],
+            runtime=f"{args.runtime_name}-{args.runtime_version}",
+            code_revision=args.code_revision,
+            device=args.device,
+            dtype=args.quantization,
+            ontology_version=ONTOLOGY_VERSION,
+            prompt_schema_revision=STRUCTURED_NER_PROMPT_SCHEMA_SHA256,
+            configuration={
+                "base_url": generator.base_url,
+                "served_model": args.served_model,
+                "runtime_name": args.runtime_name,
+                "runtime_version": args.runtime_version,
+                "runtime_verification": runtime_verification,
+                "local_artifact_sha256": local_artifact_sha256,
+                "quantization": args.quantization,
+                "temperature": 0,
+                "top_p": 1,
+                "reasoning_effort": "none",
+                "seed": args.seed,
+                "max_output_tokens": args.max_output_tokens,
+                "timeout_seconds": args.timeout_seconds,
+                "response_format_sha256": STRUCTURED_NER_RESPONSE_FORMAT_SHA256,
+                "remote_data_egress_allowed": args.allow_remote_model_endpoint,
+            },
+        )
+        structured_adapter = StructuredGenerationBenchmarkAdapter(identity, generator)
+        canary = structured_adapter.run_schema_canary(args.schema_canary_repetitions)
+        if not canary.deterministic:
+            raise RuntimeError(
+                "structured NER schema canary was nondeterministic; aborting benchmark"
+            )
+        return structured_adapter.with_canary(canary)
+
     return PredictorBenchmarkAdapter(
         identity, predictors, threshold=args.threshold, batch_size=args.batch_size
     )
@@ -417,13 +573,33 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument(
         "--input-variant", choices=("raw_ocr", "corrected_text"), required=True
     )
-    run.add_argument("--adapter", choices=("rules", "gliner"), required=True)
+    run.add_argument(
+        "--adapter",
+        choices=("rules", "gliner", "structured-generation"),
+        required=True,
+    )
     run.add_argument("--model")
     run.add_argument("--revision")
     run.add_argument("--license")
     run.add_argument("--threshold", type=float, default=0.45)
     run.add_argument("--batch-size", type=int, default=8)
     run.add_argument("--word-splitter-language")
+    run.add_argument("--base-url")
+    run.add_argument("--served-model")
+    run.add_argument(
+        "--runtime-name", choices=("ollama", "lm_studio"), default="ollama"
+    )
+    run.add_argument("--runtime-version")
+    run.add_argument("--local-artifact-sha256")
+    run.add_argument("--local-model-artifact", type=Path)
+    run.add_argument("--ollama-manifest-digest")
+    run.add_argument("--quantization")
+    run.add_argument("--device", default="local-runtime")
+    run.add_argument("--timeout-seconds", type=float, default=120)
+    run.add_argument("--max-output-tokens", type=int, default=2048)
+    run.add_argument("--seed", type=int, default=42)
+    run.add_argument("--schema-canary-repetitions", type=int, default=3)
+    run.add_argument("--allow-remote-model-endpoint", action="store_true")
     run.add_argument("--code-revision", required=True)
     run.add_argument("--allow-ineligible-technical-run", action="store_true")
     run.add_argument("--confirm-locked-test-evaluation", action="store_true")
@@ -446,7 +622,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             input_variants=args.input_variant,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(dataset.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        args.output.write_text(
+            dataset.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
         payload = {
             "output": str(args.output),
             "dataset_sha256": benchmark_dataset_sha256(dataset),
@@ -474,16 +652,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             allow_ineligible_technical_run=args.allow_ineligible_technical_run,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")
-        duration = (
-            artifact.run.completed_at - artifact.run.started_at
-        ).total_seconds()
+        args.output.write_text(
+            artifact.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+        duration = (artifact.run.completed_at - artifact.run.started_at).total_seconds()
         payload = {
             "output": str(args.output),
             "mentions": len(artifact.mentions),
             "inputs": len(artifact.input_ids),
             "duration_seconds": duration,
-            "invalid_outputs": sum(result.invalid_outputs for result in artifact.results),
+            "invalid_outputs": sum(
+                result.invalid_outputs for result in artifact.results
+            ),
             "warnings": artifact.warnings,
         }
     print(json.dumps(payload, ensure_ascii=False, sort_keys=True))

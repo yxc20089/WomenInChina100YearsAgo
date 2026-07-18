@@ -55,17 +55,22 @@ class SpanCandidate:
     score: float
     extractor: str
     supports: tuple[tuple[str, float], ...] = ()
+    confidence_available: bool = True
 
 
 class BatchPredictor(Protocol):
-    def predict(self, texts: list[str], threshold: float) -> list[list[SpanCandidate]]: ...
+    def predict(
+        self, texts: list[str], threshold: float
+    ) -> list[list[SpanCandidate]]: ...
 
 
 RULES: tuple[tuple[str, EntityType, re.Pattern[str], float], ...] = (
     (
         "republic_date",
         EntityType.DATE,
-        re.compile(r"民國[〇零一二三四五六七八九十百\d]{1,5}年(?:[〇零一二三四五六七八九十\d]{1,3}月)?(?:[〇零一二三四五六七八九十\d]{1,3}日)?"),
+        re.compile(
+            r"民國[〇零一二三四五六七八九十百\d]{1,5}年(?:[〇零一二三四五六七八九十\d]{1,3}月)?(?:[〇零一二三四五六七八九十\d]{1,3}日)?"
+        ),
         0.95,
     ),
     (
@@ -96,7 +101,9 @@ RULES: tuple[tuple[str, EntityType, re.Pattern[str], float], ...] = (
 
 
 class RulePredictor:
-    def predict(self, texts: list[str], threshold: float = 0.0) -> list[list[SpanCandidate]]:
+    def predict(
+        self, texts: list[str], threshold: float = 0.0
+    ) -> list[list[SpanCandidate]]:
         outputs: list[list[SpanCandidate]] = []
         for text in texts:
             spans = []
@@ -173,8 +180,12 @@ class GLiNERPredictor:
         if word_splitter_language:
             words_splitter = getattr(self.model.data_processor, "words_splitter", None)
             if words_splitter is None or not hasattr(words_splitter, "splitter"):
-                raise RuntimeError("This GLiNER model does not expose a replaceable word splitter")
-            words_splitter.splitter = FixedStanzaLanguageSplitter(word_splitter_language)
+                raise RuntimeError(
+                    "This GLiNER model does not expose a replaceable word splitter"
+                )
+            words_splitter.splitter = FixedStanzaLanguageSplitter(
+                word_splitter_language
+            )
         self.model.eval()
 
     def predict(self, texts: list[str], threshold: float) -> list[list[SpanCandidate]]:
@@ -211,7 +222,9 @@ class GLiNERPredictor:
         return results
 
 
-def merge_candidates(*candidate_sets: list[list[SpanCandidate]]) -> list[list[SpanCandidate]]:
+def merge_candidates(
+    *candidate_sets: list[list[SpanCandidate]],
+) -> list[list[SpanCandidate]]:
     if not candidate_sets:
         return []
     merged: list[list[SpanCandidate]] = []
@@ -225,9 +238,13 @@ def merge_candidates(*candidate_sets: list[list[SpanCandidate]]) -> list[list[Sp
             best = max(candidates, key=lambda item: item.score)
             support_scores: dict[str, float] = {}
             for candidate in candidates:
-                supports = candidate.supports or ((candidate.extractor, candidate.score),)
+                supports = candidate.supports or (
+                    (candidate.extractor, candidate.score),
+                )
                 for extractor, score in supports:
-                    support_scores[extractor] = max(score, support_scores.get(extractor, 0.0))
+                    support_scores[extractor] = max(
+                        score, support_scores.get(extractor, 0.0)
+                    )
             combined.append(
                 SpanCandidate(
                     best.start,
@@ -237,6 +254,7 @@ def merge_candidates(*candidate_sets: list[list[SpanCandidate]]) -> list[list[Sp
                     best.score,
                     best.extractor,
                     tuple(sorted(support_scores.items())),
+                    best.confidence_available,
                 )
             )
         merged.append(
@@ -376,7 +394,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--word-splitter-language",
         help="Force a pre-downloaded Stanza tokenizer language, e.g. zh-hant",
     )
-    parser.add_argument("--max-regions", type=int, help="Bound a technical compatibility run")
+    parser.add_argument(
+        "--max-regions", type=int, help="Bound a technical compatibility run"
+    )
     parser.add_argument("--dataset-id")
     parser.add_argument("--split-id")
     parser.add_argument(
@@ -399,7 +419,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("--threshold must be between 0 and 1")
     if args.max_regions is not None and args.max_regions < 1:
         raise SystemExit("--max-regions must be positive")
-    ocr = OCRPageArtifact.model_validate_json(args.ocr_artifact.read_text(encoding="utf-8"))
+    ocr = OCRPageArtifact.model_validate_json(
+        args.ocr_artifact.read_text(encoding="utf-8")
+    )
     predictors: list[BatchPredictor] = [RulePredictor()]
     if args.rules_only:
         model_name = "historical-women-zh-rules"
@@ -435,7 +457,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     args.output.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")
     print(
         json.dumps(
-            {"output": str(args.output), "mentions": len(artifact.mentions), "warnings": artifact.warnings},
+            {
+                "output": str(args.output),
+                "mentions": len(artifact.mentions),
+                "warnings": artifact.warnings,
+            },
             ensure_ascii=False,
         )
     )

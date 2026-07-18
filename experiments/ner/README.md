@@ -210,11 +210,15 @@ to a frozen project-local name. LM Studio 0.4.19 build 2 with pinned
 `Qwen3.5-0.8B-Q8_0.gguf` SHA-256
 `0ad885ffd4bb022fc4f0d33a3308fa108ef8613159d3b3a67e23abca056b7a6c` is an
 optional, separately scored runtime. Both expose an OpenAI-compatible chat
-endpoint; the future adapter must not contain backend-specific extraction
-logic. Freeze the Hugging Face source revision, local artifact SHA-256, server
+endpoint through the implemented backend-neutral adapter. Its prompt/schema
+SHA-256 is
+`ee8fafd34d2b5c3039b46b231eacd491c0d5bfb9b33760381fc59adb8a457505` and
+its response-format SHA-256 is
+`cdc6d4c736bae55ec47ef2795e22a4435262f9f8d6bb9d95643498a46a8f33a6`.
+Freeze the Hugging Face source revision, local artifact SHA-256, server
 version, model configuration, prompt/JSON-schema SHA-256 and all decoding
-controls. The first arm is text-only, non-thinking, temperature zero and fixed
-seed. Repeat a schema canary and report nondeterminism rather than assuming the
+controls. The first arm is text-only with `reasoning_effort=none`, temperature
+zero and a fixed seed. Repeat a schema canary and report nondeterminism rather than assuming the
 same seed is equivalent across runtimes. Image input is a separate page-crop
 ablation.
 
@@ -224,6 +228,35 @@ the Unicode source string, `source[start:end] != surface`, duplicate entities,
 and a surface without unique offsets when the model omits or contradicts them.
 This is how the project can benefit from Qwen's Chinese competence without
 letting a generative model rewrite historical evidence.
+
+Run the verified Ollama condition:
+
+```bash
+uv run wic-ner-benchmark run \
+  --dataset artifacts/ner-benchmark/dataset-v1.json \
+  --split development --input-variant raw_ocr \
+  --adapter structured-generation \
+  --model Qwen/Qwen3.5-0.8B \
+  --revision 2fc06364715b967f1860aea9cf38778875588b17 \
+  --license Apache-2.0 \
+  --base-url http://127.0.0.1:11434/v1 \
+  --served-model project/qwen35-08b-q8-ner-v1 \
+  --runtime-name ollama --runtime-version 0.32.0 \
+  --local-artifact-sha256 f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4 \
+  --ollama-manifest-digest sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4 \
+  --quantization Q8_0 --seed 42 --schema-canary-repetitions 3 \
+  --code-revision 0000000000000000000000000000000000000000 \
+  --output artifacts/ner-benchmark/qwen35-08b.ollama.development.raw.json
+```
+
+The command checks the live Ollama version and requested model digest before
+running the canary. For LM Studio, use `--runtime-name lm_studio`, its exact
+runtime version, `--local-model-artifact /path/to/model.gguf`, and the file's
+`--local-artifact-sha256`; that file is hashed before inference. The optional
+`NER_LLM_API_KEY` environment variable supplies a bearer token without placing
+it in CLI arguments or artifacts. Non-loopback endpoints require HTTPS and
+`--allow-remote-model-endpoint`; redirects are not followed. Replace the zero
+code revision with the exact project commit.
 
 Rules and both pinned GLiNER arms use the common executable adapter today:
 
@@ -240,10 +273,10 @@ uv run wic-ner-benchmark run \
 
 Replace the zero code revision with the exact 40-character project commit. The
 adapter rejects moving model labels and abbreviated code revisions. The
-MacBERT/mmBERT/historical W2NER, Otter and structured-generation arms are
-specified but hard-blocked on their
-listed training, license, prompt/schema, offset-resolution or hardware
-requirements; they are not silently approximated by another implementation.
+MacBERT/mmBERT supervised arms and Otter remain blocked on their listed training
+or license requirements. The Qwen structured-generation adapter is implemented
+but remains unscored until a real content-verified local model and eligible gold
+exist; it is not silently approximated by another model.
 
 Score the separate prediction artifact with the existing scorer. Its CLI
 verifies the exact gold file SHA-256 and scores only the frozen split inputs,
@@ -280,12 +313,25 @@ review gates.
 ## Pinned compatibility comparison
 
 The official [GLiNER-X collection](https://huggingface.co/collections/knowledgator/gliner-x)
-has three pinned sizes. Its published `zh_pud` F1 is 0.5792 for small
-`d51a098…`, 0.6152 for base `a6c7a8f…`, and 0.6794 for large `4a4437f…`; the
-same table gives GLiNER multi-v2.1 0.6410. This is generic Chinese evidence, not
-Traditional-Chinese newspaper/OCR evidence. Use large for the accuracy-first
-arm, base only as an efficiency control after large qualifies or under a clear
-hardware constraint, and small only as a diagnostic control.
+contains three current Apache-2.0 checkpoints and three legacy v0.5 checkpoints.
+For the current family, published `zh_pud` F1 is 0.5792 for small `d51a098…`,
+0.6152 for base `a6c7a8f…`, and 0.6794 for large `4a4437f…`; the same table gives
+GLiNER multi-v2.1 0.6410. The underlying [Chinese PUD
+corpus](https://universaldependencies.org/treebanks/zh_pud/index.html) is modern,
+professionally translated news/Wikipedia and its published inventory visibly
+contains Traditional characters. That makes the score relevant modern-script
+evidence, but not evidence for Republican-era vocabulary, OCR corruption,
+historical typography, or this project's ontology. Keep current large as the
+current-release/Stanza arm, base only as its efficiency control after large
+qualifies or under a clear hardware constraint, and small only as diagnostic.
+
+The legacy `gliner-x-large-v0.5@f41e752…` card reports a higher `zh_pud` F1 of
+0.709. Licensing is not a blocker for this project, so run it as an active
+accuracy challenger, separately from the current large checkpoint. Record its
+CC-BY-NC-SA-4.0 license as provenance, and freeze its universal/Jieba Chinese
+splitter because it differs from the current Stanza path. The legacy base
+reports 0.623; the legacy small reports 0.269 and has a whitespace splitter
+unsafe for uninterrupted Chinese, so neither warrants another main arm.
 
 GLiNER-X uses a Stanza word splitter. Automatic per-region language detection
 is unsafe for short noisy newspaper OCR: the technical run misclassified

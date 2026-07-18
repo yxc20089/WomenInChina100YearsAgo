@@ -101,12 +101,22 @@ spans do not solve discontinuous project evidence. Current GLiNER2 checkpoints
 do not officially list Chinese, and GLiNER v2.5's whitespace-style splitting
 can group uninterrupted Chinese into one unit, so neither displaces GLiNER-X.
 The official [GLiNER-X collection](https://huggingface.co/collections/knowledgator/gliner-x)
-contains small `d51a098…`, base `a6c7a8f…`, and large `4a4437f…` checkpoints.
-Its card reports `zh_pud` F1 of 0.5792, 0.6152, and 0.6794 respectively, versus
-0.6410 for GLiNER multi-v2.1. Run large first as the accuracy candidate; run base
-only as a separately scored efficiency control if large qualifies or hardware
-requires it; keep small diagnostic-only. None of those scores identifies
-Traditional versus Simplified text or measures newspaper OCR.
+contains three current Apache-2.0 checkpoints and three legacy v0.5 checkpoints.
+Current small `d51a098…`, base `a6c7a8f…`, and large `4a4437f…` report `zh_pud`
+F1 of 0.5792, 0.6152, and 0.6794 respectively, versus 0.6410 for GLiNER
+multi-v2.1. [Chinese PUD](https://universaldependencies.org/treebanks/zh_pud/index.html)
+is a modern translated news/Wikipedia corpus whose published token inventory
+visibly contains Traditional characters. This is useful modern-script evidence,
+not Republican-era, OCR-noise, layout, or project-ontology evidence. Keep
+current large as the current-release/Stanza candidate; run base only as its
+separately scored efficiency control if large qualifies or hardware requires
+it; keep small diagnostic-only.
+
+Legacy `gliner-x-large-v0.5@f41e752…` reports a higher `zh_pud` F1 of 0.709 and
+therefore enters the active accuracy tournament. Licensing is not a blocker for
+this project; retain the CC-BY-NC-SA-4.0 value as provenance, not an execution
+gate. Score v0.5 as a distinct system because its universal/Jieba Chinese
+splitter differs from the current Stanza condition.
 Retain **Otter CE** as
 research-only until its checkpoint-weight license is explicit. Use
 **NuExtract3** only as a routed difficult/image-context stage.
@@ -122,10 +132,18 @@ as the canonical local arm. The pinned
 [Unsloth Q8 GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/tree/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0)
 in LM Studio is an optional, separately scored system—not an equivalent runtime.
 Both use one backend-neutral OpenAI-compatible adapter. Start text-only with
-non-thinking, schema-constrained output and separately score any page-image
+`reasoning_effort=none`, schema-constrained output and separately score any page-image
 ablation. Reject unknown labels, non-verbatim surfaces, invalid/ambiguous
 offsets and duplicates. Keep **Qwen3.6-27B** only as the high-compute
 multimodal ceiling.
+
+The backend-neutral Qwen adapter is now implemented. It verifies the live
+Ollama version and manifest digest or hashes the exact LM Studio GGUF, sends the
+same frozen JSON schema to either runtime, repeats a deterministic canary, and
+retains per-input prompt/output hashes, finish reason, token usage, latency and
+invalid-output counts. Mock Ollama and LM Studio end-to-end tests pass. This is
+implementation evidence only: the real Qwen artifact has not been pulled or
+scored on project text.
 
 Track **PP-UIE-0.5B** only as post-independent-annotation assistance. Official
 [PaddleNLP documentation](https://paddlenlp.readthedocs.io/zh/latest/llm/application/information_extraction/README.html)

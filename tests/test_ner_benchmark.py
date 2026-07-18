@@ -107,10 +107,14 @@ def _manifest() -> IssueSplitManifest:
         assigned_by="historian",
         assignments=[
             SnippetSplitAssignment(
-                snippet_id="snippet-1", issue_id="issue-development", split="development"
+                snippet_id="snippet-1",
+                issue_id="issue-development",
+                split="development",
             ),
             SnippetSplitAssignment(
-                snippet_id="snippet-2", issue_id="issue-development", split="development"
+                snippet_id="snippet-2",
+                issue_id="issue-development",
+                split="development",
             ),
             SnippetSplitAssignment(
                 snippet_id="snippet-3", issue_id="issue-train", split="train"
@@ -169,7 +173,9 @@ class NERBenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot cross benchmark splits"):
             IssueSplitManifest.model_validate(data)
 
-    def test_prepare_requires_exact_manifest_coverage_and_marks_small_set_ineligible(self):
+    def test_prepare_requires_exact_manifest_coverage_and_marks_small_set_ineligible(
+        self,
+    ):
         manifest = _manifest().model_copy(
             update={"assignments": _manifest().assignments[:-1]}
         )
@@ -186,7 +192,9 @@ class NERBenchmarkTests(unittest.TestCase):
         dataset = self._dataset()
         self.assertFalse(dataset.benchmark_eligible)
         self.assertEqual(len(dataset.inputs), 8)
-        self.assertTrue(any("at least 500" in failure for failure in dataset.eligibility_failures))
+        self.assertTrue(
+            any("at least 500" in failure for failure in dataset.eligibility_failures)
+        )
 
         tampered = dataset.model_dump(mode="json")
         tampered["benchmark_eligible"] = True
@@ -222,7 +230,13 @@ class NERBenchmarkTests(unittest.TestCase):
         self.assertEqual(len(artifact.source_ocr_run_ids), 2)
         self.assertEqual(len(artifact.results), 2)
         self.assertTrue(all(result.input_text_sha256 for result in artifact.results))
-        self.assertTrue(all(mention.attributes["candidate_only"] for mention in artifact.mentions))
+        self.assertTrue(
+            all(mention.attributes["candidate_only"] for mention in artifact.mentions)
+        )
+        self.assertIsNone(artifact.run.configuration["total_tokens"])
+        self.assertEqual(
+            artifact.run.configuration["token_usage_complete_results"], 0
+        )
         report = score_ner_artifact(
             _gold(),
             artifact,
@@ -241,9 +255,7 @@ class NERBenchmarkTests(unittest.TestCase):
             report, report, bootstrap_samples=1_000, seed=7
         )
         self.assertEqual(comparison["exact_f1_delta"], 0.0)
-        self.assertEqual(
-            comparison["paired_issue_cluster_bootstrap"]["lower_95"], 0.0
-        )
+        self.assertEqual(comparison["paired_issue_cluster_bootstrap"]["lower_95"], 0.0)
 
         mismatched = dict(report)
         mismatched["input_sha256"] = "f" * 64

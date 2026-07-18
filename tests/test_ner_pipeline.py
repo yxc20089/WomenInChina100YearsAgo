@@ -13,6 +13,10 @@ from wic_history.ner_pipeline import (
     build_parser,
     merge_candidates,
 )
+from wic_history.ner_structured import (
+    STRUCTURED_NER_PROMPT_SCHEMA_SHA256,
+    STRUCTURED_NER_RESPONSE_FORMAT_SHA256,
+)
 
 
 class NERPipelineTests(unittest.TestCase):
@@ -67,6 +71,7 @@ class NERPipelineTests(unittest.TestCase):
                 "sikubert-w2ner",
                 "otter-ce-mmbert",
                 "gliner-x-large",
+                "gliner-x-large-v0.5",
                 "nuextract3",
                 "qwen3.5-0.8b-structured-ner",
                 "qwen3.6-27b",
@@ -148,6 +153,21 @@ class NERPipelineTests(unittest.TestCase):
         )
         self.assertEqual(qwen_arm["decoding_contract"]["temperature"], 0)
         self.assertFalse(qwen_arm["decoding_contract"]["thinking"])
+        self.assertEqual(
+            qwen_arm["status"],
+            "backend_neutral_adapter_implemented_real_model_run_pending",
+        )
+        self.assertEqual(
+            qwen_arm["implementation"]["prompt_schema_sha256"],
+            STRUCTURED_NER_PROMPT_SCHEMA_SHA256,
+        )
+        self.assertEqual(
+            qwen_arm["implementation"]["response_format_sha256"],
+            STRUCTURED_NER_RESPONSE_FORMAT_SHA256,
+        )
+        self.assertNotIn(
+            "backend_neutral_openai_compatible_adapter", qwen_arm["blockers"]
+        )
 
         gliner = candidates["gliner-x-large"]
         controls = {item["model"]: item for item in gliner["family_size_controls"]}
@@ -157,6 +177,10 @@ class NERPipelineTests(unittest.TestCase):
         self.assertGreater(
             controls["knowledgator/gliner-x-large"]["official_zh_pud_f1"],
             controls["knowledgator/gliner-x-base"]["official_zh_pud_f1"],
+        )
+        self.assertGreater(
+            candidates["gliner-x-large-v0.5"]["official_zh_pud_f1"],
+            controls["knowledgator/gliner-x-large"]["official_zh_pud_f1"],
         )
 
     def test_mmbert_registry_pins_the_passing_offset_qualification(self):

@@ -185,6 +185,23 @@
       ]
     },
     {
+      "id": "gliner-x-large-v0.5",
+      "candidate_id": "gliner-x-large-v0.5",
+      "adapter_family": "gliner",
+      "status": "executable_after_optional_dependency_and_pinned_universal_jieba_tokenizer_install",
+      "model": "knowledgator/gliner-x-large-v0.5",
+      "revision": "f41e752e4a44883aa840f7d9dae8cb4f0fcb64db",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "accuracy_first_published_chinese_score_challenger",
+      "official_zh_pud_f1": 0.709,
+      "tokenization_condition": "pinned_universal_jieba_route_scored_as_a_distinct_system",
+      "blockers": [
+        "eligible_adjudicated_gold"
+      ]
+    },
+    {
       "id": "macbert-w2ner",
       "candidate_id": "macbert-w2ner",
       "adapter_family": "w2ner",
@@ -370,7 +387,7 @@
       "id": "qwen3.5-0.8b-structured-ner",
       "candidate_id": "qwen3.5-0.8b-structured-ner",
       "adapter_family": "structured_generation",
-      "status": "local_endpoint_prompt_schema_and_offset_adapter_not_implemented",
+      "status": "backend_neutral_adapter_implemented_real_model_run_pending",
       "model": "Qwen/Qwen3.5-0.8B",
       "revision": "2fc06364715b967f1860aea9cf38778875588b17",
       "modalities": [
@@ -379,6 +396,16 @@
       ],
       "selection_role": "low_cost_chinese_capable_generative_ner_challenger",
       "serving_contract": "OpenAI-compatible local endpoint supplied by Ollama or LM Studio; benchmark logic is backend-neutral",
+      "implementation": {
+        "module": "src/wic_history/ner_structured.py",
+        "cli": "wic-ner-benchmark run --adapter structured-generation",
+        "prompt_schema_sha256": "ee8fafd34d2b5c3039b46b231eacd491c0d5bfb9b33760381fc59adb8a457505",
+        "response_format_sha256": "cdc6d4c736bae55ec47ef2795e22a4435262f9f8d6bb9d95643498a46a8f33a6",
+        "validation": "strict_json_unknown_label_unicode_half_open_offset_verbatim_surface_duplicate_finish_reason_and_count_checks",
+        "provenance": "per_input_prompt_raw_output_finish_reason_token_usage_latency_and_invalid_output_records",
+        "runtime_checks": "Ollama_live_version_and_manifest_digest_or_LM_Studio_exact_local_GGUF_SHA256_plus_repeated_schema_canary",
+        "test_state": "local_mock_Ollama_and_LM_Studio_end_to_end_paths_pass"
+      },
       "canonical_runtime": {
         "backend": "Ollama",
         "version": "0.32.0",
@@ -397,6 +424,7 @@
       },
       "decoding_contract": {
         "thinking": false,
+        "reasoning_effort": "none",
         "temperature": 0,
         "top_p": 1,
         "seed": 42,
@@ -422,12 +450,9 @@
         "temperature_top_p_seed_and_max_tokens"
       ],
       "blockers": [
-        "frozen_prompt_and_output_schema",
-        "backend_neutral_openai_compatible_adapter",
-        "verbatim_surface_and_exact_offset_validator",
-        "pinned_local_quantized_artifact_sha256",
+        "real_qwen_local_model_pull_and_content_verification",
         "eligible_adjudicated_gold",
-        "local_inference_run"
+        "real_local_inference_and_scoring_run"
       ]
     },
     {

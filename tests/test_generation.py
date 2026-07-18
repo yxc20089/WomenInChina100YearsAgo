@@ -99,7 +99,9 @@ class GenerationTests(unittest.TestCase):
         )
 
     def test_scene_abstains_without_reviewed_claims(self):
-        result = generate(self._context(), GenerationTask.RECONSTRUCTED_SCENE, FakeGenerator())
+        result = generate(
+            self._context(), GenerationTask.RECONSTRUCTED_SCENE, FakeGenerator()
+        )
         self.assertEqual(result.status, GenerationStatus.ABSTAINED)
         self.assertIsNone(result.model)
 
@@ -122,7 +124,9 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(len(result.prompt_sha256), 64)
 
     def test_prompt_marks_archive_text_as_untrusted(self):
-        messages, digest = prepare_messages(self._context(True), GenerationTask.RECONSTRUCTED_SCENE)
+        messages, digest = prepare_messages(
+            self._context(True), GenerationTask.RECONSTRUCTED_SCENE
+        )
         self.assertIn("untrusted quoted data", messages[0]["content"])
         self.assertIn("Direct evidence", messages[1]["content"])
         self.assertEqual(len(digest), 64)
@@ -146,7 +150,9 @@ class GenerationTests(unittest.TestCase):
         )
         self.assertEqual(result.status, GenerationStatus.REJECTED)
         self.assertNotIn("historical assertion", result.output)
-        self.assertTrue(any("no valid" in error.lower() for error in result.validation_errors))
+        self.assertTrue(
+            any("no valid" in error.lower() for error in result.validation_errors)
+        )
 
     def test_scene_requires_reviewed_sources_and_all_epistemic_sections(self):
         valid = generate(
@@ -168,11 +174,17 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(valid.citations, [SOURCE])
         self.assertEqual(missing_sections.status, GenerationStatus.REJECTED)
         self.assertTrue(
-            any("required sections" in error for error in missing_sections.validation_errors)
+            any(
+                "required sections" in error
+                for error in missing_sections.validation_errors
+            )
         )
         self.assertEqual(misplaced_citation.status, GenerationStatus.REJECTED)
         self.assertTrue(
-            any("Direct evidence" in error for error in misplaced_citation.validation_errors)
+            any(
+                "Direct evidence" in error
+                for error in misplaced_citation.validation_errors
+            )
         )
 
     def test_chat_history_is_untrusted_context_not_model_message_roles(self):
@@ -315,9 +327,7 @@ class GenerationTests(unittest.TestCase):
                 input_cost_per_million_tokens_usd=1,
                 output_cost_per_million_tokens_usd=2,
             )
-            result = generate(
-                self._context(), GenerationTask.RESEARCH_BRIEF, generator
-            )
+            result = generate(self._context(), GenerationTask.RESEARCH_BRIEF, generator)
             unpriced_result = generate(
                 self._context(),
                 GenerationTask.RESEARCH_BRIEF,

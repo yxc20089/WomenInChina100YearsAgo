@@ -79,7 +79,9 @@ class GenerationResponse(StrictModel):
         if self.estimated_cost_usd is not None and (
             self.prompt_tokens is None or self.completion_tokens is None
         ):
-            raise ValueError("estimated generation cost requires prompt/completion tokens")
+            raise ValueError(
+                "estimated generation cost requires prompt/completion tokens"
+            )
         if self.status == GenerationStatus.COMPLETED:
             if any(
                 value is None
@@ -90,21 +92,37 @@ class GenerationResponse(StrictModel):
                     self.raw_output_sha256,
                 )
             ):
-                raise ValueError("completed generation requires model and content provenance")
-            if not self.citations or self.invalid_citation_ids or self.validation_errors:
-                raise ValueError("completed generation requires only valid resolved citations")
-        if self.status == GenerationStatus.REJECTED:
-            if any(
-                value is None
-                for value in (
-                    self.model,
-                    self.prompt_sha256,
-                    self.context_sha256,
-                    self.raw_output_sha256,
+                raise ValueError(
+                    "completed generation requires model and content provenance"
                 )
-            ) or not self.validation_errors:
-                raise ValueError("rejected generation requires model provenance and errors")
-        if self.status in {GenerationStatus.ABSTAINED, GenerationStatus.UNAVAILABLE} and any(
+            if (
+                not self.citations
+                or self.invalid_citation_ids
+                or self.validation_errors
+            ):
+                raise ValueError(
+                    "completed generation requires only valid resolved citations"
+                )
+        if self.status == GenerationStatus.REJECTED:
+            if (
+                any(
+                    value is None
+                    for value in (
+                        self.model,
+                        self.prompt_sha256,
+                        self.context_sha256,
+                        self.raw_output_sha256,
+                    )
+                )
+                or not self.validation_errors
+            ):
+                raise ValueError(
+                    "rejected generation requires model provenance and errors"
+                )
+        if self.status in {
+            GenerationStatus.ABSTAINED,
+            GenerationStatus.UNAVAILABLE,
+        } and any(
             value is not None
             for value in (
                 self.model,
@@ -113,7 +131,9 @@ class GenerationResponse(StrictModel):
                 self.raw_output_sha256,
             )
         ):
-            raise ValueError("non-invoked generation cannot claim model output provenance")
+            raise ValueError(
+                "non-invoked generation cannot claim model output provenance"
+            )
         return self
 
 
@@ -126,6 +146,7 @@ class TextGenerator(Protocol):
 
 class TextCompletion(StrictModel):
     content: str = Field(min_length=1)
+    raw_content_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     finish_reason: str | None = Field(default=None, max_length=200)
     prompt_tokens: int | None = Field(default=None, ge=0)
     completion_tokens: int | None = Field(default=None, ge=0)
@@ -206,7 +227,9 @@ class OpenAICompatibleGenerator:
             part.lower() for part in model_revision.replace("\\", "/").split("/")
         }
         if revision_parts & forbidden_revisions:
-            raise ValueError("model_revision must identify an immutable model or deployment")
+            raise ValueError(
+                "model_revision must identify an immutable model or deployment"
+            )
         parsed_url = urlsplit(base_url)
         if (
             parsed_url.scheme not in {"http", "https"}
@@ -227,7 +250,9 @@ class OpenAICompatibleGenerator:
         if not is_loopback and parsed_url.scheme != "https":
             raise ValueError("remote LLM endpoints must use HTTPS")
         if not math.isfinite(timeout_seconds) or not 0 < timeout_seconds <= 300:
-            raise ValueError("timeout_seconds must be greater than zero and at most 300")
+            raise ValueError(
+                "timeout_seconds must be greater than zero and at most 300"
+            )
         if not 1 <= max_output_tokens <= 32768:
             raise ValueError("max_output_tokens must be between 1 and 32768")
         if seed is not None and not -(2**63) <= seed < 2**63:
@@ -237,8 +262,7 @@ class OpenAICompatibleGenerator:
             output_cost_per_million_tokens_usd,
         )
         if any(
-            cost is not None and (not math.isfinite(cost) or cost < 0)
-            for cost in costs
+            cost is not None and (not math.isfinite(cost) or cost < 0) for cost in costs
         ):
             raise ValueError("token costs must be finite nonnegative USD values")
         self.base_url = base_url.rstrip("/")
@@ -282,12 +306,8 @@ class OpenAICompatibleGenerator:
             max_output_tokens = int(os.environ.get("LLM_MAX_OUTPUT_TOKENS", "2048"))
             seed_value = os.environ.get("LLM_SEED")
             seed = int(seed_value) if seed_value is not None else None
-            input_cost_value = os.environ.get(
-                "LLM_INPUT_COST_PER_MILLION_TOKENS_USD"
-            )
-            output_cost_value = os.environ.get(
-                "LLM_OUTPUT_COST_PER_MILLION_TOKENS_USD"
-            )
+            input_cost_value = os.environ.get("LLM_INPUT_COST_PER_MILLION_TOKENS_USD")
+            output_cost_value = os.environ.get("LLM_OUTPUT_COST_PER_MILLION_TOKENS_USD")
             input_cost = (
                 float(input_cost_value) if input_cost_value is not None else None
             )
@@ -335,7 +355,22 @@ class OpenAICompatibleGenerator:
             }
         )
 
-    def complete(self, messages: list[dict[str, str]]) -> TextCompletion:
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        response_format: dict[str, Any] | None = None,
+        top_p: float | None = None,
+        reasoning_effort: str | None = None,
+    ) -> TextCompletion:
+        if top_p is not None and (not math.isfinite(top_p) or not 0 < top_p <= 1):
+            raise ValueError("top_p must be greater than zero and at most one")
+        if response_format is not None and not isinstance(response_format, dict):
+            raise ValueError("response_format must be an object")
+        if reasoning_effort not in {None, "none", "low", "medium", "high"}:
+            raise ValueError(
+                "reasoning_effort must be none, low, medium, high or omitted"
+            )
         request_payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
@@ -344,6 +379,12 @@ class OpenAICompatibleGenerator:
         }
         if self.seed is not None:
             request_payload["seed"] = self.seed
+        if response_format is not None:
+            request_payload["response_format"] = response_format
+        if top_p is not None:
+            request_payload["top_p"] = top_p
+        if reasoning_effort is not None:
+            request_payload["reasoning_effort"] = reasoning_effort
         payload = json.dumps(
             request_payload,
             ensure_ascii=False,
@@ -373,7 +414,9 @@ class OpenAICompatibleGenerator:
             choice = parsed["choices"][0]
             content = choice["message"]["content"]
         except (json.JSONDecodeError, KeyError, IndexError, TypeError) as exc:
-            raise RuntimeError("LLM endpoint returned an invalid chat-completion response") from exc
+            raise RuntimeError(
+                "LLM endpoint returned an invalid chat-completion response"
+            ) from exc
         if not isinstance(content, str) or not content.strip():
             raise RuntimeError("LLM endpoint returned empty content")
         usage = parsed.get("usage")
@@ -393,6 +436,7 @@ class OpenAICompatibleGenerator:
             raise RuntimeError("LLM endpoint returned invalid finish reason")
         return TextCompletion(
             content=content.strip(),
+            raw_content_sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
             finish_reason=finish_reason,
             prompt_tokens=token_count("prompt_tokens"),
             completion_tokens=token_count("completion_tokens"),
@@ -421,15 +465,21 @@ def _context_payload(
     payload: dict[str, Any] = {
         "task": task.value,
         "research_query": context.research_query,
-        "reviewed_claims": [item.model_dump(mode="json") for item in context.evidence_items],
-        "retrieved_ocr_leads": [hit.model_dump(mode="json") for hit in context.retrieved_context],
+        "reviewed_claims": [
+            item.model_dump(mode="json") for item in context.evidence_items
+        ],
+        "retrieved_ocr_leads": [
+            hit.model_dump(mode="json") for hit in context.retrieved_context
+        ],
         "warnings": context.warnings,
     }
     if task == GenerationTask.CHAT_ANSWER:
         payload["conversation_history"] = [
             turn.model_dump(mode="json") for turn in history
         ]
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
 
 
 def generation_context_sha256(
@@ -545,7 +595,9 @@ def _validate_output(
             "Plausible reconstruction",
             "Speculative details",
         )
-        missing_sections = [section for section in required_sections if section not in output]
+        missing_sections = [
+            section for section in required_sections if section not in output
+        ]
         if missing_sections:
             errors.append(
                 "Reconstructed scene lacks required sections: "
@@ -558,9 +610,7 @@ def _validate_output(
                 errors.append(
                     "Reconstructed scene sections are not in the required epistemic order."
                 )
-            direct_section = output[
-                section_positions[0] : section_positions[1]
-            ]
+            direct_section = output[section_positions[0] : section_positions[1]]
             direct_citations = {
                 value
                 for value in re.findall(
@@ -577,8 +627,7 @@ def _validate_output(
 
 def has_direct_evidence(context: ScenarioContextBundle) -> bool:
     return any(
-        item.epistemic_label == "directly_evidenced"
-        for item in context.evidence_items
+        item.epistemic_label == "directly_evidenced" for item in context.evidence_items
     )
 
 
@@ -627,7 +676,10 @@ def generate(
         else TextCompletion(content=completion_value)
     )
     raw_output = completion.content
-    raw_output_sha256 = hashlib.sha256(raw_output.encode("utf-8")).hexdigest()
+    raw_output_sha256 = (
+        completion.raw_content_sha256
+        or hashlib.sha256(raw_output.encode("utf-8")).hexdigest()
+    )
     context_sha256 = generation_context_sha256(context, task, history)
     citation_evidence_items = context.evidence_items
     if task == GenerationTask.RECONSTRUCTED_SCENE:
@@ -644,16 +696,18 @@ def generate(
     }
     if task in {GenerationTask.RESEARCH_BRIEF, GenerationTask.CHAT_ANSWER}:
         sources.update(
-            {hit.source.region_id: hit.source for hit in context.retrieved_context if hit.source.region_id}
+            {
+                hit.source.region_id: hit.source
+                for hit in context.retrieved_context
+                if hit.source.region_id
+            }
         )
     cited_ids, invalid_ids, validation_errors = _validate_output(
         raw_output, task, sources
     )
     provenance = _generator_response_provenance(generator)
     estimate_cost = getattr(generator, "estimate_cost_usd", None)
-    estimated_cost_usd = (
-        estimate_cost(completion) if callable(estimate_cost) else None
-    )
+    estimated_cost_usd = estimate_cost(completion) if callable(estimate_cost) else None
     if isinstance(completion_value, TextCompletion) and any(
         value is None
         for value in (
@@ -662,7 +716,9 @@ def generate(
             completion.total_tokens,
         )
     ):
-        warnings.append("Generation provider did not return complete token-usage metadata.")
+        warnings.append(
+            "Generation provider did not return complete token-usage metadata."
+        )
     elif isinstance(completion_value, TextCompletion) and estimated_cost_usd is None:
         warnings.append(
             "Generation cost is unavailable because token prices are not configured."

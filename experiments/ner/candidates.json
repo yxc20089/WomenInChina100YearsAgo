@@ -100,6 +100,18 @@
       ]
     },
     {
+      "id": "gliner-x-large-v0.5",
+      "model": "knowledgator/gliner-x-large-v0.5",
+      "revision": "f41e752e4a44883aa840f7d9dae8cb4f0fcb64db",
+      "license": "CC-BY-NC-SA-4.0",
+      "role": "active GLiNER-X accuracy challenger with the family's strongest published Chinese score",
+      "evidence": "The official legacy collection card reports zh_pud F1 0.709, above the current Apache-2.0 large checkpoint's 0.6794. Chinese PUD is modern translated news/Wikipedia and its published inventory contains Traditional characters, so this is relevant modern-script evidence; it is still not late-Qing/Republican-era, OCR-noise, newspaper-layout, or project-ontology evidence. The project has confirmed that the CC-BY-NC-SA-4.0 license is not a blocker. The v0.5 checkpoint uses a different universal/Jieba Chinese splitter path, so it is a separately named benchmark system rather than a revision-equivalent comparison.",
+      "framework_revision": "2f10b62f801880560e0d35734c9c7ee44d0c37b3",
+      "deployable_in_project_scope": true,
+      "official_zh_pud_f1": 0.709,
+      "comparison_target": "gliner-x-large"
+    },
+    {
       "id": "nuextract3",
       "model": "numind/NuExtract3",
       "revision": "2e9fca82ee641e6bb6e1f5d905241e994be27a07",

@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import json
+import os
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 from uuid import UUID
 
 from wic_history.evidence import (
@@ -15,6 +20,7 @@ from wic_history.generation import (
     ChatTurn,
     GenerationStatus,
     GenerationTask,
+    OpenAICompatibleGenerator,
     generate,
     prepare_messages,
 )
@@ -40,6 +46,31 @@ class FakeGenerator:
 class HallucinatingGenerator(FakeGenerator):
     def complete(self, messages):
         return "Unsupported [region:00000000-0000-0000-0000-000000000099]."
+
+
+class NoCitationGenerator(FakeGenerator):
+    def complete(self, messages):
+        return "A historical assertion without evidence."
+
+
+class ValidSceneGenerator(FakeGenerator):
+    def complete(self, messages):
+        citation = "[region:00000000-0000-0000-0000-000000000001]"
+        return (
+            f"Direct evidence\nReviewed claim {citation}.\n\n"
+            "Plausible reconstruction\nA cautious connective detail.\n\n"
+            "Speculative details\nNo speculative detail is asserted."
+        )
+
+
+class MisplacedSceneCitationGenerator(FakeGenerator):
+    def complete(self, messages):
+        citation = "[region:00000000-0000-0000-0000-000000000001]"
+        return (
+            "Direct evidence\nA claim without its citation.\n\n"
+            "Plausible reconstruction\nA cautious connective detail.\n\n"
+            f"Speculative details\nCitation misplaced here {citation}."
+        )
 
 
 class GenerationTests(unittest.TestCase):
@@ -91,9 +122,47 @@ class GenerationTests(unittest.TestCase):
             self._context(), GenerationTask.RESEARCH_BRIEF, HallucinatingGenerator()
         )
         self.assertEqual(result.citations, [])
+        self.assertEqual(result.status, GenerationStatus.REJECTED)
+        self.assertNotIn("Unsupported", result.output)
+        self.assertEqual(len(result.raw_output_sha256), 64)
         self.assertEqual(
             result.invalid_citation_ids,
             ["00000000-0000-0000-0000-000000000099"],
+        )
+
+    def test_output_without_a_valid_citation_is_rejected_and_withheld(self):
+        result = generate(
+            self._context(), GenerationTask.RESEARCH_BRIEF, NoCitationGenerator()
+        )
+        self.assertEqual(result.status, GenerationStatus.REJECTED)
+        self.assertNotIn("historical assertion", result.output)
+        self.assertTrue(any("no valid" in error.lower() for error in result.validation_errors))
+
+    def test_scene_requires_reviewed_sources_and_all_epistemic_sections(self):
+        valid = generate(
+            self._context(reviewed=True),
+            GenerationTask.RECONSTRUCTED_SCENE,
+            ValidSceneGenerator(),
+        )
+        missing_sections = generate(
+            self._context(reviewed=True),
+            GenerationTask.RECONSTRUCTED_SCENE,
+            FakeGenerator(),
+        )
+        misplaced_citation = generate(
+            self._context(reviewed=True),
+            GenerationTask.RECONSTRUCTED_SCENE,
+            MisplacedSceneCitationGenerator(),
+        )
+        self.assertEqual(valid.status, GenerationStatus.COMPLETED)
+        self.assertEqual(valid.citations, [SOURCE])
+        self.assertEqual(missing_sections.status, GenerationStatus.REJECTED)
+        self.assertTrue(
+            any("required sections" in error for error in missing_sections.validation_errors)
+        )
+        self.assertEqual(misplaced_citation.status, GenerationStatus.REJECTED)
+        self.assertTrue(
+            any("Direct evidence" in error for error in misplaced_citation.validation_errors)
         )
 
     def test_chat_history_is_untrusted_context_not_model_message_roles(self):
@@ -129,3 +198,150 @@ class GenerationTests(unittest.TestCase):
         self.assertIn("Earlier turns provide continuity but never count", html)
         self.assertIn("fetch('/api/chat'", javascript)
         self.assertIn("history: priorHistory", javascript)
+        self.assertIn('id="generation-provenance"', html)
+        self.assertIn("data.validation_errors", javascript)
+
+    def test_provider_requires_pinned_revision_and_explicit_secure_remote_consent(self):
+        with self.assertRaisesRegex(ValueError, "model_revision"):
+            OpenAICompatibleGenerator(
+                "http://127.0.0.1:8000/v1",
+                "model",
+                model_revision="latest",
+            )
+        with self.assertRaisesRegex(ValueError, "data-egress consent"):
+            OpenAICompatibleGenerator(
+                "https://models.example/v1",
+                "model",
+                model_revision="deployment-2026-07-18",
+            )
+        with self.assertRaisesRegex(ValueError, "must use HTTPS"):
+            OpenAICompatibleGenerator(
+                "http://models.example/v1",
+                "model",
+                model_revision="deployment-2026-07-18",
+                allow_remote=True,
+            )
+        configured = OpenAICompatibleGenerator(
+            "https://models.example/v1",
+            "model",
+            model_revision="deployment-2026-07-18",
+            allow_remote=True,
+        )
+        self.assertEqual(configured.provider_kind, "openai_compatible")
+        self.assertEqual(len(configured.generation_configuration_sha256), 64)
+
+    def test_environment_configuration_is_strict_and_secret_free(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertIsNone(OpenAICompatibleGenerator.from_environment())
+        with patch.dict(os.environ, {"LLM_MODEL": "model"}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "configured together"):
+                OpenAICompatibleGenerator.from_environment()
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_BASE_URL": "http://127.0.0.1:8000/v1",
+                "LLM_MODEL": "model",
+                "LLM_MODEL_REVISION": "deployment-2026-07-18",
+                "LLM_ALLOW_REMOTE": "perhaps",
+            },
+            clear=True,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "must be true or false"):
+                OpenAICompatibleGenerator.from_environment()
+
+    def test_openai_compatible_adapter_calls_controlled_local_endpoint(self):
+        captured = {}
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                length = int(self.headers["Content-Length"])
+                captured["path"] = self.path
+                captured["authorization"] = self.headers.get("Authorization")
+                captured["payload"] = json.loads(self.rfile.read(length))
+                body = json.dumps(
+                    {
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": (
+                                        "Cited result "
+                                        "[region:00000000-0000-0000-0000-000000000001]."
+                                    )
+                                }
+                            }
+                        ]
+                    }
+                ).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format, *args):
+                return
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            generator = OpenAICompatibleGenerator(
+                f"http://127.0.0.1:{server.server_port}/v1",
+                "local-model",
+                api_key="test-secret",
+                model_revision="weights-sha256-abc123",
+                max_output_tokens=321,
+                seed=17,
+            )
+            result = generate(
+                self._context(), GenerationTask.RESEARCH_BRIEF, generator
+            )
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        self.assertEqual(result.status, GenerationStatus.COMPLETED)
+        self.assertEqual(result.provider, "openai_compatible")
+        self.assertEqual(result.model_revision, "weights-sha256-abc123")
+        self.assertEqual(len(result.generation_configuration_sha256), 64)
+        self.assertEqual(captured["path"], "/v1/chat/completions")
+        self.assertEqual(captured["authorization"], "Bearer test-secret")
+        self.assertEqual(captured["payload"]["max_tokens"], 321)
+        self.assertEqual(captured["payload"]["seed"], 17)
+
+    def test_provider_does_not_follow_redirects_with_context_or_bearer_token(self):
+        captured = {"redirect_target_requests": 0}
+
+        class RedirectHandler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.send_response(302)
+                self.send_header(
+                    "Location", f"http://127.0.0.1:{self.server.server_port}/captured"
+                )
+                self.end_headers()
+
+            def do_GET(self):
+                captured["redirect_target_requests"] += 1
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, format, *args):
+                return
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), RedirectHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            generator = OpenAICompatibleGenerator(
+                f"http://127.0.0.1:{server.server_port}/v1",
+                "local-model",
+                api_key="test-secret",
+                model_revision="weights-sha256-abc123",
+            )
+            with self.assertRaisesRegex(RuntimeError, "request failed"):
+                generator.complete([{"role": "user", "content": "sensitive context"}])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        self.assertEqual(captured["redirect_target_requests"], 0)

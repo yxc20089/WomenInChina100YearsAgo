@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import json
+import os
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
@@ -32,6 +36,32 @@ from wic_history.ingestion_jobs import BatchStatus, FailedJob
 
 
 class APITests(unittest.TestCase):
+    def test_health_validates_complete_generation_configuration(self):
+        with patch("opensearchpy.OpenSearch.ping", return_value=True), patch.dict(
+            os.environ,
+            {
+                "LLM_BASE_URL": "http://127.0.0.1:8000/v1",
+                "LLM_MODEL": "model",
+            },
+            clear=True,
+        ):
+            invalid = TestClient(create_app()).get("/api/health").json()
+        self.assertFalse(invalid["generation_configured"])
+        self.assertIn("LLM_MODEL_REVISION", invalid["generation_configuration_error"])
+
+        with patch("opensearchpy.OpenSearch.ping", return_value=True), patch.dict(
+            os.environ,
+            {
+                "LLM_BASE_URL": "http://127.0.0.1:8000/v1",
+                "LLM_MODEL": "model",
+                "LLM_MODEL_REVISION": "deployment-2026-07-18",
+            },
+            clear=True,
+        ):
+            valid = TestClient(create_app()).get("/api/health").json()
+        self.assertTrue(valid["generation_configured"])
+        self.assertIsNone(valid["generation_configuration_error"])
+
     def test_chat_endpoint_retrieves_each_question_and_passes_bounded_history(self):
         source = SourcePointer(
             source_uri="s3://example/volume.pdf",
@@ -84,6 +114,89 @@ class APITests(unittest.TestCase):
         self.assertEqual(len(response.json()["citations"]), 1)
         self.assertIn("conversation_history", generator.messages[1]["content"])
         search.assert_called_once()
+
+    def test_default_provider_wiring_calls_local_endpoint_and_returns_provenance(self):
+        source = SourcePointer(
+            source_uri="s3://example/volume.pdf",
+            volume_number=219,
+            publication_year=1925,
+            page_number=308,
+            region_id="00000000-0000-0000-0000-000000000001",
+        )
+        retrieval = RetrievalResponse(
+            query="女學生",
+            mode=RetrievalMode.LEXICAL,
+            hits=[
+                RetrievalHit(
+                    rank=1,
+                    score=1,
+                    source=source,
+                    text="女學生",
+                    explanation={"retriever": "lexical"},
+                )
+            ],
+        )
+        captured = {"calls": 0}
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                captured["calls"] += 1
+                length = int(self.headers["Content-Length"])
+                captured["request"] = json.loads(self.rfile.read(length))
+                body = json.dumps(
+                    {
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": (
+                                        "The OCR lead reads 女學生 and remains unreviewed "
+                                        "[region:00000000-0000-0000-0000-000000000001]."
+                                    )
+                                }
+                            }
+                        ]
+                    }
+                ).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format, *args):
+                return
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            environment = {
+                "LLM_BASE_URL": f"http://127.0.0.1:{server.server_port}/v1",
+                "LLM_MODEL": "controlled-local-model",
+                "LLM_MODEL_REVISION": "fixture-2026-07-18",
+                "LLM_MAX_OUTPUT_TOKENS": "256",
+                "LLM_SEED": "11",
+            }
+            with patch.dict(os.environ, environment, clear=True), patch(
+                "wic_history.api.lexical_search", return_value=retrieval
+            ):
+                response = TestClient(create_app()).post(
+                    "/api/chat",
+                    json={"query": "女學生", "mode": "lexical", "history": []},
+                )
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        payload = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "completed")
+        self.assertEqual(payload["provider"], "openai_compatible")
+        self.assertEqual(payload["model_revision"], "fixture-2026-07-18")
+        self.assertEqual(len(payload["generation_configuration_sha256"]), 64)
+        self.assertEqual(len(payload["context_sha256"]), 64)
+        self.assertEqual(captured["calls"], 1)
+        self.assertEqual(captured["request"]["max_tokens"], 256)
 
     def test_chat_rejects_system_roles_and_oversized_history(self):
         client = TestClient(create_app())

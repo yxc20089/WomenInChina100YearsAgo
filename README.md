@@ -275,10 +275,13 @@ uv run wic-api --host 127.0.0.1 --port 8766 \
 
 Open `http://127.0.0.1:8766` for lexical, dense, or hybrid search. Scenario
 context returned by the API contains only reviewed claims; with the current
-smoke data it abstains explicitly. `LLM_BASE_URL` and `LLM_MODEL` optionally
-enable a local or hosted OpenAI-compatible chat endpoint. Research briefs must
-label OCR as unreviewed leads; reconstructed scenes hard-abstain until reviewed
-claims exist.
+smoke data it abstains explicitly. `LLM_BASE_URL`, `LLM_MODEL`, and the
+immutable `LLM_MODEL_REVISION` optionally enable a local OpenAI-compatible chat
+endpoint. Remote endpoints additionally require HTTPS and explicit
+`LLM_ALLOW_REMOTE=true` data-egress consent. Research briefs must label OCR as
+unreviewed leads; reconstructed scenes hard-abstain until reviewed claims
+exist. See [`docs/generation-operations.md`](docs/generation-operations.md) for
+the provider, privacy, provenance and output-validation contract.
 
 After a search, `Discuss evidence` opens a browser-held multi-turn research
 conversation. Every follow-up performs fresh retrieval under the selected mode
@@ -288,6 +291,11 @@ Archive citations are accepted only when their region UUID occurs in the
 current retrieval or a reviewed claim. Conversations are not persisted by the
 server. Without an LLM configuration the endpoint returns an explicit
 `unavailable` response while preserving the retrieved evidence bundle.
+Outputs with missing, malformed or foreign citations are returned as
+`rejected`, with the unsafe model text withheld and hashed. Scene outputs must
+also contain the three epistemic sections in order and cite a reviewed claim
+inside `Direct evidence`. The UI displays model, prompt/context/output hashes,
+resolved scan links, validation errors and warnings.
 
 The same interface exposes a historian review queue and reviewed-only insight
 signals. A reviewer first accepts or rejects the exact NER span, then makes a

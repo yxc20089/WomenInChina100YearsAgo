@@ -16,6 +16,9 @@ const chatTranscript = document.querySelector('#chat-transcript');
 const generationPanel = document.querySelector('#generation-panel');
 const generationLabel = document.querySelector('#generation-label');
 const generationOutput = document.querySelector('#generation-output');
+const generationProvenance = document.querySelector('#generation-provenance');
+const generationCitations = document.querySelector('#generation-citations');
+const generationWarnings = document.querySelector('#generation-warnings');
 const reviewButton = document.querySelector('#review-button');
 const reviewPanel = document.querySelector('#review-panel');
 const reviewItems = document.querySelector('#review-items');
@@ -736,6 +739,29 @@ async function generate(task, button) {
     const data = await response.json();
     generationLabel.textContent = `${data.task.replaceAll('_', ' ')} · ${data.status}`;
     generationOutput.textContent = data.output;
+    generationProvenance.textContent = [
+      data.model ? `model ${data.model}` : null,
+      data.prompt_sha256 ? `prompt ${data.prompt_sha256.slice(0, 12)}…` : null,
+      data.context_sha256 ? `context ${data.context_sha256.slice(0, 12)}…` : null,
+      data.raw_output_sha256 ? `output ${data.raw_output_sha256.slice(0, 12)}…` : null,
+    ].filter(Boolean).join(' · ');
+    generationCitations.replaceChildren();
+    data.citations.forEach(source => {
+      const link = document.createElement('a');
+      link.className = 'scan-link';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.href = pageImageUrl(source.volume_number, source.page_number, source.derivative_id);
+      link.textContent = `Volume ${source.volume_number} · ${source.publication_year} · page ${source.page_number} ↗`;
+      generationCitations.append(link);
+    });
+    generationWarnings.replaceChildren();
+    [...data.validation_errors, ...data.warnings].forEach(message => {
+      const warning = document.createElement('p');
+      warning.className = 'chat-warning';
+      warning.textContent = message;
+      generationWarnings.append(warning);
+    });
     generationPanel.hidden = false;
     generationPanel.scrollIntoView({behavior: 'smooth'});
   } catch (error) {
@@ -750,7 +776,7 @@ async function generate(task, button) {
 briefButton.addEventListener('click', () => generate('research_brief', briefButton));
 sceneButton.addEventListener('click', () => generate('reconstructed_scene', sceneButton));
 
-function appendChatTurn(role, content, citations = [], messages = []) {
+function appendChatTurn(role, content, citations = [], messages = [], provenance = '') {
   const turn = document.createElement('article');
   turn.className = `chat-turn ${role}`;
   const label = document.createElement('p');
@@ -760,6 +786,12 @@ function appendChatTurn(role, content, citations = [], messages = []) {
   output.className = 'chat-content';
   output.textContent = content;
   turn.append(label, output);
+  if (provenance) {
+    const metadata = document.createElement('p');
+    metadata.className = 'generation-provenance';
+    metadata.textContent = provenance;
+    turn.append(metadata);
+  }
   if (citations.length) {
     const citationList = document.createElement('div');
     citationList.className = 'chat-citations';
@@ -816,7 +848,16 @@ chatForm.addEventListener('submit', async event => {
     });
     if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
     const data = await response.json();
-    appendChatTurn('assistant', data.output, data.citations, data.warnings);
+    const provenance = [
+      data.status,
+      data.model,
+      data.prompt_sha256 ? `prompt ${data.prompt_sha256.slice(0, 12)}…` : null,
+      data.context_sha256 ? `context ${data.context_sha256.slice(0, 12)}…` : null,
+    ].filter(Boolean).join(' · ');
+    appendChatTurn(
+      'assistant', data.output, data.citations,
+      [...data.validation_errors, ...data.warnings], provenance,
+    );
     chatHistory.push(
       {role: 'user', content: question},
       {role: 'assistant', content: data.output},

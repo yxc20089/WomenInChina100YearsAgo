@@ -310,12 +310,21 @@ def create_app(
             search_ok = bool(OpenSearch(hosts=[search_url]).ping())
         except Exception:
             search_ok = False
+        generation_error = None
+        try:
+            generation_configured = (
+                OpenAICompatibleGenerator.from_environment() is not None
+            )
+        except Exception as exc:
+            generation_configured = False
+            generation_error = str(exc)
         return {
             "status": "ok" if search_ok else "degraded",
             "opensearch": search_ok,
             "database_configured": bool(db_url),
             "neo4j_configured": bool(graph_uri and graph_password),
-            "generation_configured": bool(os.environ.get("LLM_BASE_URL") and os.environ.get("LLM_MODEL")),
+            "generation_configured": generation_configured,
+            "generation_configuration_error": generation_error,
             "index": index,
         }
 

@@ -1,7 +1,7 @@
 # Ingestion orchestration operations
 
-Status: durable scheduler plus executable/render-resumable page workers;
-aggregate projection stages and production fleet controls remain pending.
+Status: durable scheduler, resumable page workers, terminal controls and
+aggregate search/RAG/graph workers; production fleet controls remain pending.
 
 ## Contract
 
@@ -11,6 +11,10 @@ currently contains:
 ```text
 render_lossless -> ocr -> embedding
                        -> ner
+
+embedding -> search_projection
+ocr       -> rag_export
+ner       -> graph_projection
 ```
 
 Every plan freezes the manifest source identity, page scope, stage order and
@@ -31,6 +35,7 @@ uv run wic-migrate --database-url "$DATABASE_URL"
 uv run wic-batch --database-url "$DATABASE_URL" plan \
   --name 'v219 p308 bounded pilot' --created-by researcher \
   --volume 219 --page 308 \
+  --aggregate-stages search_projection,rag_export,graph_projection \
   --configuration '{"ner":{"max_regions":50}}'
 ```
 
@@ -68,6 +73,14 @@ pinned stage when no reusable output exists, persists OCR/NER results to
 PostgreSQL, and only then completes the job. `--offline` forbids S3 download and
 therefore requires the size-verified source in `/tmp/wic-source-cache` (or the
 configured cache directory).
+
+Aggregate stages are explicit rather than automatic defaults. Search projection
+creates a `wic-regions-*` index named from the batch UUID, indexes all current
+active OCR selections in PostgreSQL, and only then moves the alias atomically.
+The RAG job exports only the plan's volume/page scope and validates every
+document/citation checksum and offset. The graph job always queries reviewed
+entities/claims globally and refuses `reviewed_only=false`. OpenSearch and Neo4j
+are disposable global projections; RAG exports are immutable batch artifacts.
 
 `claim` uses `FOR UPDATE ... SKIP LOCKED`, so several workers can safely poll in
 parallel. Expired leases return to `pending` while attempts remain; the final
@@ -132,6 +145,13 @@ worker separately performed a fresh source-cache render of page 309 to prove the
 non-adoption path: a 6186×8962 source raster was decoded without geometric
 transform and labeled `unreviewed_ingestion`, never gold.
 
-Aggregate search/RAG/graph projection jobs, dead-letter replay, fleet
-autoscaling, backpressure and production metrics are subsequent milestones. Do
-not describe the current code as an unattended full-corpus ingestion system.
+A seven-job aggregate pilot then completed all page and fan-in jobs. Its search
+index contains 1,099 active lossless OCR regions; its RAG export contains one
+document, 1,088 citation-mapped text regions and 11 explicitly omitted empty
+regions; its reviewed-only graph contains zero nodes because no historical
+claim has yet been reviewed. Hybrid `士女` retrieval remained evidence-citing
+after the atomic alias change.
+
+Dead-letter replay, fleet autoscaling, backpressure and production metrics are
+subsequent milestones. Do not describe the current code as an unattended
+full-corpus ingestion system.

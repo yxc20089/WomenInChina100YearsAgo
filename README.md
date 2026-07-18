@@ -125,11 +125,14 @@ Create an idempotent, dependency-gated ingestion plan before processing pages:
 uv run wic-batch --database-url "$DATABASE_URL" plan \
   --name 'volume 219 page 308 semantic pilot' --created-by researcher \
   --volume 219 --page 308 \
+  --aggregate-stages search_projection,rag_export,graph_projection \
   --configuration '{"ner":{"max_regions":50}}'
 uv run wic-batch --database-url "$DATABASE_URL" status --batch-id BATCH_UUID
 ```
 
-The page DAG is `render_lossless -> OCR -> {embedding, NER}`. PostgreSQL records
+The page DAG is `render_lossless -> OCR -> {embedding, NER}`. Optional batch
+fan-in jobs add `embedding -> search_projection`, `OCR -> rag_export`, and
+`NER -> graph_projection`. PostgreSQL records
 immutable plan/input fingerprints, dependencies, bounded stage configuration,
 leases, retries, artifact checksums, typed completion metadata, and an
 append-only event history. Planning is guarded at 1,000 pages by default; the
@@ -160,6 +163,12 @@ local source cache. A worker first validates and adopts an exact existing
 artifact when possible; otherwise it invokes the pinned renderer, OCR,
 embedding, or NER stage. Per-job outputs under `artifacts/ingestion-*` are
 generated data and excluded from Git.
+
+Aggregate workers build a batch-specific OpenSearch index before atomically
+moving `wic-regions-current`, export the batch OCR scope with exact citation
+sidecars, and rebuild Neo4j from reviewed claims only. OpenSearch and Neo4j are
+global rebuildable views of the current PostgreSQL state; the RAG export is
+limited to the plan's volume/page scope.
 
 OCR ingestion retains every byte-distinct page image in
 `archive.page_derivative` and chooses the preferred derivative monotonically by

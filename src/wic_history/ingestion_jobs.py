@@ -14,10 +14,17 @@ from uuid import UUID, uuid4
 
 
 PAGE_STAGES = ("render_lossless", "ocr", "embedding", "ner")
+AGGREGATE_STAGES = ("search_projection", "rag_export", "graph_projection")
+ALL_STAGES = (*PAGE_STAGES, *AGGREGATE_STAGES)
 STAGE_DEPENDENCY = {
     "ocr": "render_lossless",
     "embedding": "ocr",
     "ner": "ocr",
+}
+AGGREGATE_DEPENDENCY_STAGE = {
+    "search_projection": "embedding",
+    "rag_export": "ocr",
+    "graph_projection": "ner",
 }
 DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
     "render_lossless": {
@@ -59,6 +66,22 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "split_id": None,
         "output_root": "artifacts/ingestion-ner",
         "status": "candidate_only",
+    },
+    "search_projection": {
+        "alias": "wic-regions-current",
+        "index_prefix": "wic-regions-batch",
+        "batch_size": 500,
+        "source_policy": "active_page_selection_only",
+        "output_root": "artifacts/ingestion-search",
+    },
+    "rag_export": {
+        "source_policy": "active_page_selection_only",
+        "input_unit": "ocr_page",
+        "output_root": "artifacts/ingestion-rag",
+    },
+    "graph_projection": {
+        "reviewed_only": True,
+        "output_root": "artifacts/ingestion-graph",
     },
 }
 
@@ -163,6 +186,22 @@ def normalize_stages(stages: Iterable[str]) -> tuple[str, ...]:
     return tuple(stage for stage in PAGE_STAGES if stage in requested)
 
 
+def normalize_aggregate_stages(
+    stages: Iterable[str], page_stages: Sequence[str]
+) -> tuple[str, ...]:
+    requested = tuple(dict.fromkeys(stage.strip() for stage in stages if stage.strip()))
+    unknown = sorted(set(requested) - set(AGGREGATE_STAGES))
+    if unknown:
+        raise ValueError(f"Unsupported aggregate stages: {', '.join(unknown)}")
+    for stage in requested:
+        dependency = AGGREGATE_DEPENDENCY_STAGE[stage]
+        if dependency not in page_stages:
+            raise ValueError(
+                f"Aggregate stage {stage} requires page stage {dependency}"
+            )
+    return tuple(stage for stage in AGGREGATE_STAGES if stage in requested)
+
+
 def _psycopg() -> tuple[Any, Any]:
     try:
         import psycopg
@@ -234,6 +273,7 @@ def create_plan(
     volume_number: int | None = None,
     page_number: int | None = None,
     stages: Iterable[str] = PAGE_STAGES,
+    aggregate_stages: Iterable[str] = (),
     configuration: dict[str, dict[str, Any]] | None = None,
     include_suspect: bool = False,
     max_pages: int = 1000,
@@ -242,12 +282,16 @@ def create_plan(
     """Create an immutable, idempotent page DAG from authoritative volume rows."""
     psycopg, _ = _psycopg()
     normalized_stages = normalize_stages(stages)
+    normalized_aggregate_stages = normalize_aggregate_stages(
+        aggregate_stages, normalized_stages
+    )
+    all_requested_stages = (*normalized_stages, *normalized_aggregate_stages)
     stage_configuration = {
         stage: {
             **DEFAULT_CONFIGURATION[stage],
             **(configuration or {}).get(stage, {}),
         }
-        for stage in normalized_stages
+        for stage in all_requested_stages
     }
     if not name.strip() or not created_by.strip():
         raise ValueError("Batch name and created_by must not be blank")
@@ -291,6 +335,8 @@ def create_plan(
             "configuration": stage_configuration,
             "targets": target_snapshots,
         }
+        if normalized_aggregate_stages:
+            plan_payload["aggregate_stages"] = normalized_aggregate_stages
         plan_key = canonical_sha256(plan_payload)
         existing = connection.execute(
             """
@@ -329,6 +375,7 @@ def create_plan(
                     {
                         "contract": "wic-ingestion-dag-v1",
                         "stages": normalized_stages,
+                        "aggregate_stages": normalized_aggregate_stages,
                         "stage_configuration": stage_configuration,
                     },
                     ensure_ascii=False,
@@ -339,6 +386,12 @@ def create_plan(
         jobs: list[tuple[Any, ...]] = []
         dependencies: list[tuple[UUID, UUID]] = []
         events: list[tuple[UUID, str]] = []
+        page_stage_ids: dict[str, list[UUID]] = {
+            stage: [] for stage in normalized_stages
+        }
+        page_stage_keys: dict[str, list[str]] = {
+            stage: [] for stage in normalized_stages
+        }
         for target, snapshot in zip(targets, target_snapshots, strict=True):
             source_fingerprint = canonical_sha256(snapshot)
             stage_ids: dict[str, UUID] = {}
@@ -372,6 +425,7 @@ def create_plan(
                         batch_id,
                         job_key,
                         stage,
+                        "page",
                         target.source_object_id,
                         target.volume_id,
                         target.page_number,
@@ -382,8 +436,48 @@ def create_plan(
                 events.append((job_id, created_by.strip()))
                 stage_ids[stage] = job_id
                 stage_keys[stage] = job_key
+                page_stage_ids[stage].append(job_id)
+                page_stage_keys[stage].append(job_key)
                 if dependency:
                     dependencies.append((job_id, stage_ids[dependency]))
+        for stage in normalized_aggregate_stages:
+            dependency_stage = AGGREGATE_DEPENDENCY_STAGE[stage]
+            parent_keys = sorted(page_stage_keys[dependency_stage])
+            input_fingerprint = canonical_sha256(
+                {
+                    "parent_job_keys": parent_keys,
+                    "stage": stage,
+                    "configuration": stage_configuration[stage],
+                }
+            )
+            job_key = canonical_sha256(
+                {
+                    "stage": stage,
+                    "scope": scope,
+                    "input_fingerprint": input_fingerprint,
+                    "configuration": stage_configuration[stage],
+                }
+            )
+            job_id = uuid4()
+            jobs.append(
+                (
+                    job_id,
+                    batch_id,
+                    job_key,
+                    stage,
+                    "batch",
+                    None,
+                    None,
+                    None,
+                    input_fingerprint,
+                    json.dumps(stage_configuration[stage], ensure_ascii=False),
+                )
+            )
+            events.append((job_id, created_by.strip()))
+            dependencies.extend(
+                (job_id, parent_id)
+                for parent_id in page_stage_ids[dependency_stage]
+            )
         with connection.cursor() as cursor:
             cursor.executemany(
                 """
@@ -391,7 +485,7 @@ def create_plan(
                     job_id, batch_id, job_key, stage, scope_kind,
                     source_object_id, volume_id, page_number,
                     input_fingerprint, configuration
-                ) VALUES (%s, %s, %s, %s, 'page', %s, %s, %s, %s, %s::jsonb)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
                 """,
                 jobs,
             )
@@ -558,8 +652,8 @@ def claim_job(
         raise ValueError("worker_id must not be blank")
     if not 30 <= lease_seconds <= 86400:
         raise ValueError("lease_seconds must be between 30 and 86400")
-    if stage is not None and stage not in PAGE_STAGES:
-        raise ValueError("claim stage must be a supported page stage")
+    if stage is not None and stage not in ALL_STAGES:
+        raise ValueError("claim stage must be a supported ingestion stage")
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
         _requeue_expired(connection)
         row = connection.execute(
@@ -598,11 +692,11 @@ def claim_job(
                 lease_expires_at = now() + %(lease_duration)s,
                 started_at = COALESCE(started_at, now()),
                 error_details = NULL
-            FROM archive.volume volume
             WHERE job.job_id = %(job_id)s
-              AND volume.volume_id = job.volume_id
             RETURNING job.job_id, job.batch_id, job.stage, job.scope_kind,
-                      volume.volume_number, job.page_number,
+                      (SELECT volume_number FROM archive.volume volume
+                       WHERE volume.volume_id = job.volume_id) AS volume_number,
+                      job.page_number,
                       job.input_fingerprint, job.configuration,
                       job.attempt_count, job.max_attempts,
                       job.lease_owner, job.lease_expires_at
@@ -811,6 +905,24 @@ def validate_stage_result(
             raise ValueError(
                 "NER bounded_regions must exactly match the planned max_regions"
             )
+    elif stage == "search_projection":
+        _required_uuid(result, "projection_build_id")
+        _required_count(result, "documents_indexed")
+        if not str(result.get("index_name", "")).startswith("wic-regions-"):
+            raise ValueError("Search projection requires managed index_name")
+    elif stage == "rag_export":
+        _required_count(result, "documents")
+        _required_count(result, "exported_regions")
+        if not re.fullmatch(
+            r"[0-9a-f]{64}", str(result.get("manifest_sha256", ""))
+        ):
+            raise ValueError("RAG export requires manifest_sha256")
+    elif stage == "graph_projection":
+        _required_uuid(result, "projection_build_id")
+        for field in ("entities", "claims", "mentions", "claim_evidence"):
+            _required_count(result, field)
+        if result.get("reviewed_only") is not True:
+            raise ValueError("Graph projection must remain reviewed_only")
     else:
         raise ValueError(f"No completion result contract exists for stage {stage}")
 
@@ -1075,6 +1187,11 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--volume", type=int)
     plan.add_argument("--page", type=int)
     plan.add_argument("--stages", default=",".join(PAGE_STAGES))
+    plan.add_argument(
+        "--aggregate-stages",
+        default="",
+        help="Comma-separated batch stages: search_projection,rag_export,graph_projection",
+    )
     plan.add_argument("--configuration", help="JSON object keyed by stage")
     plan.add_argument("--include-suspect", action="store_true")
     plan.add_argument("--max-pages", type=int, default=1000)
@@ -1083,7 +1200,7 @@ def build_parser() -> argparse.ArgumentParser:
     claim = subparsers.add_parser("claim")
     claim.add_argument("--worker", required=True)
     claim.add_argument("--lease-seconds", type=int, default=900)
-    claim.add_argument("--stage", choices=PAGE_STAGES)
+    claim.add_argument("--stage", choices=ALL_STAGES)
     claim.add_argument("--batch-id", type=UUID)
 
     start = subparsers.add_parser("start")
@@ -1135,6 +1252,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             volume_number=args.volume,
             page_number=args.page,
             stages=args.stages.split(","),
+            aggregate_stages=args.aggregate_stages.split(","),
             configuration=configuration,
             include_suspect=args.include_suspect,
             max_pages=args.max_pages,

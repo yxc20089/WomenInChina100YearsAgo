@@ -3,10 +3,12 @@ from __future__ import annotations
 import unittest
 
 from wic_history.ingestion_jobs import (
+    AGGREGATE_STAGES,
     PAGE_STAGES,
     build_parser,
     canonical_sha256,
     normalize_stages,
+    normalize_aggregate_stages,
     validate_stage_result,
 )
 
@@ -26,12 +28,24 @@ class IngestionJobTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires ocr"):
             normalize_stages(["ner"])
 
+    def test_aggregate_stages_require_their_page_inputs(self):
+        self.assertEqual(
+            normalize_aggregate_stages(
+                ["graph_projection", "search_projection", "rag_export"],
+                PAGE_STAGES,
+            ),
+            AGGREGATE_STAGES,
+        )
+        with self.assertRaisesRegex(ValueError, "requires page stage embedding"):
+            normalize_aggregate_stages(["search_projection"], ("ocr",))
+
     def test_cli_defaults_to_the_full_page_dag(self):
         args = build_parser().parse_args(
             ["plan", "--name", "pilot", "--created-by", "researcher"]
         )
         self.assertEqual(args.stages, ",".join(PAGE_STAGES))
         self.assertEqual(args.max_pages, 1000)
+        self.assertEqual(args.aggregate_stages, "")
 
     def test_terminal_control_commands_require_explicit_scope(self):
         failures = build_parser().parse_args(
@@ -74,6 +88,35 @@ class IngestionJobTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source_object_sha256"):
             validate_stage_result(
                 "render_lossless", {}, {"render_sha256": "a" * 64}
+            )
+
+    def test_aggregate_results_have_projection_contracts(self):
+        validate_stage_result(
+            "search_projection",
+            {},
+            {
+                "projection_build_id": "00000000-0000-0000-0000-000000000001",
+                "documents_indexed": 10,
+                "index_name": "wic-regions-batch-abc",
+            },
+        )
+        validate_stage_result(
+            "rag_export",
+            {},
+            {"documents": 1, "exported_regions": 10, "manifest_sha256": "a" * 64},
+        )
+        with self.assertRaisesRegex(ValueError, "reviewed_only"):
+            validate_stage_result(
+                "graph_projection",
+                {},
+                {
+                    "projection_build_id": "00000000-0000-0000-0000-000000000001",
+                    "entities": 0,
+                    "claims": 0,
+                    "mentions": 0,
+                    "claim_evidence": 0,
+                    "reviewed_only": False,
+                },
             )
 
 

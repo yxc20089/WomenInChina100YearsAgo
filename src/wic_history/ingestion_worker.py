@@ -14,12 +14,14 @@ from uuid import UUID
 from .corpus_manifest import build_s3_client
 from .embedding_pipeline import embed_regions
 from .evidence import NERArtifact, OCRPageArtifact
+from .graph import project_reviewed_graph
 from .gold_render import (
     ingestion_candidate,
     render_lossless_plan,
     write_lossless_results,
 )
 from .ingestion_jobs import (
+    ALL_STAGES,
     JobLease,
     claim_job,
     complete_job,
@@ -30,8 +32,11 @@ from .ingestion_jobs import (
 from .ner_pipeline import main as ner_main
 from .ocr_pipeline import main as ocr_main
 from .ocr_pipeline import resolve_render_provenance
+from .rag_adapters import validate_export
+from .rag_experiment import export_rag_corpus
 from .render_samples import sha256_file
 from .repository import ingest_ner_artifact, ingest_ocr_artifact
+from .search import project_regions
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +60,15 @@ class PageJobContext:
     parent_artifact_uri: str | None
     parent_output_sha256: str | None
     parent_result: dict[str, Any] | None
+
+
+@dataclass(frozen=True, slots=True)
+class AggregateJobContext:
+    job_id: str
+    batch_id: str
+    stage: str
+    configuration: dict[str, Any]
+    scope: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,6 +167,42 @@ def load_job_status(database_url: str, job_id: UUID | str) -> str:
     return row[0]
 
 
+def load_aggregate_context(
+    database_url: str, job_id: UUID | str
+) -> AggregateJobContext:
+    psycopg, dict_row = _psycopg()
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        row = connection.execute(
+            """
+            SELECT job.job_id, job.batch_id, job.stage, job.configuration,
+                   batch.scope
+            FROM pipeline.ingestion_job job
+            JOIN pipeline.ingestion_batch batch USING (batch_id)
+            WHERE job.job_id = %s AND job.scope_kind = 'batch'
+            """,
+            (job_id,),
+        ).fetchone()
+    if row is None:
+        raise ValueError("Aggregate ingestion job does not exist")
+    return AggregateJobContext(
+        job_id=str(row["job_id"]),
+        batch_id=str(row["batch_id"]),
+        stage=row["stage"],
+        configuration=row["configuration"],
+        scope=row["scope"],
+    )
+
+
+def load_execution_context(
+    database_url: str, lease: JobLease
+) -> PageJobContext | AggregateJobContext:
+    if lease.scope_kind == "page":
+        return load_job_context(database_url, lease.job_id)
+    if lease.scope_kind == "batch":
+        return load_aggregate_context(database_url, lease.job_id)
+    raise ValueError(f"Unsupported job scope_kind: {lease.scope_kind}")
+
+
 def resolve_workspace_path(workspace_root: Path, value: str | Path) -> Path:
     """Resolve a repository artifact path and refuse workspace escape."""
     root = workspace_root.resolve()
@@ -163,7 +213,9 @@ def resolve_workspace_path(workspace_root: Path, value: str | Path) -> Path:
     return resolved
 
 
-def stage_output_dir(context: PageJobContext, workspace_root: Path) -> Path:
+def stage_output_dir(
+    context: PageJobContext | AggregateJobContext, workspace_root: Path
+) -> Path:
     configured = context.configuration.get(
         "output_root", f"artifacts/ingestion-{context.stage}"
     )
@@ -804,9 +856,228 @@ def execute_ner(
     )
 
 
+def _projection_is_current(
+    database_url: str, build_id: str, projection_kind: str
+) -> bool:
+    psycopg, _ = _psycopg()
+    with psycopg.connect(database_url) as connection:
+        row = connection.execute(
+            """
+            SELECT build_id = %s::uuid
+            FROM retrieval.projection_build
+            WHERE projection_kind = %s AND status = 'completed'
+            ORDER BY completed_at DESC, started_at DESC, build_id DESC
+            LIMIT 1
+            """,
+            (build_id, projection_kind),
+        ).fetchone()
+    return bool(row and row[0])
+
+
+def _search_alias_points_to(
+    opensearch_url: str, alias: str, index_name: str
+) -> bool:
+    try:
+        from opensearchpy import OpenSearch
+    except ImportError as exc:  # pragma: no cover - minimal installations
+        raise RuntimeError("Install the data extra: uv sync --extra data") from exc
+    client = OpenSearch(hosts=[opensearch_url])
+    if not client.indices.exists_alias(name=alias):
+        return False
+    return index_name in client.indices.get_alias(name=alias)
+
+
+def execute_search_projection(
+    database_url: str,
+    context: AggregateJobContext,
+    workspace_root: Path,
+    *,
+    opensearch_url: str,
+) -> StageExecution:
+    configuration = context.configuration
+    if configuration.get("source_policy") != "active_page_selection_only":
+        raise ValueError("Search projection must use active page OCR selections")
+    prefix = str(configuration.get("index_prefix", ""))
+    if not prefix.startswith("wic-regions-"):
+        raise ValueError("Search index_prefix must stay in wic-regions-* namespace")
+    index_name = f"{prefix}-{context.batch_id.replace('-', '')[:12]}"
+    alias = str(configuration.get("alias", "wic-regions-current"))
+    receipt_path = stage_output_dir(context, workspace_root) / "search-receipt.json"
+    if receipt_path.is_file():
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        build_id = str(receipt.get("projection_build_id", ""))
+        if (
+            receipt.get("job_id") != context.job_id
+            or receipt.get("index_name") != index_name
+            or not _projection_is_current(database_url, build_id, "opensearch")
+            or not _search_alias_points_to(opensearch_url, alias, index_name)
+        ):
+            raise ValueError("Existing search receipt is not the current verified projection")
+        result = {
+            "projection_build_id": build_id,
+            "index_name": index_name,
+            "documents_indexed": receipt["documents_indexed"],
+            "alias": alias,
+            "reused_verified_artifact": True,
+        }
+        return StageExecution(
+            workspace_artifact_uri(workspace_root, receipt_path),
+            sha256_file(receipt_path),
+            result,
+            True,
+        )
+    projected = project_regions(
+        database_url,
+        opensearch_url,
+        index_name=index_name,
+        alias=alias,
+        recreate=True,
+        batch_size=int(configuration.get("batch_size", 500)),
+    )
+    receipt = {
+        "schema_version": "1.0",
+        "job_id": context.job_id,
+        "batch_id": context.batch_id,
+        "projection_build_id": projected.build_id,
+        "index_name": projected.index_name,
+        "alias": alias,
+        "documents_indexed": projected.documents_indexed,
+        "source_policy": "active_page_selection_only",
+    }
+    _atomic_json(receipt_path, receipt)
+    return StageExecution(
+        workspace_artifact_uri(workspace_root, receipt_path),
+        sha256_file(receipt_path),
+        {
+            "projection_build_id": projected.build_id,
+            "index_name": projected.index_name,
+            "documents_indexed": projected.documents_indexed,
+            "alias": alias,
+            "reused_verified_artifact": False,
+        },
+        False,
+    )
+
+
+def execute_rag_export(
+    database_url: str,
+    context: AggregateJobContext,
+    workspace_root: Path,
+) -> StageExecution:
+    if context.configuration.get("source_policy") != "active_page_selection_only":
+        raise ValueError("RAG export must use active page OCR selections")
+    output_dir = stage_output_dir(context, workspace_root) / "export"
+    manifest_path = output_dir / "experiment-manifest.json"
+    if manifest_path.is_file():
+        validation = validate_export(output_dir)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("scope") != {
+            "volume_number": context.scope.get("volume_number"),
+            "page_number": context.scope.get("page_number"),
+        }:
+            raise ValueError("Existing RAG export scope contradicts its immutable batch")
+        result = {
+            "documents": validation.documents,
+            "exported_regions": validation.citations,
+            "source_regions": validation.source_regions,
+            "omitted_empty_regions": validation.omitted_empty_regions,
+            "manifest_sha256": sha256_file(manifest_path),
+            "reused_verified_artifact": True,
+        }
+        return StageExecution(
+            workspace_artifact_uri(workspace_root, manifest_path),
+            result["manifest_sha256"],
+            result,
+            True,
+        )
+    exported = export_rag_corpus(
+        database_url,
+        output_dir,
+        volume_number=context.scope.get("volume_number"),
+        page_number=context.scope.get("page_number"),
+        overwrite=False,
+    )
+    return StageExecution(
+        workspace_artifact_uri(workspace_root, manifest_path),
+        exported.manifest_sha256,
+        {
+            "documents": exported.documents,
+            "exported_regions": exported.exported_regions,
+            "source_regions": exported.source_regions,
+            "omitted_empty_regions": exported.omitted_empty_regions,
+            "manifest_sha256": exported.manifest_sha256,
+            "reused_verified_artifact": False,
+        },
+        False,
+    )
+
+
+def execute_graph_projection(
+    database_url: str,
+    context: AggregateJobContext,
+    workspace_root: Path,
+    *,
+    neo4j_uri: str,
+    neo4j_user: str,
+    neo4j_password: str | None,
+) -> StageExecution:
+    if context.configuration.get("reviewed_only") is not True:
+        raise ValueError("Graph projection must remain reviewed_only")
+    if not neo4j_password:
+        raise ValueError("NEO4J_PASSWORD or --neo4j-password is required")
+    receipt_path = stage_output_dir(context, workspace_root) / "graph-receipt.json"
+    if receipt_path.is_file():
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        build_id = str(receipt.get("projection_build_id", ""))
+        if (
+            receipt.get("job_id") != context.job_id
+            or not _projection_is_current(database_url, build_id, "neo4j")
+        ):
+            raise ValueError("Existing graph receipt is not the current verified projection")
+        result = {
+            key: receipt[key]
+            for key in (
+                "projection_build_id",
+                "entities",
+                "claims",
+                "mentions",
+                "claim_evidence",
+                "reviewed_only",
+            )
+        }
+        result["reused_verified_artifact"] = True
+        return StageExecution(
+            workspace_artifact_uri(workspace_root, receipt_path),
+            sha256_file(receipt_path),
+            result,
+            True,
+        )
+    projected = project_reviewed_graph(
+        database_url, neo4j_uri, neo4j_user, neo4j_password
+    )
+    receipt = {
+        "schema_version": "1.0",
+        "job_id": context.job_id,
+        "batch_id": context.batch_id,
+        "projection_build_id": projected.build_id,
+        "entities": projected.entities,
+        "claims": projected.claims,
+        "mentions": projected.mentions,
+        "claim_evidence": projected.claim_evidence,
+        "reviewed_only": True,
+    }
+    _atomic_json(receipt_path, receipt)
+    return StageExecution(
+        workspace_artifact_uri(workspace_root, receipt_path),
+        sha256_file(receipt_path),
+        {**receipt, "reused_verified_artifact": False},
+        False,
+    )
+
+
 def execute_stage(
     database_url: str,
-    context: PageJobContext,
+    context: PageJobContext | AggregateJobContext,
     workspace_root: Path,
     *,
     cache_dir: Path,
@@ -814,7 +1085,31 @@ def execute_stage(
     profile: str | None,
     credentials_csv: Path | None,
     region: str,
+    opensearch_url: str,
+    neo4j_uri: str,
+    neo4j_user: str,
+    neo4j_password: str | None,
 ) -> StageExecution:
+    if isinstance(context, AggregateJobContext):
+        if context.stage == "search_projection":
+            return execute_search_projection(
+                database_url,
+                context,
+                workspace_root,
+                opensearch_url=opensearch_url,
+            )
+        if context.stage == "rag_export":
+            return execute_rag_export(database_url, context, workspace_root)
+        if context.stage == "graph_projection":
+            return execute_graph_projection(
+                database_url,
+                context,
+                workspace_root,
+                neo4j_uri=neo4j_uri,
+                neo4j_user=neo4j_user,
+                neo4j_password=neo4j_password,
+            )
+        raise ValueError(f"No aggregate worker exists for stage {context.stage}")
     if context.stage == "render_lossless":
         return execute_render(
             database_url,
@@ -888,6 +1183,10 @@ def run_one(
     profile: str | None = None,
     credentials_csv: Path | None = None,
     region: str = "us-east-1",
+    opensearch_url: str = "http://127.0.0.1:9200",
+    neo4j_uri: str = "bolt://127.0.0.1:7687",
+    neo4j_user: str = "neo4j",
+    neo4j_password: str | None = None,
     lease_seconds: int = 900,
     retry_delay_seconds: int = 60,
     stage: str | None = None,
@@ -906,7 +1205,7 @@ def run_one(
     job_id = UUID(lease.job_id)
     start_job(database_url, job_id, worker_id)
     try:
-        context = load_job_context(database_url, job_id)
+        context = load_execution_context(database_url, lease)
         with LeaseHeartbeat(
             database_url, job_id, worker_id, lease_seconds
         ) as heartbeat:
@@ -919,6 +1218,10 @@ def run_one(
                 profile=profile,
                 credentials_csv=credentials_csv,
                 region=region,
+                opensearch_url=opensearch_url,
+                neo4j_uri=neo4j_uri,
+                neo4j_user=neo4j_user,
+                neo4j_password=neo4j_password,
             )
             heartbeat.raise_if_failed()
         transition = complete_job(
@@ -976,10 +1279,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--profile")
     parser.add_argument("--credentials-csv", type=Path)
     parser.add_argument("--region", default="us-east-1")
+    parser.add_argument(
+        "--opensearch-url",
+        default=os.environ.get("OPENSEARCH_URL", "http://127.0.0.1:9200"),
+    )
+    parser.add_argument(
+        "--neo4j-uri",
+        default=os.environ.get("NEO4J_URI", "bolt://127.0.0.1:7687"),
+    )
+    parser.add_argument("--neo4j-user", default=os.environ.get("NEO4J_USER", "neo4j"))
+    parser.add_argument("--neo4j-password", default=os.environ.get("NEO4J_PASSWORD"))
     parser.add_argument("--lease-seconds", type=int, default=900)
     parser.add_argument("--retry-delay-seconds", type=int, default=60)
     parser.add_argument(
-        "--stage", choices=("render_lossless", "ocr", "embedding", "ner")
+        "--stage", choices=ALL_STAGES
     )
     parser.add_argument("--batch-id", type=UUID)
     return parser
@@ -998,6 +1311,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         profile=args.profile,
         credentials_csv=args.credentials_csv,
         region=args.region,
+        opensearch_url=args.opensearch_url,
+        neo4j_uri=args.neo4j_uri,
+        neo4j_user=args.neo4j_user,
+        neo4j_password=args.neo4j_password,
         lease_seconds=args.lease_seconds,
         retry_delay_seconds=args.retry_delay_seconds,
         stage=args.stage,

@@ -27,6 +27,8 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - Entity-link persistence retains an explicit NIL option. With no reviewed authority catalog yet, all 115 smoke mentions correctly remain NIL rather than manufacturing people. The grounded relation pass emits zero claims because no pair of reviewed linked entities exists.
 - The reviewed-only Neo4j projection was live-tested and correctly produced an empty graph from that state. A local FastAPI/researcher UI exposes lexical, dense and hybrid search, page images, and a scenario-context contract that abstains when no reviewed claims support a reconstruction.
 - A common RAG smoke export accounts for all 1,138 regions: 1,131 text-bearing regions map back from exact page-text character offsets to scan polygons; seven empty regions are recorded as omitted. GraphRAG and LightRAG receive the same text input.
+- Pinned GraphRAG 3.1.1 and LightRAG 1.5.4 package CLIs were installed and inspected in isolated environments. The shared-export validator, GraphRAG workspace preparation and authenticated LightRAG REST adapter are implemented; indexing is waiting for a recorded experiment LLM/embedding configuration and review-quality article units.
+- Lexical, dense and hybrid retrieval each achieve Recall@5 1.0, MRR 1.0 and citation-pointer rate 1.0 on the single exact-match smoke question. This validates metric plumbing only and is explicitly not a historian-facing quality result.
 
 The slice intentionally contains no reviewed entities or claims. It must not be described as a reconstructed knowledge graph until historian review data exists.
 
@@ -371,7 +373,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Difficult OCR | PaddleOCR-VL-1.6 | Benchmark fallback candidate |
 | Authoritative database | PostgreSQL 17 | Implemented and live-tested locally |
 | Embeddings near evidence | pgvector 0.8.5 + BGE-M3 challenger | Implemented for smoke slice; benchmark pending |
-| Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline; reranker/evaluation pending |
+| Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline and smoke metrics; reranker/historian evaluation pending |
 | Graph exploration | Neo4j Community derived projection | Selected for pilot if graph questions justify it |
 | Standards export | CIDOC CRM profile + PROV-O + Web Annotation, validated with Jena/SHACL | Selected architecture |
 | NER | Rules + SIKU-BERT supervised head + GLiNER-X union; NuExtract3 difficult-case challenger | Pinned benchmark registry committed; candidate storage implemented; gold comparison pending |
@@ -379,4 +381,6 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Graph-RAG experiment | LightRAG 1.5.4 (`9a45b64…`) | Selected first isolated experiment; shared export implemented |
 | Graph-RAG comparator | Microsoft GraphRAG 3.1.1 (`14a00ad…`) Global + DRIFT | Selected bounded experiment; shared export implemented |
 | LazyGraphRAG | Track product/research availability | Not currently selected as deployable OSS |
+| Model handoff | OpenAI-compatible adapter with prompt hashing and untrusted-OCR boundary | Implemented; live model not configured; scene generation abstains without reviewed claims |
+| Evaluation | Frozen JSONL judgments + Recall@k, MRR and citation-pointer scoring | Implemented smoke harness; historian-authored question set pending |
 | Simulation | None in factual system | Explicitly deferred |

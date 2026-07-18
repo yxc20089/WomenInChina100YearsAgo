@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-18T06:44:02.466917Z",
+  "mode": "lexical",
+  "index": "wic-regions-current",
+  "limit": 5,
+  "question_set": "experiments/retrieval/smoke-questions.jsonl",
+  "question_count": 1,
+  "scored_answerable_questions": 1,
+  "macro_recall_at_k": 1.0,
+  "mean_reciprocal_rank": 1.0,
+  "citation_pointer_rate": 1.0,
+  "results": [
+    {
+      "question_id": "smoke-exact-001",
+      "category": "exact_lookup",
+      "answerable": true,
+      "expected_region_ids": [
+        "c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1",
+        "abaad60e-1927-44e6-a875-50e8304b53fe"
+      ],
+      "retrieved_region_ids": [
+        "c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1",
+        "abaad60e-1927-44e6-a875-50e8304b53fe"
+      ],
+      "relevant_retrieved": 2,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "citation_pointer_rate": 1.0,
+      "response": {
+        "schema_version": "1.0",
+        "query": "富紳淑女",
+        "mode": "lexical",
+        "hits": [
+          {
+            "rank": 1,
+            "score": 8.892822,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 501.0,
+                    "y": 2352.0
+                  },
+                  {
+                    "x": 535.0,
+                    "y": 2352.0
+                  },
+                  {
+                    "x": 536.0,
+                    "y": 2759.0
+                  },
+                  {
+                    "x": 502.0,
+                    "y": 2759.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "曰富紳淑女固不貪便宜却愛大世",
+            "normalized_text": "曰富紳淑女固不貪便宜却愛大世",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "OpenSearch CJK lexical",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ]
+            }
+          },
+          {
+            "rank": 2,
+            "score": 6.092697,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "abaad60e-1927-44e6-a875-50e8304b53fe",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 537.0,
+                    "y": 2379.0
+                  },
+                  {
+                    "x": 570.0,
+                    "y": 2379.0
+                  },
+                  {
+                    "x": 572.0,
+                    "y": 2759.0
+                  },
+                  {
+                    "x": 539.0,
+                    "y": 2759.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "富紳雅十淑女名媛豈是貪便宜",
+            "normalized_text": "富紳雅十淑女名媛豈是貪便宜",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "OpenSearch CJK lexical",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ]
+            }
+          }
+        ],
+        "generated_answer": null,
+        "answer_model": null,
+        "warnings": [
+          "One or more hits come from provisional or lossy OCR artifacts."
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    "This is a technical smoke set, not a historian-authored quality evaluation."
+  ]
+}

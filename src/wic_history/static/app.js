@@ -5,6 +5,11 @@ const warnings = document.querySelector('#warnings');
 const contextButton = document.querySelector('#context-button');
 const contextPanel = document.querySelector('#context-panel');
 const contextJson = document.querySelector('#context-json');
+const briefButton = document.querySelector('#brief-button');
+const sceneButton = document.querySelector('#scene-button');
+const generationPanel = document.querySelector('#generation-panel');
+const generationLabel = document.querySelector('#generation-label');
+const generationOutput = document.querySelector('#generation-output');
 let lastRequest = null;
 
 function requestBody() {
@@ -42,6 +47,8 @@ function render(data) {
   });
   status.textContent = `${data.hits.length} cited region${data.hits.length === 1 ? '' : 's'} · ${data.mode}`;
   contextButton.disabled = false;
+  briefButton.disabled = false;
+  sceneButton.disabled = false;
 }
 
 form.addEventListener('submit', async event => {
@@ -60,6 +67,36 @@ form.addEventListener('submit', async event => {
     status.textContent = `Search failed: ${error.message}`;
   }
 });
+
+async function generate(task, button) {
+  if (!lastRequest) return;
+  const original = button.textContent;
+  button.textContent = 'Preparing…';
+  briefButton.disabled = true;
+  sceneButton.disabled = true;
+  try {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({...lastRequest, task}),
+    });
+    if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+    const data = await response.json();
+    generationLabel.textContent = `${data.task.replaceAll('_', ' ')} · ${data.status}`;
+    generationOutput.textContent = data.output;
+    generationPanel.hidden = false;
+    generationPanel.scrollIntoView({behavior: 'smooth'});
+  } catch (error) {
+    status.textContent = `Generation failed: ${error.message}`;
+  } finally {
+    button.textContent = original;
+    briefButton.disabled = false;
+    sceneButton.disabled = false;
+  }
+}
+
+briefButton.addEventListener('click', () => generate('research_brief', briefButton));
+sceneButton.addEventListener('click', () => generate('reconstructed_scene', sceneButton));
 
 contextButton.addEventListener('click', async () => {
   if (!lastRequest) return;

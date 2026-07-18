@@ -1,0 +1,1 @@
+{"question_id":"smoke-exact-001","query":"富紳淑女","category":"exact_lookup","answerable":true,"expected_region_ids":["c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1","abaad60e-1927-44e6-a875-50e8304b53fe"],"year_start":1925,"year_end":1925,"author":"technical-smoke","notes":"Pipeline-only check from the one-page lossy OCR artifact; not historian-authored."}

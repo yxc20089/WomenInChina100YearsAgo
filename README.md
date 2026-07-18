@@ -102,9 +102,27 @@ uv run wic-api --host 127.0.0.1 --port 8766
 
 Open `http://127.0.0.1:8766` for lexical, dense, or hybrid search. Scenario
 context returned by the API contains only reviewed claims; with the current
-smoke data it abstains explicitly. Pinned NER candidates and the paired
+smoke data it abstains explicitly. `LLM_BASE_URL` and `LLM_MODEL` optionally
+enable a local or hosted OpenAI-compatible chat endpoint. Research briefs must
+label OCR as unreviewed leads; reconstructed scenes hard-abstain until reviewed
+claims exist.
+
+Run the scored citation-retrieval smoke comparison and validate the common RAG
+input with:
+
+```bash
+for mode in lexical dense hybrid; do
+  uv run wic-eval --questions experiments/retrieval/smoke-questions.jsonl \
+    --output "artifacts/eval-smoke/${mode}.json" --mode "$mode" --limit 5
+done
+uv run wic-rag-adapter validate --export artifacts/rag-smoke
+```
+
+The single smoke question is not a quality claim; the real gate requires
+historian-authored/adjudicated questions. Pinned NER candidates and the paired
 corrected-text/raw-OCR protocol are under `experiments/ner/`; isolated
 GraphRAG/LightRAG requirements and the fair-comparison protocol are under
-`experiments/rag/`.
+`experiments/rag/`; retrieval judgments and metrics are under
+`experiments/retrieval/`.
 
 The committed OCR/NER files are technical smoke artifacts from a lossy screening derivative. They demonstrate provenance, coordinates, persistence, and retrieval; they are not gold transcriptions or reviewed historical assertions.

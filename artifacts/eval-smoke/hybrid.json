@@ -1,0 +1,297 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-18T06:44:21.052706Z",
+  "mode": "hybrid",
+  "index": "wic-regions-current",
+  "limit": 5,
+  "question_set": "experiments/retrieval/smoke-questions.jsonl",
+  "question_count": 1,
+  "scored_answerable_questions": 1,
+  "macro_recall_at_k": 1.0,
+  "mean_reciprocal_rank": 1.0,
+  "citation_pointer_rate": 1.0,
+  "results": [
+    {
+      "question_id": "smoke-exact-001",
+      "category": "exact_lookup",
+      "answerable": true,
+      "expected_region_ids": [
+        "c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1",
+        "abaad60e-1927-44e6-a875-50e8304b53fe"
+      ],
+      "retrieved_region_ids": [
+        "c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1",
+        "abaad60e-1927-44e6-a875-50e8304b53fe",
+        "c6b1710a-7388-42d3-88b9-8b61006f1bcc",
+        "0bf3d714-6148-40c3-8cbc-6ef4862339fc",
+        "60efc168-aa43-43d1-934a-1c24292a2a10"
+      ],
+      "relevant_retrieved": 2,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "citation_pointer_rate": 1.0,
+      "response": {
+        "schema_version": "1.0",
+        "query": "富紳淑女",
+        "mode": "hybrid",
+        "hits": [
+          {
+            "rank": 1,
+            "score": 0.03252247488101534,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "c9c7163e-9c61-4cbd-b8b3-4f1fc579bbc1",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 501.0,
+                    "y": 2352.0
+                  },
+                  {
+                    "x": 535.0,
+                    "y": 2352.0
+                  },
+                  {
+                    "x": 536.0,
+                    "y": 2759.0
+                  },
+                  {
+                    "x": 502.0,
+                    "y": 2759.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "曰富紳淑女固不貪便宜却愛大世",
+            "normalized_text": "曰富紳淑女固不貪便宜却愛大世",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "RRF(CJK lexical+BGE-M3)",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ],
+              "component_ranks": {
+                "lexical": 1,
+                "dense": 2
+              }
+            }
+          },
+          {
+            "rank": 2,
+            "score": 0.03252247488101534,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "abaad60e-1927-44e6-a875-50e8304b53fe",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 537.0,
+                    "y": 2379.0
+                  },
+                  {
+                    "x": 570.0,
+                    "y": 2379.0
+                  },
+                  {
+                    "x": 572.0,
+                    "y": 2759.0
+                  },
+                  {
+                    "x": 539.0,
+                    "y": 2759.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "富紳雅十淑女名媛豈是貪便宜",
+            "normalized_text": "富紳雅十淑女名媛豈是貪便宜",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "RRF(CJK lexical+BGE-M3)",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ],
+              "component_ranks": {
+                "lexical": 2,
+                "dense": 1
+              }
+            }
+          },
+          {
+            "rank": 3,
+            "score": 0.015873015873015872,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "c6b1710a-7388-42d3-88b9-8b61006f1bcc",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 1390.0,
+                    "y": 1185.0
+                  },
+                  {
+                    "x": 1680.0,
+                    "y": 1185.0
+                  },
+                  {
+                    "x": 1680.0,
+                    "y": 1247.0
+                  },
+                  {
+                    "x": 1390.0,
+                    "y": 1247.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "女閨的憐",
+            "normalized_text": "女閨的憐",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "RRF(CJK lexical+BGE-M3)",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ],
+              "component_ranks": {
+                "dense": 3
+              }
+            }
+          },
+          {
+            "rank": 4,
+            "score": 0.015625,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "0bf3d714-6148-40c3-8cbc-6ef4862339fc",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 353.0,
+                    "y": 2700.0
+                  },
+                  {
+                    "x": 393.0,
+                    "y": 2700.0
+                  },
+                  {
+                    "x": 396.0,
+                    "y": 2792.0
+                  },
+                  {
+                    "x": 356.0,
+                    "y": 2793.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "有錢請",
+            "normalized_text": "有錢請",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "RRF(CJK lexical+BGE-M3)",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ],
+              "component_ranks": {
+                "dense": 4
+              }
+            }
+          },
+          {
+            "rank": 5,
+            "score": 0.015384615384615385,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": null,
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "60efc168-aa43-43d1-934a-1c24292a2a10",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 2257.0,
+                    "y": 533.0
+                  },
+                  {
+                    "x": 2289.0,
+                    "y": 533.0
+                  },
+                  {
+                    "x": 2289.0,
+                    "y": 600.0
+                  },
+                  {
+                    "x": 2257.0,
+                    "y": 600.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "金錢",
+            "normalized_text": "金錢",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "RRF(CJK lexical+BGE-M3)",
+              "index": "wic-regions-v1",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+              ],
+              "component_ranks": {
+                "dense": 5
+              }
+            }
+          }
+        ],
+        "generated_answer": null,
+        "answer_model": null,
+        "warnings": [
+          "One or more hits come from provisional or lossy OCR artifacts."
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    "This is a technical smoke set, not a historian-authored quality evaluation."
+  ]
+}

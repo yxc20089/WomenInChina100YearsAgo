@@ -35,10 +35,18 @@
 
     <section class="status-panel" aria-live="polite">
       <span id="status">Ready</span>
-      <button id="context-button" class="quiet" type="button" disabled>Prepare model context</button>
+      <div class="model-actions">
+        <button id="brief-button" class="quiet" type="button" disabled>Draft research brief</button>
+        <button id="scene-button" class="quiet" type="button" disabled>Reconstruct scene</button>
+        <button id="context-button" class="quiet" type="button" disabled>Inspect context</button>
+      </div>
     </section>
     <section id="warnings"></section>
     <section id="results" class="results"></section>
+    <section id="generation-panel" class="generation-panel" hidden>
+      <p id="generation-label" class="eyebrow"></p>
+      <div id="generation-output"></div>
+    </section>
     <section id="context-panel" class="context-panel" hidden>
       <div class="context-heading">
         <h2>Chatbot / scene context</h2>

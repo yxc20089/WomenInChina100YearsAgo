@@ -21,6 +21,19 @@ class APITests(unittest.TestCase):
         self.assertEqual(bundle.evidence_items, [])
         self.assertTrue(any("No reviewed claims" in warning for warning in bundle.warnings))
 
+    def test_scene_endpoint_abstains_before_loading_generator(self):
+        response = RetrievalResponse(query="女學生", mode=RetrievalMode.LEXICAL, hits=[])
+        with patch("wic_history.api.lexical_search", return_value=response):
+            app = create_app(
+                generator_factory=lambda: self.fail("generator should not load without reviewed claims")
+            )
+            result = TestClient(app).post(
+                "/api/generate",
+                json={"query": "女學生", "mode": "lexical", "task": "reconstructed_scene"},
+            )
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.json()["status"], "abstained")
+
     def test_lexical_endpoint_does_not_load_embedding_model(self):
         response = RetrievalResponse(query="女學生", mode=RetrievalMode.LEXICAL, hits=[])
         with patch("wic_history.api.lexical_search", return_value=response) as search:

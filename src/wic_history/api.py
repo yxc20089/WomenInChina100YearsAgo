@@ -10,10 +10,18 @@ from typing import Any, Callable, Literal, Sequence
 from pydantic import BaseModel, ConfigDict, Field
 
 from .embedding_pipeline import BGEEmbedder
+from .claim_context import load_reviewed_claim_items
 from .evidence import (
     RetrievalResponse,
     ScenarioContextBundle,
     ScenarioEvidenceItem,
+)
+from .generation import (
+    GenerationResponse,
+    GenerationTask,
+    OpenAICompatibleGenerator,
+    TextGenerator,
+    generate,
 )
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
 
@@ -27,24 +35,27 @@ class SearchRequest(BaseModel):
     year_end: int | None = Field(default=None, ge=1872, le=1949)
 
 
-def scenario_context(response: RetrievalResponse) -> ScenarioContextBundle:
+class GenerationRequest(SearchRequest):
+    task: GenerationTask = GenerationTask.RESEARCH_BRIEF
+
+
+def scenario_context(
+    response: RetrievalResponse,
+    reviewed_items: list[ScenarioEvidenceItem] | None = None,
+) -> ScenarioContextBundle:
     """Prepare a safe handoff; only reviewed claims become evidence statements."""
     claim_ids = {claim_id for hit in response.hits for claim_id in hit.claim_ids}
-    evidence_items = [
-        ScenarioEvidenceItem(
-            statement=f"Reviewed-claim evidence passage: {hit.text}",
-            epistemic_label="directly_evidenced",
-            sources=[hit.source],
-            claim_ids=hit.claim_ids,
-        )
-        for hit in response.hits
-        if hit.claim_ids
-    ]
+    evidence_items = reviewed_items or []
     warnings = list(response.warnings)
     if not claim_ids:
         warnings.append(
             "No reviewed claims are present in these results. Retrieved OCR may be used for research, "
             "but a model must not present it as a verified historical claim."
+        )
+    elif not evidence_items:
+        warnings.append(
+            "Retrieved claim identifiers could not be resolved into reviewed, cited claims; "
+            "they are excluded from model evidence."
         )
     return ScenarioContextBundle(
         research_query=response.query,
@@ -59,6 +70,7 @@ def create_app(
     database_url: str | None = None,
     index: str = DEFAULT_ALIAS,
     embedder_factory: Callable[[], BGEEmbedder] = BGEEmbedder,
+    generator_factory: Callable[[], TextGenerator | None] = OpenAICompatibleGenerator.from_environment,
 ) -> Any:
     try:
         from fastapi import FastAPI, HTTPException
@@ -72,6 +84,8 @@ def create_app(
     static_dir = Path(__file__).with_name("static")
     app = FastAPI(title="Women in China 100 Years Ago Research API", version="0.1.0")
     app.state.embedder = None
+    app.state.generator = None
+    app.state.generator_loaded = False
 
     def run_search(request: SearchRequest) -> RetrievalResponse:
         if request.year_start and request.year_end and request.year_end < request.year_start:
@@ -112,6 +126,19 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=503, detail=f"Retrieval unavailable: {exc}") from exc
 
+    def build_context(response: RetrievalResponse) -> ScenarioContextBundle:
+        claim_ids = {claim_id for hit in response.hits for claim_id in hit.claim_ids}
+        if not claim_ids:
+            return scenario_context(response)
+        if not db_url:
+            return scenario_context(response)
+        try:
+            return scenario_context(response, load_reviewed_claim_items(db_url, claim_ids))
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Reviewed claim context unavailable: {exc}"
+            ) from exc
+
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         try:
@@ -124,6 +151,7 @@ def create_app(
             "status": "ok" if search_ok else "degraded",
             "opensearch": search_ok,
             "database_configured": bool(db_url),
+            "generation_configured": bool(os.environ.get("LLM_BASE_URL") and os.environ.get("LLM_MODEL")),
             "index": index,
         }
 
@@ -133,7 +161,23 @@ def create_app(
 
     @app.post("/api/context", response_model=ScenarioContextBundle)
     def context(request: SearchRequest) -> ScenarioContextBundle:
-        return scenario_context(run_search(request))
+        return build_context(run_search(request))
+
+    @app.post("/api/generate", response_model=GenerationResponse)
+    def generate_output(request: GenerationRequest) -> GenerationResponse:
+        bundle = build_context(run_search(request))
+        if request.task == GenerationTask.RECONSTRUCTED_SCENE and not bundle.evidence_items:
+            return generate(bundle, request.task, None)
+        if not app.state.generator_loaded:
+            try:
+                app.state.generator = generator_factory()
+            except Exception as exc:
+                raise HTTPException(status_code=503, detail=f"Generation configuration invalid: {exc}") from exc
+            app.state.generator_loaded = True
+        try:
+            return generate(bundle, request.task, app.state.generator)
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"Generation unavailable: {exc}") from exc
 
     @app.get("/api/page-image/{volume_number}/{page_number}")
     def page_image(volume_number: int, page_number: int) -> Any:

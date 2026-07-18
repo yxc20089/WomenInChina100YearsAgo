@@ -148,3 +148,44 @@ Report agreement before adjudication, exact and relaxed span F1 by type, raw
 recoverability, OCR CER, invalid-evidence rate, throughput, peak memory, and
 scores by decade, layout, scan quality, and genre. Publish both micro totals and
 small-stratum sample counts.
+
+## 8. Relation and event annotation
+
+Relation annotation begins only after the coherent unit, issue assignment,
+transcription, and NER mentions have been independently reviewed and
+adjudicated. Copy the exact mention types and spans from that frozen NER gold
+set; do not redraw an argument boundary or create an entity while labeling a
+relation. Return the unit to the earlier workflow when an argument is wrong.
+
+- Annotate only predicates in the versioned relation ontology. Record the
+  directed subject mention, predicate, and object mention; do not infer a
+  relation merely because two names occur in the same article or region.
+- Cite the smallest contiguous corrected-text span that contains both arguments
+  and the printed language that supports the relation. The citation must be an
+  exact, end-exclusive substring. A title, metadata field, model explanation,
+  or graph path is not substitute evidence.
+- Record an exact raw-OCR evidence span only when both arguments and the
+  supporting expression are recoverable in one defensible contiguous raw span.
+  Otherwise leave all raw-evidence fields null; never repair OCR inside them.
+- Label negative units explicitly by returning an empty relation set after
+  checking every eligible argument pair. Negative units are required to measure
+  false positives and must not be silently dropped from model output.
+- Distinguish a printed assertion from historical truth. Reported speech,
+  advertisements, denials, allegations, future intentions, and uncertainty may
+  support a textual relation candidate while still requiring claim-level
+  qualification during historian review.
+- For events, annotate a participant, location, organization, or date relation
+  only when the frozen ontology defines it and the text supports it. Do not
+  create an event node from an unbounded verb or fill an unstated participant.
+- Do not let relation output create or merge authority entities, approve a
+  claim, or enter the reviewed graph automatically.
+
+Reviewer A and Reviewer B label every selected unit independently without model
+output or each other's work. A distinct adjudicator resolves relation identity,
+direction, predicate, and evidence-span disagreements. Freeze the adjudicated
+dataset and its byte-exact source NER-gold SHA-256 before running any model.
+Split by issue so repeated newspaper templates and continuations cannot leak
+between train, development, and test. Report exact relation F1, exact
+relation-plus-evidence F1, invalid evidence, negative-unit false positives, raw
+recoverability, pre-adjudication agreement, and issue/decade/layout/scan-quality
+strata with sample counts.

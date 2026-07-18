@@ -337,6 +337,14 @@ reviewed. The insights view reports whether review-authoritative PostgreSQL is
 newer than the derived Neo4j projection; when it says `STALE`, run `wic-graph`
 before interpreting graph patterns.
 
+`wic-relations` is deliberately reviewed-input-only. Its v2 rules require exact
+linked mention spans, an ontology-compatible argument pair, an intervening cue
+without clause crossing, and complete scan provenance; otherwise they abstain.
+The independent `wic-relation-benchmark` runner verifies the byte-exact source
+NER gold set, freezes every prediction (including negatives), and scores exact
+relations/evidence without inserting claims. The live archive currently has no
+reviewed linked mentions and therefore correctly produces no relation claims.
+
 The researcher API binds to localhost by default and currently has no
 authentication or authorization layer. Do not expose it outside a trusted local
 development environment.
@@ -354,7 +362,8 @@ uv run wic-rag-adapter validate --export artifacts/rag-pilot
 
 The single smoke question is not a quality claim; the real gate requires
 historian-authored/adjudicated questions. Pinned NER candidates and the paired
-corrected-text/raw-OCR protocol are under `experiments/ner/`; isolated
+corrected-text/raw-OCR protocol are under `experiments/ner/`; the relation/event
+shortlist, gold contract, rule adapter and scorer are under `experiments/relation/`; isolated
 GraphRAG/LightRAG requirements and the fair-comparison protocol are under
 `experiments/rag/`; retrieval judgments and metrics are under
 `experiments/retrieval/`; grounded assistant/scene evaluation is under

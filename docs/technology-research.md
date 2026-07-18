@@ -87,10 +87,11 @@ NER and entity linking must be separate stages. Recognizing `宋庆龄` as a per
 ### Candidate stack
 
 1. **Rules and gazetteers** for dates, newspaper issue structure, addresses, schools, organizations, titles, and historical place names.
-2. **Supervised fixed-ontology tournament** using the official W2NER implementation pinned at `a34ff841891919001080edefb50e14fa9dc15e1c` and identical training budgets on MacBERT, MacBERT with training-issue-only domain-adaptive continued pretraining, GujiRoBERTa-jian-fan (license-gated), and SIKU-BERT. MacBERT is the first arm because a directly relevant retyped *Shen Bao* study reports 58.26 F1 versus SIKU 56.83; neither score demonstrates OCR robustness. The DAPT arm is a proposed experiment with no released checkpoint or score, and must freeze its training-only corpus hash.
+2. **Supervised fixed-ontology tournament** using the official W2NER implementation pinned at `a34ff841891919001080edefb50e14fa9dc15e1c` and identical training budgets on MacBERT, MacBERT with training-issue-only domain-adaptive continued pretraining, mmBERT-base, GujiRoBERTa-jian-fan (license-gated), and SIKU-BERT. MacBERT is the first arm because a directly relevant retyped *Shen Bao* study reports 58.26 F1 versus SIKU 56.83; neither score demonstrates OCR robustness. DAPT is the principal proposed challenger. mmBERT is a same-head ablation, not a new primary: its paper reports a WikiANN NER tie with XLM-R, a tokenizer weakness, and no historical/OCR result.
 3. **Open-type recall challenger**: GLiNER-X, with the current GLiNER-multi run retained as a baseline. Add GLiNER-X to the production union only if paired gold evaluation shows meaningful raw-OCR recall gain at bounded precision loss. Otter CE mmBERT remains research-only because its checkpoint declares no weight license and provides no Chinese-specific, historical, OCR or nested-entity result.
-4. **Schema-constrained multimodal extraction**: NuExtract3 on routed difficult cases and Qwen3.6-27B only as a high-compute ceiling. Require verbatim surfaces/exact offsets; general multimodal models are not assumed robust on historical Chinese scans.
-5. **Entity linking** using aliases/gazetteers, temporal and geographic compatibility, graph context, and a human-review queue.
+4. **Annotation assistance only**: track PP-UIE-0.5B after independent annotations are saved. Its official modern-news result does not establish historical-OCR quality; immutable weight identity, rights, and exact offsets are unresolved.
+5. **Schema-constrained multimodal extraction**: NuExtract3 on routed difficult cases and Qwen3.6-27B only as a high-compute ceiling. Require verbatim surfaces/exact offsets; general multimodal models are not assumed robust on historical Chinese scans.
+6. **Entity linking** using aliases/gazetteers, temporal and geographic compatibility, graph context, and a human-review queue.
 
 Start with entity types that support real research questions: `PERSON`, `ALIAS`, `PLACE`, `ADDRESS`, `ORGANIZATION`, `SCHOOL`, `OCCUPATION`, `ROLE_TITLE`, `PUBLICATION`, `EVENT`, `DATE`, `KINSHIP_TERM`, `PRODUCT`, and `ADVERTISEMENT`. Add relation/event schemas only after historians review examples.
 
@@ -115,7 +116,7 @@ The 2026 RAG landscape article is useful for generating candidates, but framewor
 3. Benchmark PaddleOCR PP-StructureV3/PP-OCRv6, PaddleOCR-VL, and MinerU on the gold pages.
 4. Store page geometry and OCR versions in PostgreSQL/object storage.
 5. Build hybrid retrieval with Chinese lexical search, multilingual embeddings, and reranking.
-6. Compare GLiNER v2.5, a multilingual GLiNER model, rules, and one schema-constrained LLM on the same gold snippets.
+6. Run the frozen same-head MacBERT/MacBERT-DAPT/mmBERT/historical-encoder tournament, with GLiNER-X as the open-type recall challenger. Keep pinned GLiNER v2.5 low priority because it has no Chinese score.
 7. Build the reviewed evidence graph in PostgreSQL and project approved entities/claims into Neo4j.
 8. Run an answer-quality experiment comparing vector RAG, LightRAG, Microsoft GraphRAG, and LazyGraphRAG on 30–50 historian-authored questions.
 9. Require every answer to cite page-level evidence; score citation correctness separately from prose quality.

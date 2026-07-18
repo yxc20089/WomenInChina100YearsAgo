@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from uuid import UUID
 
 from .evidence import (
     ClaimArtifact,
@@ -25,7 +26,7 @@ from .evidence import (
 
 @dataclass(frozen=True, slots=True)
 class ReviewedMention:
-    entity_id: Any
+    entity_id: UUID
     entity_type: str
     text: str
     text_start: int
@@ -34,49 +35,124 @@ class ReviewedMention:
 
 @dataclass(frozen=True, slots=True)
 class RegionEvidence:
-    region_id: Any
+    region_id: UUID
     raw_text: str
     polygon: dict[str, Any]
     source_uri: str
+    source_sha256: str
+    derivative_id: UUID
+    image_sha256: str
+    evidence_tier: str
     volume_number: int
     publication_year: int
     page_number: int
 
 
-RELATION_RULES: tuple[tuple[str, str, str, re.Pattern[str]], ...] = (
-    ("person", "school", "attended_school", re.compile(r"入學|就讀|畢業|肄業")),
-    ("person", "organization", "affiliated_with", re.compile(r"任職|就任|擔任|服務於|加入")),
-    ("person", "place", "resided_in", re.compile(r"居於|住於|寓|遷居|居住")),
+@dataclass(frozen=True, slots=True)
+class RelationRule:
+    rule_id: str
+    subject_type: str
+    object_type: str
+    predicate: str
+    cue: re.Pattern[str]
+    maximum_argument_gap: int = 40
+
+
+RELATION_RULES: tuple[RelationRule, ...] = (
+    RelationRule(
+        "person-school-explicit-cue-v2",
+        "person",
+        "school",
+        "attended_school",
+        re.compile(r"入學|就讀|畢業|肄業"),
+    ),
+    RelationRule(
+        "person-organization-explicit-cue-v2",
+        "person",
+        "organization",
+        "affiliated_with",
+        re.compile(r"任職|就任|擔任|服務於|加入"),
+    ),
+    RelationRule(
+        "person-place-explicit-cue-v2",
+        "person",
+        "place",
+        "resided_in",
+        re.compile(r"居於|住於|寓|遷居|居住"),
+    ),
 )
+
+
+def _validate_reviewed_mentions(
+    region: RegionEvidence, mentions: list[ReviewedMention]
+) -> None:
+    for mention in mentions:
+        if not 0 <= mention.text_start < mention.text_end <= len(region.raw_text):
+            raise ValueError("reviewed mention offsets are outside the cited OCR region")
+        if region.raw_text[mention.text_start : mention.text_end] != mention.text:
+            raise ValueError("reviewed mention text disagrees with its exact OCR offsets")
+
+
+def _cue_between_arguments(
+    region: RegionEvidence,
+    subject: ReviewedMention,
+    object_mention: ReviewedMention,
+    rule: RelationRule,
+) -> re.Match[str] | None:
+    left, right = sorted((subject, object_mention), key=lambda item: item.text_start)
+    if left.text_end > right.text_start:
+        return None
+    if right.text_start - left.text_end > rule.maximum_argument_gap:
+        return None
+    intervening_text = region.raw_text[left.text_end : right.text_start]
+    if re.search(r"[，。；！？\n\r]", intervening_text):
+        return None
+    return rule.cue.search(region.raw_text, left.text_end, right.text_start)
 
 
 def extract_region_claims(
     region: RegionEvidence,
     mentions: list[ReviewedMention],
-    run_id: Any,
+    run_id: UUID,
 ) -> list[ClaimCandidate]:
+    _validate_reviewed_mentions(region, mentions)
     claims = []
     seen: set[tuple[Any, str, Any]] = set()
-    for subject_type, object_type, predicate, cue in RELATION_RULES:
-        if not cue.search(region.raw_text):
-            continue
-        subjects = [mention for mention in mentions if mention.entity_type == subject_type]
-        objects = [mention for mention in mentions if mention.entity_type == object_type]
+    for rule in RELATION_RULES:
+        subjects = [
+            mention for mention in mentions if mention.entity_type == rule.subject_type
+        ]
+        objects = [
+            mention for mention in mentions if mention.entity_type == rule.object_type
+        ]
         for subject in subjects:
             for object_mention in objects:
-                key = (subject.entity_id, predicate, object_mention.entity_id)
+                cue = _cue_between_arguments(region, subject, object_mention, rule)
+                if cue is None:
+                    continue
+                key = (
+                    subject.entity_id,
+                    rule.predicate,
+                    object_mention.entity_id,
+                )
                 if key in seen or subject.entity_id == object_mention.entity_id:
                     continue
                 seen.add(key)
+                evidence_start = min(subject.text_start, object_mention.text_start)
+                evidence_end = max(subject.text_end, object_mention.text_end)
                 claims.append(
                     ClaimCandidate(
                         subject_entity_id=subject.entity_id,
-                        predicate=predicate,
+                        predicate=rule.predicate,
                         object_entity_id=object_mention.entity_id,
-                        confidence=0.70,
+                        confidence=None,
                         evidence=[
                             SourcePointer(
                                 source_uri=region.source_uri,
+                                source_sha256=region.source_sha256,
+                                derivative_id=region.derivative_id,
+                                image_sha256=region.image_sha256,
+                                evidence_tier=region.evidence_tier,
                                 volume_number=region.volume_number,
                                 publication_year=region.publication_year,
                                 page_number=region.page_number,
@@ -84,11 +160,13 @@ def extract_region_claims(
                                 polygon=Polygon(
                                     points=[Point.model_validate(point) for point in region.polygon["points"]]
                                 ),
-                                text_start=0,
-                                text_end=len(region.raw_text),
+                                text_start=evidence_start,
+                                text_end=evidence_end,
                             )
                         ],
-                        supporting_quote=region.raw_text,
+                        supporting_quote=region.raw_text[
+                            evidence_start:evidence_end
+                        ],
                         run_id=run_id,
                     )
                 )
@@ -107,13 +185,21 @@ def create_claim_artifact(database_url: str) -> ClaimArtifact:
             """
             SELECT m.region_id, m.entity_id, m.entity_type, m.mention_text,
                    m.text_start, m.text_end, r.raw_text, r.polygon,
-                   s.source_uri, v.volume_number, v.publication_year, p.page_number
+                   s.source_uri, s.sha256 AS source_sha256,
+                   input.derivative_id, derivative.image_sha256,
+                   derivative.evidence_tier,
+                   v.volume_number, v.publication_year, p.page_number
             FROM evidence.entity_mention m
             JOIN evidence.entity e USING (entity_id)
             JOIN evidence.ocr_region r USING (region_id)
             JOIN archive.page p USING (page_id)
             JOIN archive.volume v USING (volume_id)
             JOIN archive.source_object s USING (source_object_id)
+            JOIN evidence.ocr_run_input input
+              ON input.run_id = r.run_id AND input.page_id = r.page_id
+            JOIN archive.page_derivative derivative
+              ON derivative.derivative_id = input.derivative_id
+             AND derivative.page_id = input.page_id
             WHERE m.mention_status = 'reviewed' AND e.entity_status = 'reviewed'
             ORDER BY m.region_id, m.text_start
             """
@@ -135,19 +221,33 @@ def create_claim_artifact(database_url: str) -> ClaimArtifact:
             row["raw_text"],
             row["polygon"],
             row["source_uri"],
+            row["source_sha256"],
+            row["derivative_id"],
+            row["image_sha256"],
+            row["evidence_tier"],
             row["volume_number"],
             row["publication_year"],
             row["page_number"],
         )
     run = ProcessingRun(
         kind=RunKind.RELATION,
-        engine="reviewed-comention-rules",
+        engine="reviewed-co-mention-rules",
         model_name="historical-women-relations",
-        model_revision="1",
+        model_revision="2",
         configuration={
             "reviewed_mentions_only": True,
-            "evidence_requirement": "exact_full_region_quote",
-            "predicates": [rule[2] for rule in RELATION_RULES],
+            "evidence_requirement": "minimal_exact_argument_and_between-cue_span",
+            "rules": [
+                {
+                    "rule_id": rule.rule_id,
+                    "predicate": rule.predicate,
+                    "subject_type": rule.subject_type,
+                    "object_type": rule.object_type,
+                    "cue_pattern": rule.cue.pattern,
+                    "maximum_argument_gap": rule.maximum_argument_gap,
+                }
+                for rule in RELATION_RULES
+            ],
         },
         started_at=started_at,
         completed_at=datetime.now(timezone.utc),

@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "research_cutoff": "2026-07-18",
+  "decision_status": "protocol_frozen_no_historian_gold_no_winner",
+  "benchmark_results": [],
+  "eligibility": {
+    "minimum_units": 300,
+    "minimum_issues": 30,
+    "minimum_historian_selectors": 2,
+    "minimum_units_per_split": 50,
+    "minimum_positive_test_relations": 50,
+    "minimum_negative_test_units": 10,
+    "minimum_test_relations_per_reported_predicate": 10,
+    "minimum_decades": 2,
+    "issue_level_split_required": true,
+    "approved_coherent_unit_revision_required": true,
+    "complete_scan_provenance_required": true,
+    "source_ner_gold_sha256_verification_required": true,
+    "independent_relation_reviewers_per_unit": 2,
+    "independent_adjudicator_per_unit": 1
+  },
+  "required_arms": [
+    "reviewed-co-mention-rules-v2",
+    "macbert-deepke-pair-classifier"
+  ],
+  "optional_arms": [
+    "macbert-deepke-prgc",
+    "nuextract3-schema",
+    "oneke-agentic-control"
+  ],
+  "metrics": [
+    "exact_relation_micro_precision_recall_f1",
+    "exact_relation_and_evidence_micro_precision_recall_f1",
+    "relation_with_overlapping_evidence_micro_precision_recall_f1",
+    "invalid_evidence_rate",
+    "duplicate_predictions",
+    "negative_unit_false_positive_rate",
+    "raw_relation_recoverability",
+    "end_to_end_raw_relation_precision_recall_f1",
+    "pre_adjudication_relation_pair_f1",
+    "by_predicate",
+    "by_issue",
+    "by_decade",
+    "by_layout",
+    "by_scan_quality",
+    "latency_p50_p95",
+    "unicode_characters_per_second",
+    "provider_token_usage_and_contract_cost_when_applicable",
+    "paired_issue_cluster_bootstrap_f1_difference"
+  ],
+  "hard_failures": [
+    "issue_split_leakage",
+    "unverified_ner_gold_hash",
+    "moving_model_or_code_revision",
+    "argument_outside_adjudicated_ner_mentions",
+    "evidence_surface_or_offset_mismatch",
+    "predicate_outside_frozen_ontology",
+    "automatic_promotion_to_reviewed_claim_or_graph"
+  ],
+  "selection_policy": "Select only after absolute evidence and historian-safety review plus paired issue-cluster uncertainty; a generic leaderboard or single aggregate mean is insufficient."
+}

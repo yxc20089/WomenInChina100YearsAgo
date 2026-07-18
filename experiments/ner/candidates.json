@@ -19,6 +19,14 @@
       "evidence": "No released project checkpoint or score exists. The closest Shen Bao study found MacBERT strongest among its tested encoders and identifies historical-press domain pretraining as future work; this arm tests that hypothesis using training issues only."
     },
     {
+      "id": "mmbert-w2ner",
+      "model": "jhu-clsp/mmBERT-base",
+      "revision": "c5955035435e2bf121cde7f3c8863ef52ff35d82",
+      "license": "MIT",
+      "role": "new massively multilingual supervised encoder challenger with the identical W2NER head",
+      "evidence": "The official model and paper cover 1,800+ languages including Chinese, but mmBERT only ties XLM-R on WikiANN NER and its authors identify prefix-tokenization weakness for NER/POS. There is no historical, Traditional-Chinese, or OCR result, so this is a controlled challenger rather than a replacement for MacBERT."
+    },
+    {
       "id": "guji-roberta-w2ner",
       "model": "hsc748NLP/GujiRoBERTa_jian_fan",
       "revision": "8e755704c4ae91eded4ebcabe17fecedb42d324f",
@@ -75,14 +83,28 @@
       "evidence": "Produced noisy candidate spans on one lossy Shen Bao page and has not passed review."
     }
   ],
+  "annotation_acceleration_controls": [
+    {
+      "id": "pp-uie-0.5b",
+      "model": "paddlenlp/PP-UIE-0.5B",
+      "model_revision": null,
+      "framework_revision": "3f87dac9b719f75399f92f8bf634ae2ef0611832",
+      "status": "blocked_until_immutable_weight_snapshot_and_rights_are_recorded",
+      "role": "Chinese open-schema suggestion control shown only after independent annotation",
+      "evidence": "Official PaddleNLP documentation reports Chinese/English NER, relation and event extraction and 0.773 zero-shot F1 on modern clean CCIR2021 news NER. Its example output contains strings rather than authoritative offsets, and the public model path did not expose a reproducible immutable revision through the Hugging Face API. Accept only uniquely recoverable verbatim spans; never union suggestions into gold or production candidates automatically."
+    }
+  ],
   "excluded_from_primary_benchmark": [
     {
       "model": "fastino/gliner2-multi-v1",
+      "revision": "cc151f5b0ce4f7010c3ae8884527dd43dddf9d21",
       "reason": "Published language list does not include Chinese."
     },
     {
       "model": "gliner-community/gliner_large-v2.5",
-      "reason": "May remain a control, but no published Chinese evaluation supports prioritizing it over GLiNER-X."
+      "revision": "3d6d1760be1c591069f85f207fced9214df8b15f",
+      "implementation_revision": "2f10b62f801880560e0d35734c9c7ee44d0c37b3",
+      "reason": "Apache-2.0 and multilingual, but its card publishes no Chinese, historical, or OCR evaluation. It returns contiguous offsets and can allow nested overlaps, but not discontinuous mentions; Chinese also requires a fixed tokenizer rather than unsafe whitespace splitting. Keep only as a low-priority control because GLiNER-X already has a modern-Chinese result and a measured local compatibility run."
     },
     {
       "model": "Qwen/Qwen3.5-9B",

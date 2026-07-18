@@ -24,12 +24,21 @@ evidence/offset validity, throughput, peak memory, and degradation as OCR CER
 rises.
 
 The production hypothesis is a cascade: gazetteers and rules; the winner of an
-identical-head MacBERT/MacBERT-DAPT/GujiRoBERTa/SIKU supervised tournament;
+identical-head MacBERT/MacBERT-DAPT/mmBERT/GujiRoBERTa/SIKU supervised tournament;
 GLiNER-X only if a raw-recoverable recall-union gate passes; then NuExtract3
 only for disagreements, rare types, implicit relations, or difficult page
 crops. Otter remains research-only until its checkpoint-weight license is
 explicit. Every stage must preserve exact source offsets and may abstain.
 Entity linking and claim review remain separate gates.
+
+The 2026 frontier review found no model with target evidence strong enough to
+replace MacBERT-W2NER before scoring. It adds pinned mmBERT-W2NER only as a
+same-head challenger and requires a Chinese tokenizer/character-offset
+round-trip test. PP-UIE-0.5B is tracked separately for post-independent-review
+annotation suggestions; its mutable weight path and string-only demonstrated
+output keep it outside the executable tournament until exact bytes, rights,
+and offset recovery are frozen. Pinned GLiNER large v2.5 remains a low-priority
+control because its card provides no Chinese, historical, or OCR result.
 
 Use W2NER at official implementation commit
 `a34ff841891919001080edefb50e14fa9dc15e1c` as the primary
@@ -103,8 +112,9 @@ uv run wic-ner-benchmark run \
 ```
 
 Replace the zero code revision with the exact 40-character project commit. The
-adapter rejects moving model labels and abbreviated code revisions. W2NER,
-Otter and structured-generation arms are specified but hard-blocked on their
+adapter rejects moving model labels and abbreviated code revisions. The
+MacBERT/mmBERT/historical W2NER, Otter and structured-generation arms are
+specified but hard-blocked on their
 listed training, license, prompt/schema, offset-resolution or hardware
 requirements; they are not silently approximated by another implementation.
 

@@ -60,6 +60,7 @@ class NERPipelineTests(unittest.TestCase):
         self.assertTrue(
             {
                 "macbert-w2ner",
+                "mmbert-w2ner",
                 "guji-roberta-w2ner",
                 "sikubert-w2ner",
                 "otter-ce-mmbert",

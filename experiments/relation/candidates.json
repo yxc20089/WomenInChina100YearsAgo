@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "research_cutoff": "2026-07-18",
+  "decision_status": "benchmark_shortlist_no_production_winner",
+  "candidates": [
+    {
+      "id": "reviewed-co-mention-rules-v2",
+      "model": "project deterministic relation rules",
+      "revision": "relation-rules-v2",
+      "license": "project license",
+      "role": "required high-precision and abstention baseline",
+      "selection": "baseline_only",
+      "evidence": "Requires adjudicated mention spans, a typed subject/object pair, an explicit cue strictly between them, a bounded gap, no clause boundary, and exact source provenance. These constraints improve auditability but intentionally miss implicit and cross-clause relations."
+    },
+    {
+      "id": "macbert-deepke-pair-classifier",
+      "model": "hfl/chinese-macbert-base plus a supervised DeepKE relation classifier",
+      "revision": "macbert:a986e004d2a7f2a1c2f5a3edef4e20604a974ed1;deepke:77083bf1d9ccc386c02d5b7643f4f4d2251f4c30",
+      "license": "Apache-2.0 encoder; MIT toolkit code",
+      "role": "first supervised conditional-on-adjudicated-mentions arm",
+      "selection": "primary_training_hypothesis",
+      "evidence": "DeepKE supports Chinese supervised relation extraction with explicit head/tail offsets. No project checkpoint or historical-Chinese OCR relation score exists; train and tune only on training issues."
+    },
+    {
+      "id": "macbert-deepke-prgc",
+      "model": "hfl/chinese-macbert-base plus PRGC in DeepKE",
+      "revision": "macbert:a986e004d2a7f2a1c2f5a3edef4e20604a974ed1;deepke:77083bf1d9ccc386c02d5b7643f4f4d2251f4c30",
+      "license": "Apache-2.0 encoder; MIT toolkit code",
+      "role": "joint triple-extraction challenger for overlapping triples",
+      "selection": "supervised_challenger",
+      "evidence": "PRGC explicitly models potential relations, relation-specific entity extraction, and subject-object alignment, but its published public-benchmark result is not historical Chinese or OCR evidence."
+    },
+    {
+      "id": "nuextract3-schema",
+      "model": "numind/NuExtract3",
+      "revision": "2e9fca82ee641e6bb6e1f5d905241e994be27a07",
+      "license": "Apache-2.0",
+      "role": "routed multimodal and difficult-case structured-extraction challenger",
+      "selection": "routed_challenger_only",
+      "evidence": "The official card supports multilingual text/image input, JSON templates, verbatim-string leaves, and deterministic non-thinking mode. Its reported benchmark is internal and not a historical-Chinese relation benchmark, so every argument and evidence span must be recovered exactly before scoring."
+    },
+    {
+      "id": "oneke-agentic-control",
+      "model": "zjunlp/OneKE",
+      "revision": "model:696148c0581b29f530af738ddab500deaa8fe8f2;framework:55f701a5d99d76bbad092bd2552d45a82199e516",
+      "license": "CC-BY-NC-SA-4.0 model; MIT framework",
+      "role": "research-only bilingual schema-guided relation/event extraction control",
+      "selection": "noncommercial_research_control",
+      "evidence": "OneKE explicitly supports Chinese/English relation and event extraction, but its documentation warns outputs vary and the released checkpoint is noncommercial. It has no target-period OCR evidence or native exact-offset guarantee."
+    }
+  ],
+  "tracked_but_not_executable": [
+    {
+      "id": "knowcoder-x",
+      "reason": "The ACL 2025 paper reports strong Chinese and multilingual IE across NER, relation and event tasks, but a uniquely pinned released KnowCoder-X checkpoint with clear project-appropriate rights was not located. The earlier KnowCoder release is Llama-2-based, research-restricted, English-trained, and its own documentation says non-English effectiveness is not assured."
+    },
+    {
+      "id": "true-uie",
+      "reason": "TRUE-UIE is a relevant supervised universal-IE architecture and includes Chinese open IE evaluation, but no target historical-newspaper/OCR result or currently verified executable checkpoint was found."
+    },
+    {
+      "id": "histred-transfer",
+      "reason": "HistRED is valuable historical document-level evidence, but its Hanja/Korean domain and CC-BY-NC-ND-4.0 dataset license make it a research transfer control, not target gold or a production model."
+    },
+    {
+      "id": "enp-ner-relations",
+      "reason": "The closest retyped Shen Bao corpus includes coreference, discontinuous components, and biography function relations, but its repository has no explicit dataset license and its newspaper relation layer is not the project claim ontology. Do not ingest it until rights and mappings are cleared."
+    }
+  ],
+  "sources": [
+    "https://github.com/zjunlp/DeepKE",
+    "https://aclanthology.org/2021.acl-long.486/",
+    "https://huggingface.co/numind/NuExtract3",
+    "https://github.com/zjunlp/OneKE",
+    "https://huggingface.co/zjunlp/OneKE",
+    "https://aclanthology.org/2025.findings-acl.748/",
+    "https://aclanthology.org/2024.naacl-long.103/",
+    "https://aclanthology.org/2023.acl-long.180/",
+    "https://aclanthology.org/2024.lrec-main.35/"
+  ]
+}

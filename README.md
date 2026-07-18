@@ -158,6 +158,19 @@ uv run wic-worker --database-url "$DATABASE_URL" \
   --worker "$(hostname)-worker-1" --batch-id BATCH_UUID
 ```
 
+For a bounded polling process, opt into loop mode with both work and idle stop
+limits:
+
+```bash
+uv run wic-worker --database-url "$DATABASE_URL" \
+  --worker "$(hostname)-ocr-1" --batch-id BATCH_UUID --stage ocr \
+  --loop --max-jobs 100 --idle-polls 3 --poll-seconds 5
+```
+
+The loop summary reports attempts by status plus adopted/fresh artifact counts
+and whether it stopped on the job or idle bound. Loop mode never defaults to an
+unbounded daemon.
+
 Use `--offline` only when the size-verified source object is already in the
 local source cache. A worker first validates and adopts an exact existing
 artifact when possible; otherwise it invokes the pinned renderer, OCR,

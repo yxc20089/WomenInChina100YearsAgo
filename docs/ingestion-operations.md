@@ -66,6 +66,21 @@ uv run wic-worker --database-url "$DATABASE_URL" \
   --worker "$(hostname)-worker-1" --batch-id BATCH_UUID
 ```
 
+One invocation executes at most one job by default. Opt into bounded polling for
+a stage-specific pool:
+
+```bash
+uv run wic-worker --database-url "$DATABASE_URL" \
+  --worker "$(hostname)-ocr-1" --batch-id BATCH_UUID --stage ocr \
+  --loop --max-jobs 100 --idle-polls 3 --poll-seconds 5
+```
+
+`max-jobs` and `idle-polls` must both be positive, and `poll-seconds` is limited
+to 0–60. The first bound reached stops the process. Its JSON summary reports
+attempt counts by terminal/retry state, adopted artifacts, fresh artifacts,
+idle polls and the stop reason. A supervisor may restart bounded workers; the
+CLI intentionally provides no unbounded mode.
+
 Run several processes with stage filters to separate CPU/GPU pools. The worker
 maintains its lease in a background heartbeat, validates exact existing output
 before adopting it, resumes a job-local artifact left by a crash, invokes the

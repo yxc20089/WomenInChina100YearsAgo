@@ -16,7 +16,10 @@ from wic_history.ingestion_worker import (
     _ner_artifact_matches,
     _ocr_artifact_matches,
     _render_manifest_execution,
+    WorkerRunResult,
+    build_parser,
     resolve_workspace_path,
+    run_loop,
     run_one,
     stage_output_dir,
 )
@@ -48,6 +51,50 @@ def context(stage: str, configuration: dict | None = None) -> PageJobContext:
 
 
 class IngestionWorkerTests(unittest.TestCase):
+    def test_bounded_loop_summarizes_work_and_idle_backoff(self):
+        results = iter(
+            [
+                WorkerRunResult("1", "ocr", "completed", True, "old.json"),
+                WorkerRunResult("2", "ner", "pending"),
+                WorkerRunResult(None, None, "idle"),
+                WorkerRunResult(None, None, "idle"),
+            ]
+        )
+        sleeps: list[float] = []
+
+        def runner(*_args, **_kwargs):
+            return next(results)
+
+        summary = run_loop(
+            "postgresql://example",
+            worker_id="worker",
+            max_jobs=10,
+            idle_polls=2,
+            poll_seconds=0.25,
+            runner=runner,
+            sleep=sleeps.append,
+        )
+        self.assertEqual(summary.attempts, 2)
+        self.assertEqual(summary.by_status, {"completed": 1, "idle": 2, "pending": 1})
+        self.assertEqual(summary.adopted_jobs, 1)
+        self.assertEqual(summary.stop_reason, "idle_polls")
+        self.assertEqual(sleeps, [0.25])
+
+    def test_loop_limits_are_positive_and_cli_is_opt_in(self):
+        with self.assertRaisesRegex(ValueError, "max_jobs"):
+            run_loop(
+                "postgresql://example",
+                worker_id="worker",
+                max_jobs=0,
+                idle_polls=1,
+                poll_seconds=0,
+            )
+        args = build_parser().parse_args(
+            ["--worker", "worker", "--loop", "--max-jobs", "25"]
+        )
+        self.assertTrue(args.loop)
+        self.assertEqual(args.max_jobs, 25)
+
     def test_worker_observes_operator_cancellation_during_execution(self):
         lease = JobLease(
             job_id="00000000-0000-0000-0000-000000000001",

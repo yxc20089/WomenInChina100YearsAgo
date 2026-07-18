@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import threading
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Sequence
@@ -88,6 +89,17 @@ class WorkerRunResult:
     artifact_uri: str | None = None
     error_type: str | None = None
     message: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerLoopResult:
+    worker_id: str
+    attempts: int
+    by_status: dict[str, int]
+    adopted_jobs: int
+    fresh_jobs: int
+    idle_polls: int
+    stop_reason: str
 
 
 def _psycopg() -> tuple[Any, Any]:
@@ -1269,6 +1281,59 @@ def run_one(
         )
 
 
+def run_loop(
+    database_url: str,
+    *,
+    worker_id: str,
+    max_jobs: int,
+    idle_polls: int,
+    poll_seconds: float,
+    runner: Callable[..., WorkerRunResult] = run_one,
+    sleep: Callable[[float], None] = time.sleep,
+    **worker_options: Any,
+) -> WorkerLoopResult:
+    """Poll safely until an explicit job or consecutive-idle bound is reached."""
+    if max_jobs < 1:
+        raise ValueError("max_jobs must be positive")
+    if idle_polls < 1:
+        raise ValueError("idle_polls must be positive")
+    if not 0 <= poll_seconds <= 60:
+        raise ValueError("poll_seconds must be between 0 and 60")
+    attempts = 0
+    consecutive_idle = 0
+    total_idle = 0
+    adopted_jobs = 0
+    fresh_jobs = 0
+    by_status: dict[str, int] = {}
+    while attempts < max_jobs and consecutive_idle < idle_polls:
+        result = runner(
+            database_url,
+            worker_id=worker_id,
+            **worker_options,
+        )
+        by_status[result.status] = by_status.get(result.status, 0) + 1
+        if result.status == "idle":
+            consecutive_idle += 1
+            total_idle += 1
+            if consecutive_idle < idle_polls and poll_seconds:
+                sleep(poll_seconds)
+            continue
+        attempts += 1
+        consecutive_idle = 0
+        if result.adopted is True:
+            adopted_jobs += 1
+        elif result.adopted is False:
+            fresh_jobs += 1
+    stop_reason = "max_jobs" if attempts >= max_jobs else "idle_polls"
+    return WorkerLoopResult(
+        worker_id=worker_id,
+        attempts=attempts,
+        by_status=dict(sorted(by_status.items())),
+        adopted_jobs=adopted_jobs,
+        fresh_jobs=fresh_jobs,
+        idle_polls=total_idle,
+        stop_reason=stop_reason,
+    )
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
@@ -1295,6 +1360,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--stage", choices=ALL_STAGES
     )
     parser.add_argument("--batch-id", type=UUID)
+    parser.add_argument(
+        "--loop",
+        action="store_true",
+        help="Poll for several jobs instead of executing at most one",
+    )
+    parser.add_argument("--max-jobs", type=int, default=100)
+    parser.add_argument("--idle-polls", type=int, default=3)
+    parser.add_argument("--poll-seconds", type=float, default=5.0)
     return parser
 
 
@@ -1302,26 +1375,38 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if not args.database_url:
         raise SystemExit("DATABASE_URL or --database-url is required")
-    result = run_one(
-        args.database_url,
-        worker_id=args.worker,
-        workspace_root=args.workspace_root,
-        cache_dir=args.cache_dir,
-        offline=args.offline,
-        profile=args.profile,
-        credentials_csv=args.credentials_csv,
-        region=args.region,
-        opensearch_url=args.opensearch_url,
-        neo4j_uri=args.neo4j_uri,
-        neo4j_user=args.neo4j_user,
-        neo4j_password=args.neo4j_password,
-        lease_seconds=args.lease_seconds,
-        retry_delay_seconds=args.retry_delay_seconds,
-        stage=args.stage,
-        batch_id=args.batch_id,
-    )
+    options = {
+        "workspace_root": args.workspace_root,
+        "cache_dir": args.cache_dir,
+        "offline": args.offline,
+        "profile": args.profile,
+        "credentials_csv": args.credentials_csv,
+        "region": args.region,
+        "opensearch_url": args.opensearch_url,
+        "neo4j_uri": args.neo4j_uri,
+        "neo4j_user": args.neo4j_user,
+        "neo4j_password": args.neo4j_password,
+        "lease_seconds": args.lease_seconds,
+        "retry_delay_seconds": args.retry_delay_seconds,
+        "stage": args.stage,
+        "batch_id": args.batch_id,
+    }
+    result: WorkerRunResult | WorkerLoopResult
+    if args.loop:
+        result = run_loop(
+            args.database_url,
+            worker_id=args.worker,
+            max_jobs=args.max_jobs,
+            idle_polls=args.idle_polls,
+            poll_seconds=args.poll_seconds,
+            **options,
+        )
+    else:
+        result = run_one(args.database_url, worker_id=args.worker, **options)
     print(json.dumps(asdict(result), ensure_ascii=False))
-    return 1 if result.status in {"pending", "failed"} else 0
+    if isinstance(result, WorkerRunResult):
+        return 1 if result.status in {"pending", "failed"} else 0
+    return 1 if set(result.by_status) & {"pending", "failed"} else 0
 
 
 if __name__ == "__main__":  # pragma: no cover

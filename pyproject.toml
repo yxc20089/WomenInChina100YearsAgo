@@ -22,7 +22,12 @@ data = [
   "psycopg[binary]>=3.2,<4",
   "SQLAlchemy>=2.0,<3",
 ]
-ner = ["gliner[stanza]>=0.2.27,<0.3", "sentence-transformers>=5.0,<6"]
+ner = [
+  "gliner[stanza]>=0.2.27,<0.3",
+  "huggingface-hub>=0.36,<2",
+  "sentence-transformers>=5.0,<6",
+  "transformers>=5.5,<6",
+]
 ocr = ["paddleocr==3.7.0", "paddlepaddle==3.3.1"]
 test = ["httpx>=0.28,<1", "pytest>=8.4,<9"]
 
@@ -51,6 +56,7 @@ wic-ner-compare = "wic_history.ner_compare:main"
 wic-ner-score = "wic_history.ner_gold:main"
 wic-ner-benchmark = "wic_history.ner_benchmark:main"
 wic-ner-benchmark-compare = "wic_history.ner_benchmark_compare:main"
+wic-ner-tokenizer-check = "wic_history.ner_tokenizer_qualification:main"
 wic-generation-benchmark = "wic_history.generation_benchmark:main"
 wic-relation-benchmark = "wic_history.relation_benchmark:main"
 wic-gold-packet = "wic_history.gold_packet:main"

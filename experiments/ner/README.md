@@ -40,6 +40,30 @@ output keep it outside the executable tournament until exact bytes, rights,
 and offset recovery are frozen. Pinned GLiNER large v2.5 remains a low-priority
 control because its card provides no Chinese, historical, or OCR result.
 
+### Tokenizer offset qualification
+
+Before training mmBERT, run the committed six-case Unicode fixture through the
+pinned tokenizer snapshot:
+
+```bash
+uv run wic-ner-tokenizer-check \
+  --fixture experiments/ner/tokenizer-offset-fixture-v1.json \
+  --model jhu-clsp/mmBERT-base \
+  --revision c5955035435e2bf121cde7f3c8863ef52ff35d82 \
+  --code-revision 0000000000000000000000000000000000000000 \
+  --output artifacts/ner-benchmark/mmbert-tokenizer-offsets.json
+```
+
+Replace the zero revision with the exact commit containing the qualification
+code. The artifact hashes every downloaded tokenizer/configuration file and
+fails on a moving revision, a slow tokenizer, Unicode normalization drift,
+missing or multiply covered non-whitespace characters, or any probe that does
+not round-trip to the exact source span. The fixture covers uninterrupted
+Traditional Chinese, variant forms, a supplementary-plane character, line
+breaks/full-width punctuation, OCR-confusion stress strings, `□`, and `�`.
+Passing proves offset plumbing only; unknown-token counts are reported, and no
+result is evidence of NER accuracy or historical validity.
+
 Use W2NER at official implementation commit
 `a34ff841891919001080edefb50e14fa9dc15e1c` as the primary
 overlap/discontinuous-capable supervised head, compare it to GlobalPointer on

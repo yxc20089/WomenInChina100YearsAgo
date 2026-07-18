@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "women-history-zh-tokenizer-offset-v1",
+  "created_at": "2026-07-18T00:00:00Z",
+  "cases": [
+    {
+      "case_id": "continuous-traditional",
+      "description": "Unspaced Traditional Chinese with person, school, organization, and full-width punctuation.",
+      "text": "宋女士入學上海女子學校，畢業後任職中國婦女會。",
+      "probes": [
+        {"label": "person", "start": 0, "end": 3, "text": "宋女士"},
+        {"label": "school", "start": 5, "end": 11, "text": "上海女子學校"},
+        {"label": "organization", "start": 17, "end": 22, "text": "中國婦女會"}
+      ]
+    },
+    {
+      "case_id": "traditional-variants",
+      "description": "Distinct historical and modern variant forms must not be normalized together.",
+      "text": "梁啓超與梁啟超，臺灣與台灣，裏與裡。",
+      "probes": [
+        {"label": "person_variant_a", "start": 0, "end": 3, "text": "梁啓超"},
+        {"label": "person_variant_b", "start": 4, "end": 7, "text": "梁啟超"},
+        {"label": "place_variant_a", "start": 8, "end": 10, "text": "臺灣"},
+        {"label": "place_variant_b", "start": 11, "end": 13, "text": "台灣"},
+        {"label": "character_variant_a", "start": 14, "end": 15, "text": "裏"},
+        {"label": "character_variant_b", "start": 16, "end": 17, "text": "裡"}
+      ]
+    },
+    {
+      "case_id": "supplementary-plane-character",
+      "description": "A supplementary-plane CJK character tests Unicode-code-point rather than UTF-16 indexing.",
+      "text": "𠮷女士寓滬，名錄作吉女士。",
+      "probes": [
+        {"label": "rare_person", "start": 0, "end": 3, "text": "𠮷女士"},
+        {"label": "historical_place", "start": 4, "end": 5, "text": "滬"},
+        {"label": "comparison_person", "start": 9, "end": 12, "text": "吉女士"}
+      ]
+    },
+    {
+      "case_id": "observed-ocr-confusions",
+      "description": "Plausible OCR substitutions must preserve their printed/OCR characters and exact positions.",
+      "text": "上海女孑學校女學生，宋女土任職婦女會。",
+      "probes": [
+        {"label": "ocr_school", "start": 0, "end": 6, "text": "上海女孑學校"},
+        {"label": "ocr_person", "start": 10, "end": 13, "text": "宋女土"},
+        {"label": "organization", "start": 15, "end": 18, "text": "婦女會"}
+      ]
+    },
+    {
+      "case_id": "line-break-and-punctuation",
+      "description": "A logical line break and historical full-width punctuation may separate vertical-reading regions.",
+      "text": "上海女子學校\n校長：陳女士；民國十四年。",
+      "probes": [
+        {"label": "school", "start": 0, "end": 6, "text": "上海女子學校"},
+        {"label": "person", "start": 10, "end": 13, "text": "陳女士"},
+        {"label": "date", "start": 14, "end": 19, "text": "民國十四年"}
+      ]
+    },
+    {
+      "case_id": "uncertain-and-replacement-glyphs",
+      "description": "Explicit unreadable and Unicode replacement glyphs must remain positioned rather than disappear.",
+      "text": "某女士就讀□海女子學校，字跡�不可辨。",
+      "probes": [
+        {"label": "person", "start": 0, "end": 3, "text": "某女士"},
+        {"label": "uncertain_school", "start": 5, "end": 11, "text": "□海女子學校"},
+        {"label": "replacement_context", "start": 12, "end": 15, "text": "字跡�"}
+      ]
+    }
+  ],
+  "warnings": [
+    "These synthetic strings test Unicode offset integrity only; they are not historical annotations or NER accuracy evidence.",
+    "The OCR-confusion strings are stress cases, not claims about a measured confusion matrix."
+  ]
+}

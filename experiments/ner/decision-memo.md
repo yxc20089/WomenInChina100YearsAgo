@@ -37,6 +37,29 @@ under `standalone_sentencepiece_prefix_duplicate_v1`. This does not change the
 candidate ranking or supply NER-quality evidence; it only permits the mmBERT
 arm to enter the future same-head tournament.
 
+Add **Chinese ModernBERT-large-WWM + W2NER** as one further tokenizer-gated
+encoder arm. The pinned
+[Apache-2.0 checkpoint](https://huggingface.co/feynmanzhao/chinese-modernbert-large-wwm/tree/b00f1ff1901161f68339890fe48e4dbb6ee76f4d)
+has about 377M parameters, modern Chinese-only pretraining and an 8,192-token
+context. Its [paper](https://arxiv.org/abs/2510.12285) reports no NER,
+Traditional-Chinese, historical or OCR evaluation, and its CLUE comparison is
+mixed rather than a uniform win over RoBERTa-WWM-large. The custom tokenizer's
+default preprocessing changes fullwidth text, replaces URLs/emails, removes
+HTML/control characters, normalizes whitespace and strips boundaries. Do not
+execute it on evidence text until pinned custom code is isolated and audited,
+`do_text_preprocessing=False` is enforced, and the expanded exact-offset gate
+passes. This is a benchmark challenger, not evidence of superiority.
+
+Prioritize **OCR-noise-aware training** above adding further encoders. A
+[2026 historical-document study](https://arxiv.org/abs/2601.00488) reports
+77.9 entity micro-F1 for synthetic-noise training on German VET documents,
+ahead of its clean/noisy arms. That result is from another language, domain and
+ontology. Our factorial therefore holds encoder, W2NER head, split and search
+budget fixed; derives confusion statistics only from training issues; starts
+with length-preserving substitutions; and requires explicit edit maps for
+insertions/deletions. Its public reference code has no declared license, so
+implementation must be clean-room.
+
 Use **GLiNER-X** as the executable open-type recall challenger. Retain **Otter
 CE** as research-only until its checkpoint-weight license is explicit. Use
 **NuExtract3** only as a routed difficult/image-context stage. Use
@@ -61,6 +84,7 @@ surface/offset validation and historian review remain mandatory.
 | `hfl/chinese-macbert-base@a986e004d2a7f2a1c2f5a3edef4e20604a974ed1` + W2NER | First supervised arm | A directly relevant [1872–1947 historical-newspaper study](https://aclanthology.org/2024.lrec-main.35/) reports 58.26 F1 on retyped *Shen Bao* versus 56.83 for SIKU; no OCR test | BERT-base; roughly 2–4 GB inference memory and 16–24 GB training VRAM, with snippet length bounded for W2NER's grid |
 | MacBERT-DAPT + W2NER | Proposed target-domain challenger | No released project checkpoint or score. Continue the pinned MacBERT only on training-issue newspaper text to test whether domain pretraining helps; freeze the DAPT corpus/checkpoint hashes | Additional pretraining plus the same W2NER training envelope; GPU estimate must be measured in an isolated pilot |
 | `jhu-clsp/mmBERT-base@c5955035435e2bf121cde7f3c8863ef52ff35d82` + W2NER | New multilingual supervised challenger | MIT weights and Chinese coverage; the paper reports no historical/OCR result and says it ties XLM-R on NER, so it cannot replace target-supported MacBERT a priori | About 1.23 GB weights; estimated 4–8 GB inference and 16–24 GB fine-tuning VRAM, with the same bounded W2NER grid |
+| `feynmanzhao/chinese-modernbert-large-wwm@b00f1ff1901161f68339890fe48e4dbb6ee76f4d` + W2NER | Chinese-specific tokenizer-gated challenger | Apache-2.0 and 1.2T modern-Chinese-token pretraining, but no NER/Traditional/historical/OCR result; default custom preprocessing is incompatible with source offsets | 754 MB BF16 weights; estimated 24 GB fine-tuning with aggressive checkpointing and safer at 48 GB because the 377M encoder is combined with W2NER's quadratic grid |
 | `hsc748NLP/GujiRoBERTa_jian_fan@8e755704c4ae91eded4ebcabe17fecedb42d324f` + W2NER | Historical-encoder supervised arm, license-gated | A controlled [EvaHan study](https://aclanthology.org/2025.alp-1.24/) reports W2NER 88.48 average F1 versus GlobalPointer 87.33 and CRF 86.33; the GujiRoBERTa-W2NER test result was 86.34, but this is clean ancient text | BERT-base class; roughly 2–4 GB inference memory and 16–24 GB training VRAM |
 | `SIKU-BERT/sikubert@fc656de2d6bde33919102dd3abe31c843f42226a` + W2NER | Historical-encoder supervised arm | Historical Traditional-Chinese pretraining; 56.83 F1 in the retyped *Shen Bao* comparison. The Guji project reports 90.68 on Traditional *Shiji*, while its mixed-script GujiBERT arm reports 93.76; none is an OCR result | BERT-base class; roughly 2–4 GB inference memory and 16–24 GB training VRAM |
 | `whoisjones/otter-ce-mmbert@aed019f74647c225e14bc6d0792afdd458dfdb2d` | Research-only, excluded pending weight-license clarity | The [2026 preprint](https://arxiv.org/abs/2601.06347) reports broad multilingual gains over GLiNER-X-base, but no Chinese-specific, historical, Traditional-Chinese, OCR or nested result; the checkpoint declares no license | About 309M parameters/1.24 GB F32 weights; do not execute on project data until rights are cleared |
@@ -84,7 +108,8 @@ permission with permission to publish scans, OCR, or annotations.
   30 per reported rare type.
 - Split 60/20/20 by issue/date, never random snippets. Freeze the gold JSON,
   split manifest, ontology, prompts and SHA-256 before test inference.
-- Train MacBERT, MacBERT-DAPT, mmBERT, GujiRoBERTa and SIKU with the identical W2NER head and frozen
+- Train MacBERT, MacBERT-DAPT, mmBERT, tokenizer-qualified Chinese ModernBERT,
+  GujiRoBERTa and SIKU with the identical W2NER head and frozen
   hyperparameter-search budget. Compare W2NER, GlobalPointer and flat CRF on
   one frozen encoder; do not attribute head gains to a different backbone.
 - Before the mmBERT arm, prove tokenizer-to-Unicode-character round trips on
@@ -96,6 +121,10 @@ permission with permission to publish scans, OCR, or annotations.
 - Build the MacBERT-DAPT corpus only from training issues after splitting;
   freeze its document list, bytes and SHA-256 so development/test language
   cannot leak into continued pretraining.
+- For each finalist encoder, run clean versus training-only empirical
+  OCR-substitution augmentation with the same head, split, search budget and at
+  least three seeds. Derive confusions from training issues only; require an
+  explicit edit map before allowing any length-changing augmentation.
 - Run paired corrected-text, raw-OCR and observed-confusion noise-augmentation
   arms. Image-assisted arms are separate
   ablations and must still resolve every output to a numbered OCR block and

@@ -35,6 +35,14 @@
       }
     },
     {
+      "id": "chinese-modernbert-large-wwm-w2ner",
+      "model": "feynmanzhao/chinese-modernbert-large-wwm",
+      "revision": "b00f1ff1901161f68339890fe48e4dbb6ee76f4d",
+      "license": "Apache-2.0",
+      "role": "custom-tokenizer-gated Chinese-specific long-context encoder challenger with the identical W2NER head",
+      "evidence": "The official paper and card describe a 377M-parameter encoder trained on about 1.2T modern-Chinese tokens with an 8,192-token context, but publish no NER, Traditional-Chinese, historical, or OCR result and show mixed CLUE results versus RoBERTa-WWM-large. Its custom tokenizer defaults to destructive text preprocessing, including fullwidth conversion, URL/email/HTML replacement or removal, whitespace/control changes, and stripping. It may enter the tournament only with preprocessing disabled, audited pinned custom code, and a passing raw-source offset qualification."
+    },
+    {
       "id": "guji-roberta-w2ner",
       "model": "hsc748NLP/GujiRoBERTa_jian_fan",
       "revision": "8e755704c4ae91eded4ebcabe17fecedb42d324f",
@@ -117,6 +125,11 @@
     {
       "model": "Qwen/Qwen3.5-9B",
       "reason": "Retain only as a lower-cost control when 80 GB-class hardware is unavailable; NuExtract3's own generic structured-extraction comparison favors NuExtract3, and neither has target historical-Chinese NER evidence."
+    },
+    {
+      "model": "TriG-NER",
+      "implementation_revision": "ed01d39db3d226e2e057848a39a63c1261069c53",
+      "reason": "The paper reports gains over W2NER on discontinuous English biomedical NER, but the repository declares no license and supplies no Chinese, historical, or OCR evidence. Reconsider a clean-room or explicitly licensed implementation only if adjudicated project gold shows a material discontinuous-entity slice."
     }
   ]
 }

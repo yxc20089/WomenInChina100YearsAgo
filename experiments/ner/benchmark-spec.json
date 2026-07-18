@@ -84,6 +84,21 @@
     "continued_pretraining_corpus_hash_for_dapt_models",
     "prompt_schema_revision_for_structured_generation"
   ],
+  "training_augmentation_protocol": {
+    "status": "specified_clean_room_not_implemented",
+    "design": "factorial_clean_vs_empirical_ocr_noise_with_identical_encoder_head_split_and_search_budget",
+    "first_executable_arm": "training_only_length_preserving_character_substitutions_sampled_from_adjudicated_training_issue_ocr_confusions",
+    "insertion_deletion_gate": "requires_deterministic_source_to_augmented_character_edit_maps",
+    "leakage_policy": "derive_confusion_statistics_from_training_issues_only_after_issue_split",
+    "external_evidence": {
+      "paper": "https://arxiv.org/abs/2601.00488",
+      "reported_result": "synthetic_ocr_noise_training_reached_77.9_entity_micro_f1_on_historical_german_vet_documents",
+      "transfer_caveat": "different_language_domain_ontology_and_evaluation_corpus",
+      "reference_code_revision": "3ef9442737238255f7174d2d207206579d698242",
+      "reference_code_license": null,
+      "implementation_policy": "do_not_copy_unlicensed_code_clean_room_implementation_only"
+    }
+  },
   "arms": [
     {
       "id": "rules-v1",
@@ -197,6 +212,31 @@
         "virtual_prefix_policy": "standalone_sentencepiece_prefix_duplicate_v1"
       },
       "blockers": [
+        "eligible_training_gold",
+        "trained_head_sha256",
+        "training_dataset_sha256",
+        "gpu_training_run"
+      ]
+    },
+    {
+      "id": "chinese-modernbert-large-wwm-w2ner",
+      "candidate_id": "chinese-modernbert-large-wwm-w2ner",
+      "adapter_family": "w2ner",
+      "status": "custom_tokenizer_offset_and_adapter_blocked",
+      "model": "feynmanzhao/chinese-modernbert-large-wwm",
+      "revision": "b00f1ff1901161f68339890fe48e4dbb6ee76f4d",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "chinese_specific_long_context_supervised_encoder_challenger",
+      "requires_identical_head_and_search_budget": true,
+      "head_implementation": "ljynlp/W2NER",
+      "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+      "tokenizer_policy": "audit_pinned_custom_code_and_set_do_text_preprocessing_false_before_raw_offset_qualification",
+      "required_tokenizer_test": "expanded_unicode_character_offset_round_trip_including_fullwidth_ascii_digits_url_email_html_whitespace_control_and_ocr_glyphs",
+      "blockers": [
+        "audited_isolated_custom_tokenizer_adapter",
+        "tokenizer_raw_offset_round_trip_test",
         "eligible_training_gold",
         "trained_head_sha256",
         "training_dataset_sha256",

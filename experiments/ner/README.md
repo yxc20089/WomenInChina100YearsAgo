@@ -24,10 +24,12 @@ evidence/offset validity, throughput, peak memory, and degradation as OCR CER
 rises.
 
 The production hypothesis is a cascade: gazetteers and rules; the winner of an
-identical-head MacBERT/MacBERT-DAPT/mmBERT/GujiRoBERTa/SIKU supervised tournament;
-GLiNER-X only if a raw-recoverable recall-union gate passes; then NuExtract3
-only for disagreements, rare types, implicit relations, or difficult page
-crops. Otter remains research-only until its checkpoint-weight license is
+identical-head MacBERT/MacBERT-DAPT/mmBERT/Chinese-ModernBERT/GujiRoBERTa/SIKU
+supervised tournament; GLiNER-X only if a raw-recoverable recall-union gate
+passes; then NuExtract3 only for disagreements, rare types, implicit relations,
+or difficult page crops. Chinese ModernBERT cannot execute until its pinned
+custom tokenizer passes the raw-offset gate with destructive preprocessing
+disabled. Otter remains research-only until its checkpoint-weight license is
 explicit. Every stage must preserve exact source offsets and may abstain.
 Entity linking and claim review remain separate gates.
 
@@ -39,6 +41,24 @@ annotation suggestions; its mutable weight path and string-only demonstrated
 output keep it outside the executable tournament until exact bytes, rights,
 and offset recovery are frozen. Pinned GLiNER large v2.5 remains a low-priority
 control because its card provides no Chinese, historical, or OCR result.
+
+A second independent frontier search adds
+`feynmanzhao/chinese-modernbert-large-wwm@b00f1ff1901161f68339890fe48e4dbb6ee76f4d`
+as a tokenizer-gated, same-head challenger—not as a new primary. Its 377M
+parameters, Chinese-only pretraining and long context are interesting, but its
+paper reports no NER or target-domain result. More importantly, its custom
+tokenizer defaults to preprocessing that changes source text. Execution is
+blocked until the pinned code is audited in isolation, `do_text_preprocessing`
+is false, and an expanded exact-offset fixture passes.
+
+The higher-priority new experiment is a clean versus empirical OCR-noise
+factorial for each finalist encoder. Begin with training-only, length-preserving
+character substitutions sampled from adjudicated training-issue confusions.
+Insertions and deletions require deterministic source-to-augmented edit maps.
+The 2026 historical-German VET study reported 77.9 entity micro-F1 for its
+synthetic-noise arm, but that external score is not transferable to this
+archive. Its reference repository has no declared license, so the committed
+protocol requires a clean-room implementation rather than copied code.
 
 ### Tokenizer offset qualification
 

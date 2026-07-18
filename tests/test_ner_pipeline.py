@@ -62,6 +62,7 @@ class NERPipelineTests(unittest.TestCase):
             {
                 "macbert-w2ner",
                 "mmbert-w2ner",
+                "chinese-modernbert-large-wwm-w2ner",
                 "guji-roberta-w2ner",
                 "sikubert-w2ner",
                 "otter-ce-mmbert",
@@ -98,6 +99,18 @@ class NERPipelineTests(unittest.TestCase):
         self.assertEqual(
             specification["frozen_metrics"]["primary"],
             "exact_span_and_type_micro_f1",
+        )
+        modernbert = next(
+            arm
+            for arm in specification["arms"]
+            if arm["id"] == "chinese-modernbert-large-wwm-w2ner"
+        )
+        self.assertIn("tokenizer_raw_offset_round_trip_test", modernbert["blockers"])
+        self.assertEqual(
+            specification["training_augmentation_protocol"]["external_evidence"][
+                "implementation_policy"
+            ],
+            "do_not_copy_unlicensed_code_clean_room_implementation_only",
         )
 
     def test_mmbert_registry_pins_the_passing_offset_qualification(self):

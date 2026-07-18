@@ -14,7 +14,7 @@ from uuid import UUID
 
 from .corpus_manifest import build_s3_client
 from .embedding_pipeline import embed_regions
-from .evidence import NERArtifact, OCRPageArtifact
+from .evidence import EntityLinkArtifact, NERArtifact, OCRPageArtifact
 from .graph import project_reviewed_graph
 from .gold_render import (
     ingestion_candidate,
@@ -24,19 +24,27 @@ from .gold_render import (
 from .ingestion_jobs import (
     ALL_STAGES,
     JobLease,
+    canonical_sha256,
     claim_job,
     complete_job,
     fail_job,
     heartbeat_job,
     start_job,
 )
-from .ner_pipeline import main as ner_main
+from .link_pipeline import main as link_main
+from .ner_pipeline import main as ner_main, ner_input_sha256
+from .ner_structured import (
+    LocalStructuredNERConfiguration,
+    build_verified_structured_ner_adapter,
+    create_structured_ner_artifact,
+    reverify_structured_ner_runtime,
+)
 from .ocr_pipeline import main as ocr_main
 from .ocr_pipeline import resolve_render_provenance
 from .rag_adapters import validate_export
 from .rag_experiment import export_rag_corpus
 from .render_samples import sha256_file
-from .repository import ingest_ner_artifact, ingest_ocr_artifact
+from .repository import ingest_link_artifact, ingest_ner_artifact, ingest_ocr_artifact
 from .search import project_regions
 
 
@@ -726,13 +734,100 @@ def _ner_artifact_matches(
     artifact: NERArtifact,
     context: PageJobContext,
     source_ocr_run_id: str,
+    expected_input_sha256: str | None = None,
 ) -> bool:
     configuration = context.configuration
     run_configuration = artifact.run.configuration
+    if configuration.get("adapter") == "structured_generation":
+        identity = run_configuration.get("adapter_identity")
+        identity_configuration = (
+            identity.get("configuration") if isinstance(identity, dict) else None
+        )
+        canary = (
+            identity_configuration.get("schema_canary")
+            if isinstance(identity_configuration, dict)
+            else None
+        )
+        expected_canary = configuration.get(
+            "expected_canary_raw_output_sha256"
+        )
+        canary_hashes = (
+            canary.get("raw_output_sha256s") if isinstance(canary, dict) else None
+        )
+        return (
+            str(artifact.source_ocr_run_id) == source_ocr_run_id
+            and (
+                expected_input_sha256 is None
+                or artifact.input_sha256 == expected_input_sha256
+            )
+            and artifact.input_variant == configuration.get("input_variant")
+            and artifact.ontology_version == configuration.get("ontology_version")
+            and isinstance(identity, dict)
+            and isinstance(identity_configuration, dict)
+            and identity.get("family") == "structured_generation"
+            and artifact.adapter_id == identity.get("adapter_id")
+            and artifact.run.engine == identity.get("adapter_id")
+            and artifact.run.model_name == configuration.get("model")
+            and artifact.run.model_revision == configuration.get("revision")
+            and identity.get("license") == configuration.get("license")
+            and identity.get("code_revision") == configuration.get("code_revision")
+            and identity.get("prompt_schema_revision")
+            == configuration.get("prompt_schema_revision")
+            and artifact.prompt_schema_revision
+            == configuration.get("prompt_schema_revision")
+            and identity.get("dtype") == configuration.get("quantization")
+            and identity_configuration.get("base_url")
+            == str(configuration.get("base_url", "")).rstrip("/")
+            and identity_configuration.get("served_model")
+            == configuration.get("served_model")
+            and identity_configuration.get("runtime_version")
+            == configuration.get("runtime_version")
+            and identity_configuration.get("runtime_executable_sha256")
+            == configuration.get("runtime_executable_sha256")
+            and identity_configuration.get("ollama_manifest_digest")
+            == configuration.get("ollama_manifest_digest")
+            and identity_configuration.get("quantization")
+            == configuration.get("quantization")
+            and identity_configuration.get("seed") == configuration.get("seed")
+            and identity_configuration.get("max_output_tokens")
+            == configuration.get("max_output_tokens")
+            and identity_configuration.get("response_format_sha256")
+            == configuration.get("response_format_sha256")
+            and isinstance(canary_hashes, list)
+            and len(canary_hashes)
+            == configuration.get("schema_canary_repetitions")
+            and set(canary_hashes) == {expected_canary}
+            and canary.get("deterministic") is True
+            and canary.get("required_span_verified") is True
+            and run_configuration.get("job_configuration_sha256")
+            == canonical_sha256(configuration)
+            and run_configuration.get("max_regions")
+            == configuration.get("max_regions")
+            and run_configuration.get("region_chunk_size")
+            == configuration.get("region_chunk_size")
+            and artifact.dataset_id
+            == (
+                configuration.get("dataset_id")
+                or f"ocr-run:{source_ocr_run_id}"
+            )
+            and artifact.split_id
+            == (
+                configuration.get("split_id")
+                or (
+                    "technical_pilot"
+                    if configuration.get("max_regions")
+                    else "unassigned"
+                )
+            )
+        )
     expected_name = f"{configuration.get('model')}+historical-women-zh-rules"
     expected_revision = f"{configuration.get('revision')}+rules-v1"
     return (
         str(artifact.source_ocr_run_id) == source_ocr_run_id
+        and (
+            expected_input_sha256 is None
+            or artifact.input_sha256 == expected_input_sha256
+        )
         and artifact.input_variant == configuration.get("input_variant")
         and artifact.ontology_version == configuration.get("ontology_version")
         and artifact.adapter_id == configuration.get("adapter")
@@ -748,11 +843,46 @@ def _ner_artifact_matches(
     )
 
 
+def _ner_execution_result(
+    artifact: NERArtifact,
+    *,
+    run_id: str,
+    mentions: int,
+    configuration: dict[str, Any],
+    reused: bool,
+) -> dict[str, Any]:
+    run_configuration = artifact.run.configuration
+    attempted = int(
+        run_configuration.get(
+            "regions_attempted", run_configuration.get("input_region_count", 0)
+        )
+    )
+    structured = configuration.get("adapter") == "structured_generation"
+    succeeded = int(
+        run_configuration.get("regions_succeeded", attempted if not structured else 0)
+    )
+    abstained = int(run_configuration.get("regions_abstained", 0))
+    invalid = int(run_configuration.get("invalid_outputs", 0))
+    return {
+        "ner_run_id": run_id,
+        "mentions": mentions,
+        "candidate_only": True,
+        "bounded_regions": configuration.get("max_regions"),
+        "source_ocr_run_id": str(artifact.source_ocr_run_id),
+        "regions_attempted": attempted,
+        "regions_succeeded": succeeded,
+        "regions_abstained": abstained,
+        "invalid_outputs": invalid,
+        "reused_verified_artifact": reused,
+    }
+
+
 def _existing_ner(
     database_url: str,
     context: PageJobContext,
     workspace_root: Path,
     source_ocr_run_id: str,
+    expected_input_sha256: str,
 ) -> StageExecution | None:
     psycopg, dict_row = _psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
@@ -772,20 +902,24 @@ def _existing_ner(
             artifact = NERArtifact.model_validate_json(
                 artifact_path.read_text(encoding="utf-8")
             )
-            if not _ner_artifact_matches(artifact, context, source_ocr_run_id):
+            if not _ner_artifact_matches(
+                artifact,
+                context,
+                source_ocr_run_id,
+                expected_input_sha256,
+            ):
                 continue
             stored = ingest_ner_artifact(database_url, artifact_path)
             return StageExecution(
                 artifact_uri=workspace_artifact_uri(workspace_root, artifact_path),
                 output_sha256=sha256_file(artifact_path),
-                result={
-                    "ner_run_id": stored.run_id,
-                    "mentions": stored.mentions_verified,
-                    "candidate_only": True,
-                    "bounded_regions": context.configuration.get("max_regions"),
-                    "source_ocr_run_id": source_ocr_run_id,
-                    "reused_verified_artifact": True,
-                },
+                result=_ner_execution_result(
+                    artifact,
+                    run_id=stored.run_id,
+                    mentions=stored.mentions_verified,
+                    configuration=context.configuration,
+                    reused=True,
+                ),
                 adopted=True,
             )
         except (OSError, ValueError):
@@ -801,69 +935,357 @@ def execute_ner(
     ocr_path, ocr = _parent_ocr(context, workspace_root)
     source_ocr_run_id = str(ocr.run.run_id)
     configuration = context.configuration
-    if configuration.get("adapter") != "rules+gliner":
-        raise ValueError("NER worker currently implements only rules+gliner")
+    eligible_regions = [
+        region for region in ocr.regions if len(region.raw_text.strip()) >= 2
+    ]
+    if configuration.get("max_regions") is not None:
+        eligible_regions = eligible_regions[: int(configuration["max_regions"])]
+    expected_input_sha256 = ner_input_sha256(ocr.run.run_id, eligible_regions)
+    adapter_name = configuration.get("adapter")
+    if adapter_name not in {"rules+gliner", "structured_generation"}:
+        raise ValueError(f"NER worker does not implement adapter={adapter_name!r}")
     output_path = stage_output_dir(context, workspace_root) / "ner.json"
     if output_path.is_file():
         artifact = NERArtifact.model_validate_json(
             output_path.read_text(encoding="utf-8")
         )
-        if not _ner_artifact_matches(artifact, context, source_ocr_run_id):
+        if not _ner_artifact_matches(
+            artifact,
+            context,
+            source_ocr_run_id,
+            expected_input_sha256,
+        ):
             raise ValueError("Existing job NER artifact contradicts its immutable plan")
         stored = ingest_ner_artifact(database_url, output_path)
         return StageExecution(
             artifact_uri=workspace_artifact_uri(workspace_root, output_path),
             output_sha256=sha256_file(output_path),
-            result={
-                "ner_run_id": stored.run_id,
-                "mentions": stored.mentions_verified,
-                "candidate_only": True,
-                "bounded_regions": configuration.get("max_regions"),
-                "source_ocr_run_id": source_ocr_run_id,
-                "reused_verified_artifact": True,
-            },
+            result=_ner_execution_result(
+                artifact,
+                run_id=stored.run_id,
+                mentions=stored.mentions_verified,
+                configuration=configuration,
+                reused=True,
+            ),
             adopted=True,
         )
     adopted = _existing_ner(
-        database_url, context, workspace_root, source_ocr_run_id
+        database_url,
+        context,
+        workspace_root,
+        source_ocr_run_id,
+        expected_input_sha256,
     )
     if adopted:
         return adopted
-    arguments = [
-        "--ocr-artifact", str(ocr_path),
-        "--output", str(output_path),
-        "--model", str(configuration["model"]),
-        "--revision", str(configuration["revision"]),
-        "--threshold", str(configuration["threshold"]),
-        "--batch-size", str(configuration["batch_size"]),
-        "--word-splitter-language", str(configuration["word_splitter_language"]),
-    ]
-    if configuration.get("dataset_id") is not None:
-        arguments.extend(["--dataset-id", str(configuration["dataset_id"])])
-    if configuration.get("split_id") is not None:
-        arguments.extend(["--split-id", str(configuration["split_id"])])
     max_regions = configuration.get("max_regions")
-    if max_regions is not None:
-        arguments.extend(["--max-regions", str(max_regions)])
-    if configuration.get("flat_ner"):
-        arguments.append("--flat-ner")
-    if not configuration.get("multi_label"):
-        arguments.append("--single-label")
-    exit_code = ner_main(arguments)
-    if exit_code:
-        raise RuntimeError(f"NER command exited with status {exit_code}")
+    if adapter_name == "rules+gliner":
+        arguments = [
+            "--ocr-artifact", str(ocr_path),
+            "--output", str(output_path),
+            "--model", str(configuration["model"]),
+            "--revision", str(configuration["revision"]),
+            "--threshold", str(configuration["threshold"]),
+            "--batch-size", str(configuration["batch_size"]),
+            "--word-splitter-language", str(configuration["word_splitter_language"]),
+        ]
+        if configuration.get("dataset_id") is not None:
+            arguments.extend(["--dataset-id", str(configuration["dataset_id"])])
+        if configuration.get("split_id") is not None:
+            arguments.extend(["--split-id", str(configuration["split_id"])])
+        if max_regions is not None:
+            arguments.extend(["--max-regions", str(max_regions)])
+        if configuration.get("flat_ner"):
+            arguments.append("--flat-ner")
+        if not configuration.get("multi_label"):
+            arguments.append("--single-label")
+        exit_code = ner_main(arguments)
+        if exit_code:
+            raise RuntimeError(f"NER command exited with status {exit_code}")
+    else:
+        expected_canary = configuration.get(
+            "expected_canary_raw_output_sha256"
+        )
+        if not isinstance(expected_canary, str):
+            raise ValueError(
+                "Production structured NER requires a qualification-pinned canary hash"
+            )
+        structured_configuration = LocalStructuredNERConfiguration(
+            model_name=configuration["model"],
+            model_revision=configuration["revision"],
+            license=configuration.get("license"),
+            base_url=configuration["base_url"],
+            served_model=configuration["served_model"],
+            runtime_name=configuration.get("runtime_name", "ollama"),
+            runtime_version=configuration["runtime_version"],
+            runtime_executable=Path(configuration["runtime_executable"]),
+            runtime_executable_sha256=configuration[
+                "runtime_executable_sha256"
+            ],
+            ollama_manifest_digest=configuration["ollama_manifest_digest"],
+            quantization=configuration["quantization"],
+            device=configuration.get("device", "local-runtime"),
+            seed=configuration.get("seed", 42),
+            max_output_tokens=configuration.get("max_output_tokens", 512),
+            timeout_seconds=configuration.get("timeout_seconds", 120),
+            schema_canary_repetitions=configuration.get(
+                "schema_canary_repetitions", 3
+            ),
+            expected_canary_raw_output_sha256=expected_canary,
+            code_revision=configuration["code_revision"],
+            region_chunk_size=configuration.get("region_chunk_size", 8),
+        )
+        adapter, verified = build_verified_structured_ner_adapter(
+            structured_configuration,
+            api_key=os.environ.get("NER_LLM_API_KEY"),
+        )
+        artifact = create_structured_ner_artifact(
+            ocr,
+            adapter,
+            max_regions=max_regions,
+            dataset_id=configuration.get("dataset_id"),
+            split_id=configuration.get("split_id"),
+            region_chunk_size=structured_configuration.region_chunk_size,
+            job_configuration_sha256=canonical_sha256(configuration),
+        )
+        reverify_structured_ner_runtime(adapter, verified)
+        _atomic_json(output_path, artifact.model_dump(mode="json"))
+    artifact = NERArtifact.model_validate_json(
+        output_path.read_text(encoding="utf-8")
+    )
+    if not _ner_artifact_matches(
+        artifact,
+        context,
+        source_ocr_run_id,
+        expected_input_sha256,
+    ):
+        raise ValueError("Fresh NER artifact contradicts its immutable plan")
     stored = ingest_ner_artifact(database_url, output_path)
     return StageExecution(
         artifact_uri=workspace_artifact_uri(workspace_root, output_path),
         output_sha256=sha256_file(output_path),
-        result={
-            "ner_run_id": stored.run_id,
-            "mentions": stored.mentions_verified,
-            "candidate_only": True,
-            "bounded_regions": max_regions,
-            "source_ocr_run_id": source_ocr_run_id,
-            "reused_verified_artifact": False,
-        },
+        result=_ner_execution_result(
+            artifact,
+            run_id=stored.run_id,
+            mentions=stored.mentions_verified,
+            configuration=configuration,
+            reused=False,
+        ),
+        adopted=False,
+    )
+
+
+def _parent_ner(
+    context: PageJobContext, workspace_root: Path
+) -> tuple[Path, NERArtifact]:
+    if context.parent_stage != "ner" or not context.parent_artifact_uri:
+        raise ValueError(f"{context.stage} jobs require one completed NER parent")
+    artifact_path = resolve_workspace_path(workspace_root, context.parent_artifact_uri)
+    if context.parent_output_sha256 != sha256_file(artifact_path):
+        raise ValueError("NER parent artifact checksum no longer matches its job")
+    artifact = NERArtifact.model_validate_json(
+        artifact_path.read_text(encoding="utf-8")
+    )
+    parent_result = context.parent_result or {}
+    if str(artifact.run.run_id) != str(parent_result.get("ner_run_id", "")):
+        raise ValueError("NER parent result disagrees with its artifact run UUID")
+    if len(artifact.mentions) != parent_result.get("mentions"):
+        raise ValueError("NER parent result disagrees with its artifact mention count")
+    return artifact_path, artifact
+
+
+def _validate_link_coverage(
+    artifact: EntityLinkArtifact,
+    ner: NERArtifact,
+    *,
+    top_k: int,
+) -> None:
+    if artifact.source_ner_run_id != ner.run.run_id:
+        raise ValueError("Entity-link artifact does not reference its parent NER run")
+    expected_mentions = {mention.mention_id: mention for mention in ner.mentions}
+    by_mention: dict[UUID, list[Any]] = {}
+    link_ids = set()
+    for link in artifact.links:
+        if link.link_id in link_ids:
+            raise ValueError("Entity-link artifact contains duplicate link IDs")
+        link_ids.add(link.link_id)
+        if link.run_id != artifact.run.run_id:
+            raise ValueError("Entity-link candidate run ID differs from its artifact")
+        mention = expected_mentions.get(link.mention_id)
+        if mention is None:
+            raise ValueError("Entity-link artifact contains a candidate for another NER run")
+        if link.entity_type != mention.entity_type:
+            raise ValueError("Entity-link candidate type differs from its mention")
+        by_mention.setdefault(link.mention_id, []).append(link)
+    if set(by_mention) != set(expected_mentions):
+        raise ValueError("Entity-link candidates must cover every parent NER mention")
+    for mention_id, roster in by_mention.items():
+        if len(roster) > top_k + 1:
+            raise ValueError("Entity-link roster exceeds top_k plus NIL")
+        if sum(link.nil_candidate for link in roster) != 1:
+            raise ValueError("Entity-link roster must contain exactly one NIL candidate")
+        targets = [
+            (link.entity_id, link.authority_uri)
+            for link in roster
+            if not link.nil_candidate
+        ]
+        if len(set(targets)) != len(targets):
+            raise ValueError(
+                f"Entity-link roster repeats a target for mention {mention_id}"
+            )
+
+
+def _link_artifact_matches(
+    artifact: EntityLinkArtifact,
+    context: PageJobContext,
+    source_ner_run_id: str,
+) -> bool:
+    configuration = context.configuration
+    run_configuration = artifact.run.configuration
+    resolver = run_configuration.get("resolver")
+    expected_resolver = configuration.get("resolver")
+    if expected_resolver == "qwen":
+        resolver_matches = (
+            isinstance(resolver, dict)
+            and resolver.get("family") == "qwen_candidate_bound"
+            and resolver.get("model") == configuration.get("resolver_model")
+            and resolver.get("model_revision") == configuration.get("resolver_revision")
+            and resolver.get("served_model")
+            == configuration.get("resolver_served_model")
+            and resolver.get("runtime") == configuration.get("resolver_runtime")
+            and resolver.get("runtime_version")
+            == configuration.get("resolver_runtime_version")
+            and resolver.get("quantization")
+            == configuration.get("resolver_quantization")
+            and resolver.get("seed") == configuration.get("resolver_seed")
+        )
+    else:
+        resolver_matches = resolver is None
+    return (
+        str(artifact.source_ner_run_id) == source_ner_run_id
+        and artifact.run.engine == configuration.get("engine")
+        and run_configuration.get("reviewed_entities_only") is True
+        and run_configuration.get("top_k") == configuration.get("top_k")
+        and run_configuration.get("fuzzy_threshold")
+        == configuration.get("fuzzy_threshold")
+        and run_configuration.get("normalization")
+        == "NFC+strip-space-punctuation-symbols"
+        and run_configuration.get("identity_mutation") is False
+        and resolver_matches
+    )
+
+
+def _link_execution_result(
+    artifact: EntityLinkArtifact,
+    *,
+    reused: bool,
+) -> dict[str, Any]:
+    mention_ids = {link.mention_id for link in artifact.links}
+    nil_links = sum(link.nil_candidate for link in artifact.links)
+    return {
+        "entity_link_run_id": str(artifact.run.run_id),
+        "source_ner_run_id": str(artifact.source_ner_run_id),
+        "links": len(artifact.links),
+        "mentions": len(mention_ids),
+        "nil_links": nil_links,
+        "candidate_only": True,
+        "identity_mutations": 0,
+        "authority_catalog_sha256": artifact.run.configuration[
+            "authority_catalog_sha256"
+        ],
+        "proposal_counts": artifact.run.configuration.get("proposal_counts", {}),
+        "reused_verified_artifact": reused,
+    }
+
+
+def execute_entity_link(
+    database_url: str,
+    context: PageJobContext,
+    workspace_root: Path,
+) -> StageExecution:
+    ner_path, ner = _parent_ner(context, workspace_root)
+    source_ner_run_id = str(ner.run.run_id)
+    configuration = context.configuration
+    top_k = configuration.get("top_k")
+    if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k < 1:
+        raise ValueError("Entity-link job requires a positive top_k")
+    if configuration.get("identity_mutation") is not False:
+        raise ValueError("Entity-link job must prohibit identity mutation")
+    output_path = stage_output_dir(context, workspace_root) / "links.json"
+    if output_path.is_file():
+        artifact = EntityLinkArtifact.model_validate_json(
+            output_path.read_text(encoding="utf-8")
+        )
+        if not _link_artifact_matches(artifact, context, source_ner_run_id):
+            raise ValueError("Existing job link artifact contradicts its immutable plan")
+        _validate_link_coverage(artifact, ner, top_k=top_k)
+        stored = ingest_link_artifact(database_url, output_path)
+        if stored.links_verified != len(artifact.links):
+            raise ValueError("Stored link count differs from verified artifact")
+        return StageExecution(
+            artifact_uri=workspace_artifact_uri(workspace_root, output_path),
+            output_sha256=sha256_file(output_path),
+            result=_link_execution_result(artifact, reused=True),
+            adopted=True,
+        )
+
+    arguments = [
+        "--database-url",
+        database_url,
+        "--ner-artifact",
+        str(ner_path),
+        "--output",
+        str(output_path),
+        "--top-k",
+        str(top_k),
+        "--fuzzy-threshold",
+        str(configuration.get("fuzzy_threshold", 0.72)),
+        "--resolver",
+        str(configuration.get("resolver", "none")),
+    ]
+    if configuration.get("resolver") == "qwen":
+        if configuration.get("resolver_runtime") != "ollama":
+            raise ValueError("Entity-link worker currently supports local Ollama resolution")
+        arguments.extend(
+            [
+                "--resolver-base-url",
+                str(configuration["resolver_base_url"]),
+                "--resolver-served-model",
+                str(configuration["resolver_served_model"]),
+                "--resolver-model",
+                str(configuration["resolver_model"]),
+                "--resolver-revision",
+                str(configuration["resolver_revision"]),
+                "--resolver-ollama-manifest-digest",
+                str(configuration["resolver_ollama_manifest_digest"]),
+                "--resolver-runtime-version",
+                str(configuration["resolver_runtime_version"]),
+                "--resolver-quantization",
+                str(configuration["resolver_quantization"]),
+                "--resolver-timeout-seconds",
+                str(configuration["resolver_timeout_seconds"]),
+                "--resolver-max-output-tokens",
+                str(configuration["resolver_max_output_tokens"]),
+                "--resolver-seed",
+                str(configuration["resolver_seed"]),
+            ]
+        )
+    exit_code = link_main(arguments)
+    if exit_code:
+        raise RuntimeError(f"Entity-link command exited with status {exit_code}")
+    artifact = EntityLinkArtifact.model_validate_json(
+        output_path.read_text(encoding="utf-8")
+    )
+    if not _link_artifact_matches(artifact, context, source_ner_run_id):
+        raise ValueError("Fresh link artifact contradicts its immutable plan")
+    _validate_link_coverage(artifact, ner, top_k=top_k)
+    stored = ingest_link_artifact(database_url, output_path)
+    if stored.links_verified != len(artifact.links):
+        raise ValueError("Stored link count differs from verified artifact")
+    return StageExecution(
+        artifact_uri=workspace_artifact_uri(workspace_root, output_path),
+        output_sha256=sha256_file(output_path),
+        result=_link_execution_result(artifact, reused=False),
         adopted=False,
     )
 
@@ -1139,6 +1561,8 @@ def execute_stage(
         return execute_embedding(database_url, context, workspace_root)
     if context.stage == "ner":
         return execute_ner(database_url, context, workspace_root)
+    if context.stage == "entity_link":
+        return execute_entity_link(database_url, context, workspace_root)
     raise ValueError(f"No page worker implementation exists for stage {context.stage}")
 
 

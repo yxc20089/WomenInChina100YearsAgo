@@ -22,11 +22,13 @@ class IngestionJobTests(unittest.TestCase):
 
     def test_stage_order_and_dependencies_are_explicit(self):
         self.assertEqual(
-            normalize_stages(["ner", "render_lossless", "ocr"]),
-            ("render_lossless", "ocr", "ner"),
+            normalize_stages(["entity_link", "ner", "render_lossless", "ocr"]),
+            ("render_lossless", "ocr", "ner", "entity_link"),
         )
         with self.assertRaisesRegex(ValueError, "requires ocr"):
             normalize_stages(["ner"])
+        with self.assertRaisesRegex(ValueError, "requires ner"):
+            normalize_stages(["render_lossless", "ocr", "entity_link"])
 
     def test_aggregate_stages_require_their_page_inputs(self):
         self.assertEqual(
@@ -85,6 +87,10 @@ class IngestionJobTests(unittest.TestCase):
         result = {
             "ner_run_id": "00000000-0000-0000-0000-000000000001",
             "mentions": 82,
+            "regions_attempted": 50,
+            "regions_succeeded": 48,
+            "regions_abstained": 2,
+            "invalid_outputs": 2,
             "candidate_only": True,
             "bounded_regions": 50,
         }
@@ -101,6 +107,29 @@ class IngestionJobTests(unittest.TestCase):
             validate_stage_result(
                 "render_lossless", {}, {"render_sha256": "a" * 64}
             )
+
+    def test_entity_link_result_requires_full_nil_coverage_and_no_mutation(self):
+        result = {
+            "entity_link_run_id": "00000000-0000-0000-0000-000000000001",
+            "source_ner_run_id": "00000000-0000-0000-0000-000000000002",
+            "links": 7,
+            "mentions": 3,
+            "nil_links": 3,
+            "candidate_only": True,
+            "identity_mutations": 0,
+            "authority_catalog_sha256": "a" * 64,
+        }
+        validate_stage_result("entity_link", {"top_k": 5}, result)
+        for update, message in (
+            ({"nil_links": 2}, "exactly one NIL"),
+            ({"identity_mutations": 1}, "cannot mutate"),
+            ({"links": 19}, "candidate count"),
+            ({"candidate_only": False}, "candidate_only"),
+        ):
+            with self.subTest(update=update), self.assertRaisesRegex(ValueError, message):
+                validate_stage_result(
+                    "entity_link", {"top_k": 5}, {**result, **update}
+                )
 
     def test_aggregate_results_have_projection_contracts(self):
         validate_stage_result(

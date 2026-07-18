@@ -39,8 +39,17 @@ class DatabaseContractTests(unittest.TestCase):
                 "011_segmentation_span_splits.sql",
                 "012_coherent_unit_provenance_guards.sql",
                 "013_segmentation_action_idempotency.sql",
+                "014_ingestion_entity_link_stage.sql",
             ],
         )
+
+    def test_ingestion_stage_constraint_is_append_only_widened_for_entity_link(self):
+        sql = Path("db/migrations/014_ingestion_entity_link_stage.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("DROP CONSTRAINT ingestion_job_stage_check", sql)
+        self.assertIn("'entity_link'", sql)
+        self.assertIn("VALIDATE CONSTRAINT ingestion_job_stage_check", sql)
 
     def test_reviewed_segmentation_is_distinct_from_machine_proposals(self):
         sql = Path("db/migrations/010_article_segmentation_review.sql").read_text(

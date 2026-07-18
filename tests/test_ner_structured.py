@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from uuid import UUID
 
-from wic_history.evidence import EntityType, SourcePointer
+from wic_history.evidence import EntityType, OCRPageArtifact, SourcePointer
 from wic_history.generation import OpenAICompatibleGenerator
 from wic_history.ner_adapters.base import (
     AdapterIdentity,
@@ -31,9 +31,12 @@ from wic_history.ner_gold import (
     ReviewerAnnotation,
 )
 from wic_history.ner_structured import (
+    LocalStructuredNERConfiguration,
     STRUCTURED_NER_PROMPT_SCHEMA_SHA256,
     STRUCTURED_NER_RESPONSE_FORMAT_SHA256,
     StructuredGenerationBenchmarkAdapter,
+    build_verified_structured_ner_adapter,
+    create_structured_ner_artifact,
     parse_structured_ner_content,
     prepare_structured_ner_messages,
     validate_local_artifact,
@@ -171,10 +174,17 @@ def _dataset():
 
 
 class LocalModelServer:
-    def __init__(self, *, nondeterministic: bool = False, redirect_tags: bool = False):
+    def __init__(
+        self,
+        *,
+        nondeterministic: bool = False,
+        redirect_tags: bool = False,
+        raw_digest: bool = False,
+    ):
         self.requests: list[dict[str, object]] = []
         self.nondeterministic = nondeterministic
         self.redirect_tags = redirect_tags
+        self.raw_digest = raw_digest
         self.redirect_target_requests = 0
         parent = self
 
@@ -208,7 +218,16 @@ class LocalModelServer:
                             {
                                 "name": SERVED_MODEL + ":latest",
                                 "model": SERVED_MODEL + ":latest",
-                                "digest": OLLAMA_DIGEST,
+                                "digest": (
+                                    LOCAL_ARTIFACT_SHA256
+                                    if parent.raw_digest
+                                    else OLLAMA_DIGEST
+                                ),
+                                "details": {
+                                    "family": "qwen35",
+                                    "parameter_size": "873.44M",
+                                    "quantization_level": "Q8_0",
+                                },
                             }
                         ]
                     }
@@ -380,6 +399,12 @@ class StructuredNERTests(unittest.TestCase):
                 verify_ollama_model_digest(
                     _generator(server.base_url), OLLAMA_DIGEST, "0.31.0"
                 )
+
+        with LocalModelServer(raw_digest=True) as server:
+            verification = verify_ollama_model_digest(
+                _generator(server.base_url), OLLAMA_DIGEST, "0.32.0"
+            )
+            self.assertEqual(verification.observed_digest, OLLAMA_DIGEST)
             with self.assertRaisesRegex(RuntimeError, "digest mismatch"):
                 verify_ollama_model_digest(
                     _generator(server.base_url),
@@ -402,6 +427,70 @@ class StructuredNERTests(unittest.TestCase):
             self.assertEqual(validate_local_artifact(path, digest), digest)
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 validate_local_artifact(path, "f" * 64)
+
+    def test_verified_factory_hashes_runtime_and_pins_canary(self):
+        with tempfile.TemporaryDirectory() as temporary, LocalModelServer() as server:
+            executable = Path(temporary) / "ollama"
+            executable.write_bytes(b"pinned-runtime")
+            executable_hash = hashlib.sha256(b"pinned-runtime").hexdigest()
+            configuration = LocalStructuredNERConfiguration(
+                model_name="Qwen/Qwen3.5-0.8B",
+                model_revision=MODEL_REVISION,
+                license="Apache-2.0",
+                base_url=server.base_url,
+                served_model=SERVED_MODEL,
+                runtime_version="0.32.0",
+                runtime_executable=executable,
+                runtime_executable_sha256=executable_hash,
+                ollama_manifest_digest=OLLAMA_DIGEST,
+                quantization="Q8_0",
+                code_revision=CODE_REVISION,
+                max_output_tokens=256,
+                schema_canary_repetitions=2,
+            )
+
+            adapter, verified = build_verified_structured_ner_adapter(configuration)
+
+        self.assertTrue(verified.canary.deterministic)
+        self.assertEqual(verified.executable_sha256, executable_hash)
+        self.assertEqual(
+            adapter.identity.configuration["ollama_manifest_digest"], OLLAMA_DIGEST
+        )
+        self.assertEqual(len(server.requests), 2)
+
+    def test_production_artifact_retains_zero_mention_region_and_request_provenance(self):
+        ocr = OCRPageArtifact.model_validate_json(
+            Path("artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        first = ocr.regions[0].model_copy(
+            update={"raw_text": "王女士任教於上海女子學校。", "normalized_text": None}
+        )
+        second = ocr.regions[1].model_copy(
+            update={"raw_text": "無名文字", "normalized_text": None}
+        )
+        ocr = ocr.model_copy(update={"regions": [first, second]})
+        with LocalModelServer() as server:
+            adapter = StructuredGenerationBenchmarkAdapter(
+                _identity(server.base_url), _generator(server.base_url)
+            )
+            artifact = create_structured_ner_artifact(
+                ocr, adapter, region_chunk_size=1
+            )
+
+        results = artifact.run.configuration["region_results"]
+        self.assertEqual(len(results), 2)
+        self.assertEqual([item["mention_count"] for item in results], [1, 0])
+        self.assertEqual([item["status"] for item in results], ["ok", "ok"])
+        self.assertEqual(artifact.mentions[0].text, "王女士")
+        self.assertIsNone(artifact.mentions[0].confidence)
+        self.assertEqual(
+            artifact.mentions[0].attributes["confidence_semantics"],
+            "not_provided_by_adapter",
+        )
+        self.assertIsNotNone(results[0]["prompt_sha256"])
+        self.assertIsNotNone(results[0]["raw_output_sha256"])
 
     def test_structured_generation_cli_verifies_canary_and_writes_artifact(self):
         with tempfile.TemporaryDirectory() as temporary, LocalModelServer() as server:

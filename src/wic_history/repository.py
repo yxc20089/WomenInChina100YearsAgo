@@ -846,6 +846,14 @@ def ingest_link_artifact(database_url: str, artifact_path: Path) -> LinkIngestRe
     mention_ids = {link.mention_id for link in artifact.links}
     with psycopg.connect(database_url) as connection:
         _verify_run(connection, artifact, Jsonb)
+        source_run = connection.execute(
+            """
+            SELECT kind, status FROM evidence.processing_run WHERE run_id = %s
+            """,
+            (artifact.source_ner_run_id,),
+        ).fetchone()
+        if source_run != ("ner", "completed"):
+            raise ValueError("Entity-link source must be a completed registered NER run")
         mention_rows = connection.execute(
             """
             SELECT mention_id, run_id, entity_type

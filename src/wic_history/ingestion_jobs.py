@@ -13,13 +13,14 @@ from typing import Any, Iterable, Sequence
 from uuid import UUID, uuid4
 
 
-PAGE_STAGES = ("render_lossless", "ocr", "embedding", "ner")
+PAGE_STAGES = ("render_lossless", "ocr", "embedding", "ner", "entity_link")
 AGGREGATE_STAGES = ("search_projection", "rag_export", "graph_projection")
 ALL_STAGES = (*PAGE_STAGES, *AGGREGATE_STAGES)
 STAGE_DEPENDENCY = {
     "ocr": "render_lossless",
     "embedding": "ocr",
     "ner": "ocr",
+    "entity_link": "ner",
 }
 AGGREGATE_DEPENDENCY_STAGE = {
     "search_projection": "embedding",
@@ -65,6 +66,29 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "dataset_id": None,
         "split_id": None,
         "output_root": "artifacts/ingestion-ner",
+        "status": "candidate_only",
+    },
+    "entity_link": {
+        "engine": "exact-alias+character-similarity+qwen-candidate-bound",
+        "candidate_generator_revision": "1",
+        "top_k": 5,
+        "fuzzy_threshold": 0.72,
+        "reviewed_entities_only": True,
+        "nil_required": True,
+        "resolver": "qwen",
+        "resolver_base_url": "http://127.0.0.1:11434/v1",
+        "resolver_served_model": "qwen3.5:0.8b",
+        "resolver_model": "Qwen/Qwen3.5-0.8B",
+        "resolver_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "resolver_runtime": "ollama",
+        "resolver_runtime_version": "0.24.0",
+        "resolver_ollama_manifest_digest": "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
+        "resolver_quantization": "Q8_0",
+        "resolver_seed": 42,
+        "resolver_max_output_tokens": 256,
+        "resolver_timeout_seconds": 120,
+        "identity_mutation": False,
+        "output_root": "artifacts/ingestion-links",
         "status": "candidate_only",
     },
     "search_projection": {
@@ -896,15 +920,53 @@ def validate_stage_result(
         _required_count(result, "embeddings")
     elif stage == "ner":
         _required_uuid(result, "ner_run_id")
-        _required_count(result, "mentions")
+        for field in (
+            "mentions",
+            "regions_attempted",
+            "regions_succeeded",
+            "regions_abstained",
+            "invalid_outputs",
+        ):
+            _required_count(result, field)
         if result.get("candidate_only") is not True:
             raise ValueError("NER stage results must remain candidate_only")
+        if result["regions_attempted"] != (
+            result["regions_succeeded"] + result["regions_abstained"]
+        ):
+            raise ValueError(
+                "NER attempted regions must equal succeeded plus abstained"
+            )
         expected_limit = configuration.get("max_regions")
         observed_limit = result.get("bounded_regions")
         if expected_limit != observed_limit:
             raise ValueError(
                 "NER bounded_regions must exactly match the planned max_regions"
             )
+    elif stage == "entity_link":
+        _required_uuid(result, "entity_link_run_id")
+        _required_uuid(result, "source_ner_run_id")
+        for field in ("links", "mentions", "nil_links"):
+            _required_count(result, field)
+        if result.get("candidate_only") is not True:
+            raise ValueError("Entity-link stage results must remain candidate_only")
+        if result.get("identity_mutations") != 0:
+            raise ValueError("Entity-link stage cannot mutate canonical identity")
+        mentions = result["mentions"]
+        links = result["links"]
+        nil_links = result["nil_links"]
+        if nil_links != mentions:
+            raise ValueError("Entity-link stage requires exactly one NIL per mention")
+        top_k = configuration.get("top_k")
+        if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k < 1:
+            raise ValueError("Entity-link plan requires a positive top_k")
+        if (mentions == 0 and links != 0) or not (
+            mentions <= links <= mentions * (top_k + 1)
+        ):
+            raise ValueError("Entity-link candidate count contradicts mention/top_k coverage")
+        if not re.fullmatch(
+            r"[0-9a-f]{64}", str(result.get("authority_catalog_sha256", ""))
+        ):
+            raise ValueError("Entity-link result requires authority_catalog_sha256")
     elif stage == "search_projection":
         _required_uuid(result, "projection_build_id")
         _required_count(result, "documents_indexed")

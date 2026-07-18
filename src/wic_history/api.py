@@ -44,6 +44,22 @@ from .review_workflow import (
 )
 
 
+PAGE_IMAGE_ROOTS = (
+    Path("artifacts/benchmark-pages/images"),
+    Path("artifacts/lossless-pilot/images"),
+    Path("artifacts/gold-pages/images"),
+)
+
+
+def resolve_local_page_image(image_uri: str, workspace_root: Path) -> Path:
+    candidate = Path(image_uri)
+    path = (candidate if candidate.is_absolute() else workspace_root / candidate).resolve()
+    allowed_roots = [(workspace_root / root).resolve() for root in PAGE_IMAGE_ROOTS]
+    if not any(path.is_relative_to(root) for root in allowed_roots) or not path.is_file():
+        raise ValueError("local page derivative is outside the controlled image roots")
+    return path
+
+
 class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=1000)
@@ -55,6 +71,26 @@ class SearchRequest(BaseModel):
 
 class GenerationRequest(SearchRequest):
     task: GenerationTask = GenerationTask.RESEARCH_BRIEF
+
+
+class PageDerivativeView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    derivative_id: UUID
+    image_sha256: str
+    width: int
+    height: int
+    dpi: int | None = None
+    media_type: str
+    evidence_tier: str
+    render_manifest_uri: str | None = None
+    preferred: bool
+
+
+class PageDerivativeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    volume_number: int
+    page_number: int
+    items: list[PageDerivativeView]
 
 
 def scenario_context(
@@ -307,7 +343,11 @@ def create_app(
             raise HTTPException(status_code=503, detail=f"Insight analysis unavailable: {exc}") from exc
 
     @app.get("/api/page-image/{volume_number}/{page_number}")
-    def page_image(volume_number: int, page_number: int) -> Any:
+    def page_image(
+        volume_number: int,
+        page_number: int,
+        derivative_id: UUID | None = None,
+    ) -> Any:
         require_database()
         try:
             import psycopg
@@ -315,21 +355,74 @@ def create_app(
             with psycopg.connect(db_url) as connection:
                 row = connection.execute(
                     """
-                    SELECT p.source_image_uri
-                    FROM archive.page p JOIN archive.volume v USING (volume_id)
+                    SELECT d.derivative_id, d.image_uri, d.image_sha256,
+                           d.evidence_tier
+                    FROM archive.page p
+                    JOIN archive.volume v USING (volume_id)
+                    JOIN archive.page_derivative d
+                      ON d.derivative_id = COALESCE(%s, p.preferred_derivative_id)
+                     AND d.page_id = p.page_id
                     WHERE v.volume_number = %s AND p.page_number = %s
                     """,
-                    (volume_number, page_number),
+                    (derivative_id, volume_number, page_number),
                 ).fetchone()
         except Exception as exc:
             raise HTTPException(status_code=503, detail=f"Page lookup unavailable: {exc}") from exc
-        if row is None or not row[0]:
+        if row is None:
             raise HTTPException(status_code=404, detail="Page image is unavailable")
-        path = Path(row[0]).resolve()
-        allowed_root = (Path.cwd() / "artifacts" / "benchmark-pages" / "images").resolve()
-        if not path.is_relative_to(allowed_root) or not path.is_file():
+        try:
+            path = resolve_local_page_image(row[1], Path.cwd())
+        except ValueError:
             raise HTTPException(status_code=404, detail="Local page derivative is unavailable")
-        return FileResponse(path)
+        return FileResponse(
+            path,
+            headers={
+                "X-WIC-Derivative-ID": str(row[0]),
+                "X-WIC-Image-SHA256": row[2],
+                "X-WIC-Evidence-Tier": row[3],
+            },
+        )
+
+    @app.get(
+        "/api/pages/{volume_number}/{page_number}/derivatives",
+        response_model=PageDerivativeResponse,
+    )
+    def page_derivatives(
+        volume_number: int, page_number: int
+    ) -> PageDerivativeResponse:
+        try:
+            import psycopg
+            from psycopg.rows import dict_row
+
+            with psycopg.connect(require_database(), row_factory=dict_row) as connection:
+                rows = connection.execute(
+                    """
+                    SELECT d.derivative_id, d.image_sha256, d.width, d.height,
+                           d.dpi, d.media_type, d.evidence_tier,
+                           d.render_manifest_uri,
+                           d.derivative_id = p.preferred_derivative_id AS preferred
+                    FROM archive.page p
+                    JOIN archive.volume v USING (volume_id)
+                    JOIN archive.page_derivative d USING (page_id)
+                    WHERE v.volume_number = %s AND p.page_number = %s
+                    ORDER BY d.preference_rank DESC, d.width DESC, d.height DESC,
+                             d.created_at, d.derivative_id
+                    """,
+                    (volume_number, page_number),
+                ).fetchall()
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Page derivative lookup unavailable: {exc}"
+            ) from exc
+        if not rows:
+            raise HTTPException(status_code=404, detail="Page derivatives are unavailable")
+        return PageDerivativeResponse(
+            volume_number=volume_number,
+            page_number=page_number,
+            items=[PageDerivativeView.model_validate(row) for row in rows],
+        )
 
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 

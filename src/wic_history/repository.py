@@ -17,6 +17,14 @@ from typing import Any, Iterable, Sequence
 from .evidence import ClaimArtifact, EntityLinkArtifact, NERArtifact, OCRPageArtifact
 
 
+EVIDENCE_TIER_RANKS = {
+    "screening_derivative": 10,
+    "unreviewed_input": 20,
+    "non_gold_lossless_pilot": 30,
+    "historian_selected_gold": 40,
+}
+
+
 @dataclass(frozen=True, slots=True)
 class ManifestIngestResult:
     objects_processed: int
@@ -27,6 +35,7 @@ class ManifestIngestResult:
 class OCRIngestResult:
     artifact_id: str
     page_id: str
+    derivative_id: str
     run_id: str
     regions_verified: int
 
@@ -213,6 +222,17 @@ def _region_record(region: Any) -> tuple[Any, ...]:
     )
 
 
+def _image_media_type(image_uri: str) -> str:
+    suffix = Path(image_uri).suffix.lower()
+    return {
+        ".png": "image/png",
+        ".tif": "image/tiff",
+        ".tiff": "image/tiff",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+    }.get(suffix, "image/unknown")
+
+
 def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResult:
     """Validate and atomically store a coordinate-preserving OCR artifact."""
     psycopg, Jsonb = _psycopg()
@@ -224,7 +244,8 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
     with psycopg.connect(database_url) as connection:
         volume = connection.execute(
             """
-            SELECT v.volume_id, v.publication_year, s.source_uri
+            SELECT v.volume_id, v.publication_year, s.source_object_id,
+                   s.source_uri, s.sha256
             FROM archive.volume v
             JOIN archive.source_object s USING (source_object_id)
             WHERE v.volume_number = %s
@@ -235,44 +256,162 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
             raise ValueError(
                 f"Volume {source.volume_number} is absent; ingest the corpus manifest first"
             )
-        volume_id, publication_year, stored_uri = volume
+        volume_id, publication_year, source_object_id, stored_uri, stored_source_sha256 = volume
         if stored_uri != source.source_uri or (
             source.publication_year is not None and publication_year != source.publication_year
         ):
             raise ValueError("OCR source pointer disagrees with the authoritative volume record")
+        if source.source_sha256:
+            if stored_source_sha256 and stored_source_sha256 != source.source_sha256:
+                raise ValueError("OCR source SHA-256 disagrees with the authoritative source object")
+            if stored_source_sha256 is None:
+                connection.execute(
+                    """
+                    UPDATE archive.source_object
+                    SET sha256 = %s,
+                        integrity_details = integrity_details || %s
+                    WHERE source_object_id = %s
+                    """,
+                    (
+                        source.source_sha256,
+                        Jsonb({"full_sha256_status": "computed_from_verified_local_cache"}),
+                        source_object_id,
+                    ),
+                )
 
         _verify_run(connection, artifact, Jsonb)
+        evidence_tier = artifact.run.configuration.get(
+            "evidence_tier", "unreviewed_input"
+        )
+        if evidence_tier not in EVIDENCE_TIER_RANKS:
+            raise ValueError(f"Unsupported OCR evidence tier: {evidence_tier}")
+        preference_rank = EVIDENCE_TIER_RANKS[evidence_tier]
+        render_manifest_uri = artifact.run.configuration.get("render_manifest")
         page_metadata = {
-            "ocr_artifact_id": str(artifact.artifact_id),
+            "latest_ocr_artifact_id": str(artifact.artifact_id),
             "artifact_schema_version": artifact.schema_version,
             "warnings": artifact.warnings,
         }
         page_id = connection.execute(
             """
-            INSERT INTO archive.page (
-                volume_id, page_number, source_image_uri, source_image_sha256,
-                width, height, dpi, metadata
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO archive.page (volume_id, page_number, metadata)
+            VALUES (%s, %s, %s)
             ON CONFLICT (volume_id, page_number) DO UPDATE SET
-                source_image_uri = EXCLUDED.source_image_uri,
-                source_image_sha256 = EXCLUDED.source_image_sha256,
-                width = EXCLUDED.width,
-                height = EXCLUDED.height,
-                dpi = EXCLUDED.dpi,
-                metadata = EXCLUDED.metadata
+                metadata = archive.page.metadata || EXCLUDED.metadata
             RETURNING page_id
             """,
             (
                 volume_id,
                 source.page_number,
+                Jsonb(page_metadata),
+            ),
+        ).fetchone()[0]
+
+        derivative_metadata = {
+            "last_observed_ocr_artifact_id": str(artifact.artifact_id),
+            "last_observed_ocr_run_id": str(artifact.run.run_id),
+        }
+        derivative_id = connection.execute(
+            """
+            INSERT INTO archive.page_derivative (
+                page_id, image_uri, image_sha256, width, height, dpi,
+                media_type, evidence_tier, preference_rank,
+                render_manifest_uri, metadata
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (page_id, image_sha256) DO UPDATE SET
+                image_uri = CASE
+                    WHEN EXCLUDED.preference_rank >= archive.page_derivative.preference_rank
+                        THEN EXCLUDED.image_uri
+                    ELSE archive.page_derivative.image_uri
+                END,
+                dpi = COALESCE(EXCLUDED.dpi, archive.page_derivative.dpi),
+                evidence_tier = CASE
+                    WHEN EXCLUDED.preference_rank > archive.page_derivative.preference_rank
+                        THEN EXCLUDED.evidence_tier
+                    ELSE archive.page_derivative.evidence_tier
+                END,
+                preference_rank = GREATEST(
+                    EXCLUDED.preference_rank,
+                    archive.page_derivative.preference_rank
+                ),
+                render_manifest_uri = CASE
+                    WHEN EXCLUDED.preference_rank >= archive.page_derivative.preference_rank
+                        THEN COALESCE(
+                            EXCLUDED.render_manifest_uri,
+                            archive.page_derivative.render_manifest_uri
+                        )
+                    ELSE archive.page_derivative.render_manifest_uri
+                END,
+                metadata = archive.page_derivative.metadata || EXCLUDED.metadata
+            RETURNING derivative_id
+            """,
+            (
+                page_id,
                 artifact.image_uri,
                 artifact.image_sha256,
                 artifact.width,
                 artifact.height,
                 artifact.dpi,
-                Jsonb(page_metadata),
+                _image_media_type(artifact.image_uri),
+                evidence_tier,
+                preference_rank,
+                render_manifest_uri,
+                Jsonb(derivative_metadata),
             ),
-        ).fetchone()[0]
+        ).fetchone()
+        derivative_id = derivative_id[0]
+        stored_derivative = connection.execute(
+            """
+            SELECT image_sha256, width, height, media_type, preference_rank
+            FROM archive.page_derivative WHERE derivative_id = %s
+            """,
+            (derivative_id,),
+        ).fetchone()
+        expected_derivative = (
+            artifact.image_sha256,
+            artifact.width,
+            artifact.height,
+            _image_media_type(artifact.image_uri),
+        )
+        if stored_derivative[:4] != expected_derivative or stored_derivative[4] < preference_rank:
+            raise ValueError(
+                "Stored page derivative conflicts with immutable image bytes or dimensions"
+            )
+
+        preferred = connection.execute(
+            """
+            SELECT derivative_id, image_uri, image_sha256, width, height, dpi
+            FROM archive.page_derivative
+            WHERE page_id = %s
+            ORDER BY preference_rank DESC, width DESC, height DESC,
+                     created_at, derivative_id
+            LIMIT 1
+            """,
+            (page_id,),
+        ).fetchone()
+        connection.execute(
+            """
+            UPDATE archive.page
+            SET preferred_derivative_id = %s,
+                source_image_uri = %s,
+                source_image_sha256 = %s,
+                width = %s,
+                height = %s,
+                dpi = %s,
+                metadata = metadata || %s
+            WHERE page_id = %s
+            """,
+            (
+                preferred[0],
+                preferred[1],
+                preferred[2],
+                preferred[3],
+                preferred[4],
+                preferred[5],
+                Jsonb({"preferred_derivative_id": str(preferred[0])}),
+                page_id,
+            ),
+        )
 
         rows = [_region_record(region) for region in artifact.regions]
         with connection.cursor() as cursor:
@@ -312,6 +451,7 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
     return OCRIngestResult(
         artifact_id=str(artifact.artifact_id),
         page_id=str(page_id),
+        derivative_id=str(derivative_id),
         run_id=str(artifact.run.run_id),
         regions_verified=len(rows),
     )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -302,6 +303,9 @@ def create_ocr_artifact(
     screening_derivative: bool,
     isolated_tiles: bool = False,
     page_detector: Callable[[Image.Image, int, int], tuple[list[DetectedLine], list[Tile]]] | None = None,
+    source_sha256: str | None = None,
+    evidence_tier: str = "unreviewed_input",
+    render_manifest_path: str | None = None,
 ) -> OCRPageArtifact:
     started_at = datetime.now(timezone.utc)
     with Image.open(image_path) as source_image:
@@ -325,6 +329,8 @@ def create_ocr_artifact(
             "tile_count": len(tiles),
             "orientation_model_enabled": False,
             "isolated_tile_workers": isolated_tiles,
+            "evidence_tier": evidence_tier,
+            "render_manifest": render_manifest_path,
         },
         started_at=started_at,
         completed_at=datetime.now(timezone.utc),
@@ -350,9 +356,18 @@ def create_ocr_artifact(
         warnings.append(
             "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
         )
+    elif evidence_tier == "non_gold_lossless_pilot":
+        warnings.append(
+            "Input is a source-resolution lossless pipeline pilot, not historian-selected gold."
+        )
+    elif evidence_tier != "historian_selected_gold":
+        warnings.append(
+            "Input has no historian-selected gold provenance and must not support OCR quality claims."
+        )
     return OCRPageArtifact(
         source=SourcePointer(
             source_uri=source_uri,
+            source_sha256=source_sha256,
             volume_number=volume_number,
             publication_year=publication_year,
             page_number=page_number,
@@ -368,10 +383,71 @@ def create_ocr_artifact(
     )
 
 
+def sha256_argument(value: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{64}", value):
+        raise argparse.ArgumentTypeError("expected a lowercase 64-character SHA-256")
+    return value
+
+
+def resolve_render_provenance(
+    image_path: Path,
+    manifest_path: Path,
+    *,
+    source_uri: str,
+    page_number: int,
+    volume_number: int | None,
+    publication_year: int | None,
+    supplied_source_sha256: str | None = None,
+) -> tuple[str, str]:
+    rows = [
+        json.loads(line)
+        for line in manifest_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    matches = [
+        row
+        for row in rows
+        if Path(row.get("render_path", "")).resolve() == image_path.resolve()
+    ]
+    if len(matches) != 1:
+        raise ValueError("render manifest must contain exactly one record for the OCR image")
+    record = matches[0]
+    if record.get("status") != "rendered":
+        raise ValueError("render manifest record is not successfully rendered")
+    expected = {
+        "source_uri": source_uri,
+        "page_number": page_number,
+        "volume_number": volume_number,
+        "publication_year": publication_year,
+    }
+    for key, value in expected.items():
+        if value is not None and record.get(key) != value:
+            raise ValueError(f"render manifest {key} disagrees with the OCR request")
+    if sha256_file(image_path) != record.get("render_sha256"):
+        raise ValueError("OCR image bytes disagree with the render manifest hash")
+    source_sha256 = record.get("source_object_sha256")
+    if not isinstance(source_sha256, str) or not re.fullmatch(
+        r"[0-9a-f]{64}", source_sha256
+    ):
+        raise ValueError("render manifest lacks a valid full source-object SHA-256")
+    if supplied_source_sha256 and supplied_source_sha256 != source_sha256:
+        raise ValueError("supplied source SHA-256 disagrees with the render manifest")
+    selection_status = (record.get("selection") or {}).get("gold_status")
+    evidence_tiers = {
+        "include": "historian_selected_gold",
+        "non_gold_pilot": "non_gold_lossless_pilot",
+    }
+    if selection_status not in evidence_tiers:
+        raise ValueError("render manifest does not contain an eligible gold or pilot selection")
+    return source_sha256, evidence_tiers[selection_status]
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--source-uri", required=True)
+    parser.add_argument("--source-sha256", type=sha256_argument)
+    parser.add_argument("--render-manifest", type=Path)
     parser.add_argument("--page", type=int, required=True)
     parser.add_argument("--volume", type=int)
     parser.add_argument("--year", type=int)
@@ -402,6 +478,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.screening_derivative and args.render_manifest:
+        raise SystemExit("--screening-derivative and --render-manifest are mutually exclusive")
+    source_sha256 = args.source_sha256
+    evidence_tier = "screening_derivative" if args.screening_derivative else "unreviewed_input"
+    if args.render_manifest:
+        source_sha256, evidence_tier = resolve_render_provenance(
+            args.image,
+            args.render_manifest,
+            source_uri=args.source_uri,
+            page_number=args.page,
+            volume_number=args.volume,
+            publication_year=args.year,
+            supplied_source_sha256=args.source_sha256,
+        )
     isolate_tiles = args.isolate_tiles
     batch_isolate = sys.platform == "darwin" and not args.isolate_tiles and not args.reuse_model
     reuse_model = args.reuse_model or (sys.platform != "darwin" and not isolate_tiles)
@@ -434,6 +524,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         screening_derivative=args.screening_derivative,
         isolated_tiles=isolate_tiles or batch_isolate,
         page_detector=page_detector,
+        source_sha256=source_sha256,
+        evidence_tier=evidence_tier,
+        render_manifest_path=str(args.render_manifest) if args.render_manifest else None,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")

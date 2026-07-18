@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,8 +11,10 @@ from wic_history.ocr_pipeline import (
     DetectedLine,
     create_ocr_artifact,
     deduplicate_lines,
+    resolve_render_provenance,
     tile_bounds,
 )
+from wic_history.render_samples import sha256_file
 
 
 class OCRPipelineTests(unittest.TestCase):
@@ -63,6 +66,41 @@ class OCRPipelineTests(unittest.TestCase):
             self.assertEqual(artifact.regions[0].raw_text, "女學生")
             self.assertEqual(artifact.regions[0].polygon.points[0].x, 5)
             self.assertIn("technical smoke test", artifact.warnings[-1])
+
+    def test_lossless_manifest_supplies_source_hash_and_evidence_tier(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image_path = root / "page.png"
+            Image.new("L", (20, 30), "white").save(image_path)
+            manifest_path = root / "manifest.jsonl"
+            source_sha256 = "b" * 64
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "status": "rendered",
+                        "render_path": str(image_path),
+                        "render_sha256": sha256_file(image_path),
+                        "source_object_sha256": source_sha256,
+                        "source_uri": "s3://bucket/volume.pdf",
+                        "volume_number": 219,
+                        "publication_year": 1925,
+                        "page_number": 308,
+                        "selection": {"gold_status": "non_gold_pilot"},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            resolved_hash, tier = resolve_render_provenance(
+                image_path,
+                manifest_path,
+                source_uri="s3://bucket/volume.pdf",
+                page_number=308,
+                volume_number=219,
+                publication_year=1925,
+            )
+            self.assertEqual(resolved_hash, source_sha256)
+            self.assertEqual(tier, "non_gold_lossless_pilot")
 
 
 if __name__ == "__main__":

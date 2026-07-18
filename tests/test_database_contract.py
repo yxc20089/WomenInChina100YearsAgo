@@ -29,8 +29,16 @@ class DatabaseContractTests(unittest.TestCase):
                 "001_evidence_schema.sql",
                 "002_review_workflow_indexes.sql",
                 "003_claim_review_index.sql",
+                "004_page_derivatives.sql",
             ],
         )
+
+    def test_page_derivatives_preserve_multiple_image_tiers(self):
+        sql = Path("db/migrations/004_page_derivatives.sql").read_text(encoding="utf-8")
+        self.assertIn("CREATE TABLE archive.page_derivative", sql)
+        self.assertIn("historian_selected_gold", sql)
+        self.assertIn("preferred_derivative_id", sql)
+        self.assertIn("UNIQUE (page_id, image_sha256)", sql)
 
 
 if __name__ == "__main__":

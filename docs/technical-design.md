@@ -35,6 +35,8 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - The NER gold contract now requires two distinct independent reviews and an adjudication, validates corrected/raw exact offsets, and rejects duplicate identities/spans. The scorer reports exact/relaxed and per-type metrics, invalid evidence, OCR CER/loss, raw recoverability, end-to-end recall, decade/layout/quality strata, duration and recorded peak memory. It is tested on synthetic fixtures; no historical gold set exists yet.
 - The OCR/layout gold contract likewise requires source-image hashes, dimensions, two reviews and adjudication, model-independent convex polygons and unique reading orders. Its scorer refuses mixed revisions or changed images and reports detection F1/IoU, area coverage, matched and reading-order CER, order/kind/direction accuracy, invalid geometry, throughput/memory and page strata. It is synthetic-fixture tested; the historical lossless gold renders remain pending.
 - The selection-driven lossless renderer validates complete named screening decisions and verified cached/S3 source sizes, hashes each full source object, and refuses unsafe PDF composition/rotation. A non-gold page-308 pilot directly decoded the single 6176×8960 JBIG2 raster to PNG without geometric resampling and verified decoded-pixel identity before/after writing; the 2471×3584 screening JPEG is not reused.
+- PP-OCRv6 then processed that source-resolution pilot in 54 bounded-memory tiles and produced 1,099 in-bounds, coordinate-preserving regions. The CLI verified the render manifest, PNG hash, S3 source identity and full source-object SHA-256 before model execution. This remains an explicitly non-gold pipeline result.
+- PostgreSQL retains the screening JPEG and lossless PNG as two immutable `archive.page_derivative` rows. Evidence tier and resolution select the PNG as the preferred page image without deleting the JPEG; the API lists both and serves only registered, page-scoped derivatives with hash/tier headers.
 
 The slice intentionally contains no reviewed historical entities or claims. Its insight endpoint therefore returns zero items with an explicit warning. It must not be described as a reconstructed knowledge graph until historian review data exists.
 
@@ -376,8 +378,8 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Layer | Provisional selection | Status |
 |---|---|---|
 | Source/archive | Existing S3 raw prefix + new versioned derivative area | Selected architecture |
-| Validation/rendering | PDF/JBIG2 and DjVu-aware batch pipeline | Implemented for screening; gold lossless flow pending |
-| Evidence OCR | PP-StructureV3 + PP-OCRv6 | Benchmark leader candidate; adjudicated gold contract/scorer implemented, historical pages pending |
+| Validation/rendering | PDF/JBIG2 and DjVu-aware batch pipeline | Screening and source-resolution non-gold pilot implemented; historian-selected gold pending |
+| Evidence OCR | PP-StructureV3 + PP-OCRv6 | Source-resolution pipeline pilot and adjudicated gold contract/scorer implemented; scored historical gold pending |
 | Difficult OCR | PaddleOCR-VL-1.6 | Benchmark fallback candidate; identical-image comparison pending |
 | Authoritative database | PostgreSQL 17 | Implemented and live-tested locally |
 | Embeddings near evidence | pgvector 0.8.5 + BGE-M3 challenger | Implemented for smoke slice; benchmark pending |

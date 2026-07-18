@@ -72,6 +72,23 @@ object, output-file, and decoded-pixel hashes. An explicitly non-gold plumbing
 check is available as `--pilot-sample-id`; its output can never be counted as
 gold by the manifest summary.
 
+Run OCR against a selected lossless render with its manifest so the CLI verifies
+the image hash, source identity, full source-object hash, and selection tier
+before loading the model:
+
+```bash
+uv run wic-ocr \
+  --image artifacts/lossless-pilot/images/v219/p0308.png \
+  --render-manifest artifacts/lossless-pilot/lossless_manifest.jsonl \
+  --source-uri 's3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf' \
+  --volume 219 --page 308 --year 1925 --language ch \
+  --output artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json
+```
+
+The manifest selection controls whether the artifact is historian-selected gold
+or an explicitly non-gold lossless pilot; the command cannot promote a page on
+its own.
+
 Start the local visual review UI:
 
 ```bash
@@ -94,8 +111,14 @@ Load the audited archive catalog and versioned OCR/NER artifacts:
 ```bash
 uv run wic-ingest --database-url "$DATABASE_URL" manifest artifacts/corpus-audit/manifest.jsonl
 uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-smoke/v219-p0308.ppocrv6.json
+uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json
 uv run wic-ingest --database-url "$DATABASE_URL" ner artifacts/ner-smoke/v219-p0308.gliner-multi-v2.1.json
 ```
+
+OCR ingestion retains every byte-distinct page image in
+`archive.page_derivative` and chooses the preferred derivative monotonically by
+reviewed evidence tier, then resolution. Screening images are never overwritten
+when a lossless pilot or gold render arrives.
 
 Generate BGE-M3 embeddings, rebuild the OpenSearch projection, and issue an evidence-citing hybrid query:
 
@@ -176,4 +199,7 @@ compares byte-identical page artifacts using detection F1/IoU, CER,
 reading-order, region-kind/direction, geometry, throughput and stratified
 metrics. Benchmark commands and refusal conditions are under `experiments/ocr/`.
 
-The committed OCR/NER files are technical smoke artifacts from a lossy screening derivative. They demonstrate provenance, coordinates, persistence, and retrieval; they are not gold transcriptions or reviewed historical assertions.
+The committed OCR/NER files include technical smoke artifacts from a lossy
+screening derivative and one source-resolution, explicitly non-gold lossless OCR
+pilot. They demonstrate provenance, coordinates, persistence, and retrieval;
+they are not gold transcriptions or reviewed historical assertions.

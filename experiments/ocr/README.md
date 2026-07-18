@@ -46,3 +46,19 @@ For the non-gold page-308 pipeline pilot, it directly decoded the embedded
 6176×8960 JBIG2 raster, performed no geometric transform, and verified identical
 decoded-pixel hashes across PNG writing. The committed pilot manifest is
 provenance evidence only, not a benchmark judgment.
+
+The same page has also completed a source-resolution PP-OCRv6 plumbing run:
+
+```bash
+uv run wic-ocr \
+  --image artifacts/lossless-pilot/images/v219/p0308.png \
+  --render-manifest artifacts/lossless-pilot/lossless_manifest.jsonl \
+  --source-uri 's3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf' \
+  --volume 219 --page 308 --year 1925 --language ch \
+  --tile-size 1200 --overlap 120 --worker-batch-size 5 \
+  --output artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json
+```
+
+It produced 1,099 coordinate-preserving regions over 54 tiles. Its artifact and
+database derivative retain the render manifest and full source-object hash, but
+its `non_gold_lossless_pilot` tier excludes it from OCR quality claims.

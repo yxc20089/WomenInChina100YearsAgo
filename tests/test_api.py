@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from wic_history.api import build_parser, create_app, scenario_context
+from wic_history.api import (
+    build_parser,
+    create_app,
+    resolve_local_page_image,
+    scenario_context,
+)
 from wic_history.evidence import RetrievalMode, RetrievalResponse
 from wic_history.review_workflow import ClaimQueueResponse, MentionQueueResponse
 from wic_history.insights import (
@@ -16,6 +23,24 @@ from wic_history.insights import (
 
 
 class APITests(unittest.TestCase):
+    def test_page_image_resolution_is_limited_to_registered_workspace_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            allowed = workspace / "artifacts/lossless-pilot/images/page.png"
+            allowed.parent.mkdir(parents=True)
+            allowed.write_bytes(b"image")
+            outside = workspace / "private.png"
+            outside.write_bytes(b"private")
+
+            self.assertEqual(
+                resolve_local_page_image(
+                    "artifacts/lossless-pilot/images/page.png", workspace
+                ),
+                allowed.resolve(),
+            )
+            with self.assertRaises(ValueError):
+                resolve_local_page_image(str(outside), workspace)
+
     def test_cli_accepts_documented_bind_arguments(self):
         args = build_parser().parse_args(["--host", "127.0.0.1", "--port", "9000"])
         self.assertEqual(args.host, "127.0.0.1")

@@ -154,7 +154,7 @@ corpus for the isolated RAG comparisons, and start the local researcher API:
 uv run wic-graph --database-url "$DATABASE_URL" --neo4j-uri "$NEO4J_URI" \
   --neo4j-user "$NEO4J_USER" --neo4j-password "$NEO4J_PASSWORD"
 uv run wic-rag-export --database-url "$DATABASE_URL" \
-  --output artifacts/rag-smoke --volume 219 --page 308
+  --output artifacts/rag-pilot --volume 219 --page 308
 uv run wic-api --host 127.0.0.1 --port 8766 \
   --database-url "$DATABASE_URL" --opensearch-url "$OPENSEARCH_URL" \
   --neo4j-uri "$NEO4J_URI" --neo4j-user "$NEO4J_USER" \
@@ -172,9 +172,10 @@ The same interface exposes a historian review queue and reviewed-only insight
 signals. A reviewer first accepts or rejects the exact NER span, then makes a
 separate entity-resolution decision: link to a reviewed candidate, create a new
 reviewed entity from the explicit NIL option, or keep it unresolved. Each action
-is transactionally audited and idempotent by review UUID. The current 187
-machine candidates are unreviewed smoke outputs; opening the queue does not
-promote them. Re-run `wic-graph` after genuine reviews before using the graph
+is transactionally audited and idempotent by review UUID. The current 276
+machine candidates are unreviewed screening/lossless pilot outputs; opening the
+queue does not promote them. Dataset and run filters isolate exact experiment
+cohorts. Re-run `wic-graph` after genuine reviews before using the graph
 insight view. Insight cards are analytical leads and never become historical
 claims automatically.
 
@@ -194,10 +195,10 @@ input with:
 
 ```bash
 for mode in lexical dense hybrid; do
-  uv run wic-eval --questions experiments/retrieval/smoke-questions.jsonl \
-    --output "artifacts/eval-smoke/${mode}.json" --mode "$mode" --limit 5
+  uv run wic-eval --questions experiments/retrieval/lossless-pilot-questions.jsonl \
+    --output "artifacts/eval-pilot/${mode}.json" --mode "$mode" --limit 5
 done
-uv run wic-rag-adapter validate --export artifacts/rag-smoke
+uv run wic-rag-adapter validate --export artifacts/rag-pilot
 ```
 
 The single smoke question is not a quality claim; the real gate requires

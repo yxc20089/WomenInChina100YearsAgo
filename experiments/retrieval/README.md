@@ -1,13 +1,19 @@
 # Retrieval evaluation
 
-Run the committed technical smoke set with:
+Run the active, derivative-bound lossless technical set with:
 
 ```bash
-uv run wic-eval --questions experiments/retrieval/smoke-questions.jsonl \
-  --output artifacts/eval-smoke/lexical.json --mode lexical --limit 5
+uv run wic-eval --questions experiments/retrieval/lossless-pilot-questions.jsonl \
+  --output artifacts/eval-pilot/lexical.json --mode lexical --limit 5
 ```
 
-The smoke set proves metric and citation plumbing only. Replace it with 30–50
+The lossless set proves metric, active-OCR selection, polygon and exact
+derivative-pointer plumbing only. Its historian-gold evidence rate must remain
+0.0 because the page is a non-gold pilot. The older screening question/report
+is retained as superseded provenance and must not be run against the active v2
+index.
+
+Replace the technical set with 30–50
 questions written and adjudicated by historians, split across exact lookup, OCR
 variants, multi-hop relations, temporal questions, corpus themes,
 unanswerable/negative questions, and scan-region trace tasks. Expected region

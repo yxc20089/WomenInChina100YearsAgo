@@ -40,6 +40,8 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(result.recall_at_k, 1.0)
         self.assertEqual(result.reciprocal_rank, 0.5)
         self.assertEqual(result.citation_pointer_rate, 1.0)
+        self.assertEqual(result.derivative_pointer_rate, 0.0)
+        self.assertEqual(result.historian_gold_evidence_rate, 0.0)
 
     def test_answerable_question_requires_expected_evidence(self):
         with self.assertRaises(ValueError):

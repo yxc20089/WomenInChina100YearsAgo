@@ -77,7 +77,13 @@ def _page_document(rows: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dic
                 "raw_text": row["raw_text"],
                 "exported_text": text,
                 "source_uri": row["source_uri"],
+                "source_sha256": row["source_sha256"],
+                "ocr_run_id": str(row["run_id"]),
+                "derivative_id": str(row["derivative_id"]),
                 "source_image_uri": row["source_image_uri"],
+                "source_image_sha256": row["source_image_sha256"],
+                "evidence_tier": row["evidence_tier"],
+                "ocr_selection_basis": row["ocr_selection_basis"],
                 "volume_number": row["volume_number"],
                 "publication_year": row["publication_year"],
                 "page_number": row["page_number"],
@@ -97,7 +103,13 @@ def _page_document(rows: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dic
             "publication_year": first["publication_year"],
             "page_number": first["page_number"],
             "source_uri": first["source_uri"],
+            "source_sha256": first["source_sha256"],
+            "ocr_run_id": str(first["run_id"]),
+            "derivative_id": str(first["derivative_id"]),
             "source_image_uri": first["source_image_uri"],
+            "source_image_sha256": first["source_image_sha256"],
+            "evidence_tier": first["evidence_tier"],
+            "ocr_selection_basis": first["ocr_selection_basis"],
             "ocr_model": first["ocr_model"],
             "ocr_model_revision": first["ocr_model_revision"],
             "region_count": len(citations),
@@ -123,8 +135,14 @@ def build_documents(rows: Iterable[dict[str, Any]]) -> list[tuple[dict[str, Any]
 
 
 EXPORT_SQL = """
-    SELECT p.page_id, p.page_number, p.source_image_uri,
+    SELECT p.page_id, p.page_number, r.run_id,
+           derivative.derivative_id,
+           derivative.image_uri AS source_image_uri,
+           derivative.image_sha256 AS source_image_sha256,
+           derivative.evidence_tier,
+           selection.selection_basis AS ocr_selection_basis,
            v.volume_number, v.publication_year, s.source_uri,
+           s.sha256 AS source_sha256,
            r.region_id, r.reading_order, r.region_kind, r.polygon,
            r.raw_text, r.normalized_text, r.confidence,
            pr.model_name AS ocr_model, pr.model_revision AS ocr_model_revision
@@ -133,6 +151,17 @@ EXPORT_SQL = """
     JOIN archive.volume v USING (volume_id)
     JOIN archive.source_object s USING (source_object_id)
     JOIN evidence.processing_run pr USING (run_id)
+    JOIN evidence.page_ocr_selection selection
+      ON selection.page_id = r.page_id
+     AND selection.run_id = r.run_id
+     AND selection.superseded_at IS NULL
+    JOIN evidence.ocr_run_input input
+      ON input.run_id = selection.run_id
+     AND input.page_id = selection.page_id
+     AND input.derivative_id = selection.derivative_id
+    JOIN archive.page_derivative derivative
+      ON derivative.derivative_id = input.derivative_id
+     AND derivative.page_id = input.page_id
     WHERE (%(volume_number)s IS NULL OR v.volume_number = %(volume_number)s)
       AND (%(page_number)s IS NULL OR p.page_number = %(page_number)s)
     ORDER BY v.volume_number, p.page_number, r.reading_order, r.region_id
@@ -200,10 +229,11 @@ def export_rag_corpus(
 
     omitted_empty_regions = len(rows) - region_count
     manifest = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "scope": {"volume_number": volume_number, "page_number": page_number},
         "input_unit": "ocr_page",
+        "ocr_run_policy": "active_page_selection_only",
         "citation_contract": "citations.jsonl maps page-text character offsets to OCR regions",
         "counts": {
             "documents": len(pages),

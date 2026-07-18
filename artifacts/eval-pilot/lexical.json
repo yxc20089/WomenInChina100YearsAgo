@@ -1,0 +1,207 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-18T08:40:28.752622Z",
+  "mode": "lexical",
+  "index": "wic-regions-current",
+  "limit": 5,
+  "question_set": "experiments/retrieval/lossless-pilot-questions.jsonl",
+  "question_count": 1,
+  "scored_answerable_questions": 1,
+  "macro_recall_at_k": 1.0,
+  "mean_reciprocal_rank": 1.0,
+  "citation_pointer_rate": 1.0,
+  "derivative_pointer_rate": 1.0,
+  "historian_gold_evidence_rate": 0.0,
+  "results": [
+    {
+      "question_id": "lossless-exact-shinu",
+      "category": "exact_lookup",
+      "answerable": true,
+      "expected_region_ids": [
+        "6a813268-60c2-4cfa-80ae-982f33d5f189"
+      ],
+      "retrieved_region_ids": [
+        "6a813268-60c2-4cfa-80ae-982f33d5f189",
+        "b02ab75d-7d38-4d46-97b8-0b7562d71018",
+        "6c8b3917-a470-4e26-9238-97c470b18a5d"
+      ],
+      "relevant_retrieved": 1,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "citation_pointer_rate": 1.0,
+      "derivative_pointer_rate": 1.0,
+      "historian_gold_evidence_rate": 0.0,
+      "response": {
+        "schema_version": "1.0",
+        "query": "士女",
+        "mode": "lexical",
+        "hits": [
+          {
+            "rank": 1,
+            "score": 7.5163584,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+              "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+              "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+              "evidence_tier": "non_gold_lossless_pilot",
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "6a813268-60c2-4cfa-80ae-982f33d5f189",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 4759.0,
+                    "y": 1080.0
+                  },
+                  {
+                    "x": 4958.0,
+                    "y": 1080.0
+                  },
+                  {
+                    "x": 4958.0,
+                    "y": 1182.0
+                  },
+                  {
+                    "x": 4759.0,
+                    "y": 1182.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "士女",
+            "normalized_text": "士女",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "OpenSearch CJK lexical",
+              "index": "wic-regions-v2",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a source-resolution lossless pipeline pilot, not historian-selected gold."
+              ],
+              "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+              "evidence_tier": "non_gold_lossless_pilot",
+              "ocr_selection_basis": "technical_default"
+            }
+          },
+          {
+            "rank": 2,
+            "score": 3.4477215,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+              "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+              "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+              "evidence_tier": "non_gold_lossless_pilot",
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "b02ab75d-7d38-4d46-97b8-0b7562d71018",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 4549.0,
+                    "y": 1045.0
+                  },
+                  {
+                    "x": 5520.0,
+                    "y": 1045.0
+                  },
+                  {
+                    "x": 5520.0,
+                    "y": 1186.0
+                  },
+                  {
+                    "x": 4549.0,
+                    "y": 1186.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "之等士女登爾竇賽樂桃",
+            "normalized_text": "之等士女登爾竇賽樂桃",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "OpenSearch CJK lexical",
+              "index": "wic-regions-v2",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a source-resolution lossless pipeline pilot, not historian-selected gold."
+              ],
+              "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+              "evidence_tier": "non_gold_lossless_pilot",
+              "ocr_selection_basis": "technical_default"
+            }
+          },
+          {
+            "rank": 3,
+            "score": 2.865962,
+            "source": {
+              "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+              "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+              "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+              "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+              "evidence_tier": "non_gold_lossless_pilot",
+              "volume_number": 219,
+              "publication_year": 1925,
+              "page_number": 308,
+              "region_id": "6c8b3917-a470-4e26-9238-97c470b18a5d",
+              "polygon": {
+                "points": [
+                  {
+                    "x": 3240.0,
+                    "y": 1308.0
+                  },
+                  {
+                    "x": 4420.0,
+                    "y": 1308.0
+                  },
+                  {
+                    "x": 4420.0,
+                    "y": 1392.0
+                  },
+                  {
+                    "x": 3240.0,
+                    "y": 1392.0
+                  }
+                ]
+              },
+              "text_start": null,
+              "text_end": null
+            },
+            "text": "主士女貞雲韓演導生先菊瘦朱",
+            "normalized_text": "主士女貞雲韓演導生先菊瘦朱",
+            "entity_ids": [],
+            "claim_ids": [],
+            "explanation": {
+              "retriever": "OpenSearch CJK lexical",
+              "index": "wic-regions-v2",
+              "page_warnings": [
+                "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+                "Input is a source-resolution lossless pipeline pilot, not historian-selected gold."
+              ],
+              "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+              "evidence_tier": "non_gold_lossless_pilot",
+              "ocr_selection_basis": "technical_default"
+            }
+          }
+        ],
+        "generated_answer": null,
+        "answer_model": null,
+        "warnings": [
+          "One or more hits come from OCR that is not historian-selected gold."
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    "This is a technical smoke set, not a historian-authored quality evaluation."
+  ]
+}

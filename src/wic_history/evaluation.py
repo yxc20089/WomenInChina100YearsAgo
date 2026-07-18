@@ -60,6 +60,8 @@ class QuestionResult(StrictModel):
     recall_at_k: float | None
     reciprocal_rank: float | None
     citation_pointer_rate: float
+    derivative_pointer_rate: float
+    historian_gold_evidence_rate: float
     response: RetrievalResponse
 
 
@@ -75,6 +77,8 @@ class EvaluationReport(StrictModel):
     macro_recall_at_k: float | None
     mean_reciprocal_rank: float | None
     citation_pointer_rate: float
+    derivative_pointer_rate: float
+    historian_gold_evidence_rate: float
     results: list[QuestionResult]
     warnings: list[str] = Field(default_factory=list)
 
@@ -115,6 +119,18 @@ def score_question(
         for hit in response.hits
     )
     citation_rate = citation_count / len(response.hits) if response.hits else 1.0
+    derivative_count = sum(
+        hit.source.derivative_id is not None
+        and hit.source.image_sha256 is not None
+        and hit.source.evidence_tier is not None
+        for hit in response.hits
+    )
+    derivative_rate = derivative_count / len(response.hits) if response.hits else 1.0
+    gold_count = sum(
+        hit.source.evidence_tier == "historian_selected_gold"
+        for hit in response.hits
+    )
+    gold_rate = gold_count / len(response.hits) if response.hits else 1.0
     return QuestionResult(
         question_id=question.question_id,
         category=question.category,
@@ -125,6 +141,8 @@ def score_question(
         recall_at_k=recall,
         reciprocal_rank=reciprocal_rank,
         citation_pointer_rate=citation_rate,
+        derivative_pointer_rate=derivative_rate,
+        historian_gold_evidence_rate=gold_rate,
         response=response,
     )
 
@@ -151,6 +169,24 @@ def evaluate(
         if hit_count
         else 1.0
     )
+    derivative_rate = (
+        sum(
+            result.derivative_pointer_rate * len(result.response.hits)
+            for result in results
+        )
+        / hit_count
+        if hit_count
+        else 1.0
+    )
+    gold_rate = (
+        sum(
+            result.historian_gold_evidence_rate * len(result.response.hits)
+            for result in results
+        )
+        / hit_count
+        if hit_count
+        else 1.0
+    )
     warnings = []
     if all(question.author == "technical-smoke" for question in questions):
         warnings.append(
@@ -169,6 +205,8 @@ def evaluate(
             sum(reciprocal_ranks) / len(reciprocal_ranks) if reciprocal_ranks else None
         ),
         citation_pointer_rate=citation_rate,
+        derivative_pointer_rate=derivative_rate,
+        historian_gold_evidence_rate=gold_rate,
         results=results,
         warnings=warnings,
     )
@@ -246,6 +284,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "macro_recall_at_k",
             "mean_reciprocal_rank",
             "citation_pointer_rate",
+            "derivative_pointer_rate",
+            "historian_gold_evidence_rate",
             "warnings",
         }
     }

@@ -18,10 +18,16 @@ const reviewerInput = document.querySelector('#reviewer');
 const moreReview = document.querySelector('#more-review');
 const insightsButton = document.querySelector('#insights-button');
 const insightsPanel = document.querySelector('#insights-panel');
+const claimReviewItems = document.querySelector('#claim-review-items');
+const claimReviewSummary = document.querySelector('#claim-review-summary');
+const moreClaims = document.querySelector('#more-claims');
 let lastRequest = null;
 let reviewOffset = 0;
 const reviewLimit = 20;
 let reviewTotal = 0;
+let claimOffset = 0;
+const claimLimit = 20;
+let claimTotal = 0;
 
 reviewerInput.value = localStorage.getItem('wic-reviewer') || '';
 reviewerInput.addEventListener('change', () => {
@@ -164,7 +170,12 @@ async function loadReview(reset = false) {
 reviewButton.addEventListener('click', async () => {
   reviewPanel.hidden = false;
   reviewPanel.scrollIntoView({behavior: 'smooth'});
-  try { await loadReview(true); } catch (error) { reviewSummary.textContent = error.message; }
+  try {
+    await Promise.all([loadReview(true), loadClaims(true)]);
+  } catch (error) {
+    reviewSummary.textContent = error.message;
+    claimReviewSummary.textContent = error.message;
+  }
 });
 document.querySelector('#close-review').addEventListener('click', () => {
   reviewPanel.hidden = true;
@@ -172,6 +183,76 @@ document.querySelector('#close-review').addEventListener('click', () => {
 });
 document.querySelector('#refresh-review').addEventListener('click', () => loadReview(true));
 moreReview.addEventListener('click', () => loadReview(false));
+
+function claimObjectLabel(item) {
+  if (item.object_canonical_name) return item.object_canonical_name;
+  return JSON.stringify(item.object_literal);
+}
+
+function renderClaim(item) {
+  const fragment = document.querySelector('#claim-template').content.cloneNode(true);
+  const card = fragment.querySelector('.claim-card');
+  fragment.querySelector('.claim-statement').textContent = `${item.subject_canonical_name} — ${item.predicate} → ${claimObjectLabel(item)}`;
+  fragment.querySelector('.claim-provenance').textContent = `${item.model_name} @ ${item.model_revision} · confidence ${(item.confidence || 0).toFixed(3)} · ${item.claim_id}`;
+  const evidenceNode = fragment.querySelector('.claim-evidence');
+  item.evidence.forEach(evidence => {
+    const block = document.createElement('blockquote');
+    block.textContent = evidence.evidence_quote;
+    const citation = document.createElement('a');
+    citation.className = 'scan-link';
+    citation.target = '_blank';
+    citation.rel = 'noopener';
+    citation.href = `/api/page-image/${evidence.volume_number}/${evidence.page_number}`;
+    citation.textContent = `Volume ${evidence.volume_number} · ${evidence.publication_year} · page ${evidence.page_number} ↗`;
+    evidenceNode.append(block, citation);
+  });
+  if (!item.evidence.length) {
+    const warning = document.createElement('p');
+    warning.className = 'warning';
+    warning.textContent = 'No cited evidence is attached. This claim cannot be accepted.';
+    evidenceNode.append(warning);
+  }
+  const statusNode = fragment.querySelector('.decision-status');
+  const buttons = fragment.querySelectorAll('.accept-claim, .reject-claim, .dispute-claim, .defer-claim');
+  async function decide(decision) {
+    buttons.forEach(button => { button.disabled = true; });
+    try {
+      const result = await postReview(`/api/review/claims/${item.claim_id}`, {decision});
+      const projectionNotice = decision === 'accept'
+        ? ' Rebuild the graph before using graph analysis.'
+        : ' The reviewed graph is unchanged.';
+      statusNode.textContent = `Recorded: ${result.action} · ${result.review_id}.${projectionNotice}`;
+      card.classList.add('decided');
+    } catch (error) {
+      statusNode.textContent = error.message;
+      buttons.forEach(button => { button.disabled = false; });
+    }
+  }
+  fragment.querySelector('.accept-claim').addEventListener('click', () => decide('accept'));
+  fragment.querySelector('.reject-claim').addEventListener('click', () => decide('reject'));
+  fragment.querySelector('.dispute-claim').addEventListener('click', () => decide('dispute'));
+  fragment.querySelector('.defer-claim').addEventListener('click', () => decide('needs_review'));
+  claimReviewItems.append(fragment);
+}
+
+async function loadClaims(reset = false) {
+  if (reset) {
+    claimOffset = 0;
+    claimReviewItems.replaceChildren();
+  }
+  claimReviewSummary.textContent = 'Loading candidate claims…';
+  const response = await fetch(`/api/review/claims?status=candidate&limit=${claimLimit}&offset=${claimOffset}`);
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  const data = await response.json();
+  claimTotal = data.total;
+  data.items.forEach(renderClaim);
+  claimOffset += data.items.length;
+  claimReviewSummary.textContent = `${claimOffset} of ${claimTotal} candidate claims loaded`;
+  moreClaims.hidden = claimOffset >= claimTotal;
+}
+
+document.querySelector('#refresh-claims').addEventListener('click', () => loadClaims(true));
+moreClaims.addEventListener('click', () => loadClaims(false));
 
 async function loadInsights() {
   const counts = document.querySelector('#insight-counts');
@@ -184,7 +265,12 @@ async function loadInsights() {
   if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
   const data = await response.json();
   const values = data.evidence_counts;
-  counts.textContent = `${values.reviewed_entities} entities · ${values.reviewed_mentions} mentions · ${values.reviewed_claims} claims · ${values.reviewed_claim_evidence} evidence links`;
+  const graph = data.graph_projection;
+  counts.textContent = `${values.reviewed_entities} entities · ${values.reviewed_mentions} mentions · ${values.reviewed_claims} claims · ${values.reviewed_claim_evidence} evidence links · graph ${graph.stale ? 'STALE' : 'current/empty'}`;
+  const graphState = document.createElement('p');
+  graphState.className = graph.stale ? 'warning' : 'projection-state';
+  graphState.textContent = graph.reason;
+  warningsNode.append(graphState);
   data.warnings.forEach(message => {
     const warning = document.createElement('p');
     warning.className = 'warning';

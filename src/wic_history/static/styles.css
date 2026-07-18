@@ -65,6 +65,11 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace,
 .danger { background: transparent; color: var(--red); }
 .mention-scan { color: var(--red); margin-left: auto; }
 .insight-counts { margin: 20px 0; padding: 16px; border: 1px solid var(--line); font-size: 1.1rem; }
+.claim-review-section { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--line); }
+.claim-statement { font-size: 1.3rem; font-weight: bold; }
+.claim-provenance, .projection-state { color: var(--muted); font-size: .85rem; }
+.claim-evidence { margin: 18px 0; padding-left: 18px; border-left: 3px solid var(--line); }
+.claim-evidence blockquote { margin: 14px 0 4px; font-size: 1.1rem; }
 .context-heading { display: flex; justify-content: space-between; align-items: center; }
 .context-heading h2 { margin: 0; }
 .context-panel .quiet { color: #f3b4a8; }

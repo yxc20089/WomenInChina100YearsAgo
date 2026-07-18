@@ -27,14 +27,19 @@ from .generation import (
 from .insights import InsightReport, build_insight_report
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
 from .review_workflow import (
+    ClaimQueueResponse,
+    ClaimReviewRequest,
+    ClaimReviewResult,
     EntityResolutionRequest,
     MentionQueueResponse,
     MentionReviewRequest,
     ReviewConflictError,
     ReviewNotFoundError,
     ReviewResult,
+    list_claim_queue,
     list_mention_queue,
     resolve_entity,
+    review_claim,
     review_mention,
 )
 
@@ -251,6 +256,37 @@ def create_app(
     ) -> ReviewResult:
         try:
             return resolve_entity(require_database(), mention_id, request)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            review_error(exc)
+
+    @app.get("/api/review/claims", response_model=ClaimQueueResponse)
+    def claim_queue(
+        status: Literal["candidate", "reviewed", "disputed", "rejected", "superseded"] = "candidate",
+        limit: int = 25,
+        offset: int = 0,
+        model_name: str | None = None,
+    ) -> ClaimQueueResponse:
+        if not 1 <= limit <= 100 or offset < 0:
+            raise HTTPException(status_code=422, detail="limit must be 1–100 and offset nonnegative")
+        try:
+            return list_claim_queue(
+                require_database(),
+                status,
+                limit=limit,
+                offset=offset,
+                model_name=model_name,
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            review_error(exc)
+
+    @app.post("/api/review/claims/{claim_id}", response_model=ClaimReviewResult)
+    def decide_claim(claim_id: UUID, request: ClaimReviewRequest) -> ClaimReviewResult:
+        try:
+            return review_claim(require_database(), claim_id, request)
         except HTTPException:
             raise
         except Exception as exc:

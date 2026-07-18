@@ -3,7 +3,13 @@ from __future__ import annotations
 import unittest
 from uuid import UUID
 
-from wic_history.review_workflow import EntityResolutionRequest, MENTION_QUEUE_SQL
+from wic_history.review_workflow import (
+    CLAIM_EVIDENCE_VALIDATION_SQL,
+    CLAIM_QUEUE_SQL,
+    MENTION_QUEUE_SQL,
+    ClaimReviewRequest,
+    EntityResolutionRequest,
+)
 
 
 class ReviewWorkflowTests(unittest.TestCase):
@@ -32,3 +38,19 @@ class ReviewWorkflowTests(unittest.TestCase):
         self.assertIn("JOIN evidence.ocr_region", MENTION_QUEUE_SQL)
         self.assertIn("JOIN evidence.processing_run", MENTION_QUEUE_SQL)
         self.assertIn("m.mention_status", MENTION_QUEUE_SQL)
+
+    def test_claim_queue_carries_entities_model_and_evidence_join_key(self):
+        self.assertIn("subject.canonical_name", CLAIM_QUEUE_SQL)
+        self.assertIn("JOIN evidence.processing_run", CLAIM_QUEUE_SQL)
+        self.assertIn("c.claim_status", CLAIM_QUEUE_SQL)
+
+    def test_claim_review_decision_is_constrained(self):
+        request = ClaimReviewRequest(decision="dispute", reviewer="historian-a")
+        self.assertEqual(request.decision, "dispute")
+        with self.assertRaises(ValueError):
+            ClaimReviewRequest(decision="publish", reviewer="historian-a")
+
+    def test_claim_acceptance_revalidates_exact_ocr_offsets(self):
+        self.assertIn("substring", CLAIM_EVIDENCE_VALIDATION_SQL)
+        self.assertIn("supporting_quote", CLAIM_EVIDENCE_VALIDATION_SQL)
+        self.assertIn("evidence_quote = ''", CLAIM_EVIDENCE_VALIDATION_SQL)

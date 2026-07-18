@@ -77,6 +77,19 @@
       </div>
       <div id="review-items"></div>
       <button id="more-review" type="button" hidden>Load more</button>
+      <div class="claim-review-section">
+        <div class="review-heading">
+          <div>
+            <p class="eyebrow">Relationship review gate</p>
+            <h2>Candidate claims</h2>
+          </div>
+          <button id="refresh-claims" class="quiet" type="button">Refresh claims</button>
+        </div>
+        <p>Claims can enter the reviewed graph only when their referenced entities are reviewed and at least one exact source passage is attached.</p>
+        <p id="claim-review-summary">Not loaded</p>
+        <div id="claim-review-items"></div>
+        <button id="more-claims" type="button" hidden>Load more claims</button>
+      </div>
     </section>
     <section id="insights-panel" class="review-panel" hidden>
       <div class="review-heading">
@@ -119,6 +132,20 @@
         <a class="mention-scan" target="_blank" rel="noopener">Open scan ↗</a>
       </div>
       <div class="resolution-actions" hidden></div>
+      <p class="decision-status" aria-live="polite"></p>
+    </article>
+  </template>
+  <template id="claim-template">
+    <article class="mention-card claim-card">
+      <p class="claim-statement"></p>
+      <p class="claim-provenance"></p>
+      <div class="claim-evidence"></div>
+      <div class="mention-actions">
+        <button class="accept-claim" type="button">Accept cited claim</button>
+        <button class="reject-claim danger" type="button">Reject</button>
+        <button class="dispute-claim quiet" type="button">Mark disputed</button>
+        <button class="defer-claim quiet" type="button">Needs review</button>
+      </div>
       <p class="decision-status" aria-live="polite"></p>
     </article>
   </template>

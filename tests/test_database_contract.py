@@ -25,7 +25,11 @@ class DatabaseContractTests(unittest.TestCase):
         files = migration_files(Path("db/migrations"))
         self.assertEqual(
             [path.name for path in files],
-            ["001_evidence_schema.sql", "002_review_workflow_indexes.sql"],
+            [
+                "001_evidence_schema.sql",
+                "002_review_workflow_indexes.sql",
+                "003_claim_review_index.sql",
+            ],
         )
 
 

@@ -27,6 +27,7 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - OpenSearch CJK lexical, BGE-M3 dense, and client-side RRF hybrid retrieval return exact S3 volume/page/region polygons and propagate page-quality warnings. The query `富紳淑女` placed the two exact matching regions first in the hybrid result.
 - Entity-link persistence retains an explicit NIL option. With no reviewed authority catalog yet, all 115 smoke mentions correctly remain NIL rather than manufacturing people. The grounded relation pass emits zero claims because no pair of reviewed linked entities exists.
 - The local historian queue exposes all 187 persisted NER candidates across the smoke runs with scan, OCR, model and link-candidate provenance. Mention acceptance and entity resolution are separate transactional decisions. An isolated live-database test accepted a synthetic span, created a reviewed entity from its NIL candidate, proved idempotent retries, and removed every fixture row; no historical candidate was changed.
+- The claim-review queue exposes subject, predicate, object, extraction revision and cited scan passages. Acceptance requires at least one evidence record and reviewed referenced entities. A reversible live test approved a synthetic cited claim, detected the stale graph, rebuilt and verified the reified Neo4j claim, restored the empty baseline, and left zero fixture rows/nodes.
 - The reviewed-only Neo4j projection was live-tested and correctly produced an empty graph from that state. A local FastAPI/researcher UI exposes lexical, dense and hybrid search, page images, historian review, reviewed-only analytical signals, and a scenario-context contract that abstains when no reviewed claims support a reconstruction.
 - A common RAG smoke export accounts for all 1,138 regions: 1,131 text-bearing regions map back from exact page-text character offsets to scan polygons; seven empty regions are recorded as omitted. GraphRAG and LightRAG receive the same text input.
 - Pinned GraphRAG 3.1.1 and LightRAG 1.5.4 package CLIs were installed and inspected in isolated environments. The shared-export validator, GraphRAG workspace preparation and authenticated LightRAG REST adapter are implemented; indexing is waiting for a recorded experiment LLM/embedding configuration and review-quality article units.
@@ -349,7 +350,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 
 - Process 1924–1926 volumes 199–230 after measuring total pages and compute.
 - Fine-tune OCR/NER only if error analysis demonstrates value.
-- Extend the implemented mention/entity-resolution queue with claim review.
+- Validate and scale the implemented mention, entity-resolution and claim queues; add an adjudication/reversal workflow.
 
 ### Phase 5 — narratives and scene reconstruction
 
@@ -363,7 +364,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 2. Write annotation guidelines for original characters, normalization, layout and women-centered entities.
 3. Render gold pages losslessly and run PP-StructureV3/PP-OCRv6 versus the difficult-page challengers.
 4. Build OCR/layout and NER metric computation against double-reviewed annotations.
-5. Have historians test the implemented mention/entity-resolution queue; add claim review without promoting current GLiNER smoke outputs.
+5. Have historians test the implemented mention/entity-resolution and cited-claim queues without promoting current GLiNER smoke outputs.
 6. Create reviewed article segmentation and historian-authored retrieval questions.
 7. Use the implemented shared export to evaluate LightRAG and Microsoft GraphRAG only after the hybrid baseline is scored.
 
@@ -382,7 +383,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Standards export | CIDOC CRM profile + PROV-O + Web Annotation, validated with Jena/SHACL | Selected architecture |
 | NER | Rules + SIKU-BERT supervised head + GLiNER-X union; NuExtract3 difficult-case challenger | Pinned benchmark registry committed; candidate storage implemented; gold comparison pending |
 | Relation/event extraction | Schema-constrained Chinese-capable LLM with grounded offsets | Benchmark/model selection required |
-| Human review and insights | Transactional PostgreSQL decisions + reviewed-only Neo4j analytical signals | Mention/entity-resolution queue implemented and live-tested with a removed synthetic fixture; claim review pending |
+| Human review and insights | Transactional PostgreSQL decisions + reviewed-only Neo4j analytical signals | Mention, entity-resolution and cited-claim queues implemented; graph staleness and reversible projection tested; adjudication/reversal pending |
 | Graph-RAG experiment | LightRAG 1.5.4 (`9a45b64…`) | Selected first isolated experiment; shared export implemented |
 | Graph-RAG comparator | Microsoft GraphRAG 3.1.1 (`14a00ad…`) Global + DRIFT | Selected bounded experiment; shared export implemented |
 | LazyGraphRAG | Track product/research availability | Not currently selected as deployable OSS |

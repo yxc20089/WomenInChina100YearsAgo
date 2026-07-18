@@ -120,6 +120,13 @@ promote them. Re-run `wic-graph` after genuine reviews before using the graph
 insight view. Insight cards are analytical leads and never become historical
 claims automatically.
 
+Candidate claims have a second queue showing their subject, predicate, object,
+model revision, and every cited scan passage. Acceptance is rejected unless at
+least one evidence passage is attached and all referenced entities are already
+reviewed. The insights view reports whether review-authoritative PostgreSQL is
+newer than the derived Neo4j projection; when it says `STALE`, run `wic-graph`
+before interpreting graph patterns.
+
 The researcher API binds to localhost by default and currently has no
 authentication or authorization layer. Do not expose it outside a trusted local
 development environment.

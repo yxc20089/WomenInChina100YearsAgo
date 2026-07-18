@@ -70,6 +70,17 @@ failure.
 Passing proves offset plumbing only; unknown-token counts are reported, and no
 result is evidence of NER accuracy or historical validity.
 
+The committed mmBERT run at
+`experiments/ner/mmbert-tokenizer-offset-qualification.json` passed all six
+cases with no unknown tokens. It records two audited virtual prefixes, model
+revision `c5955035435e2bf121cde7f3c8863ef52ff35d82`, code revision
+`3ae5fb5ad8e93c901dbd249e3e7d3f50fc88499a`, tokenizer-file manifest
+`66367f39282358dd81ab317b563d283dcecaff20cd70ac97c0bffa7da222314e`,
+and artifact SHA-256
+`20a09b9b750faed9dc744233a33cf3378961e3d7fb224d3ad9267e1b984b38b8`.
+This clears only the tokenizer gate; eligible gold, the trained W2NER head,
+and the model-quality tournament remain absent.
+
 Use W2NER at official implementation commit
 `a34ff841891919001080edefb50e14fa9dc15e1c` as the primary
 overlap/discontinuous-capable supervised head, compare it to GlobalPointer on

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import unittest
 from pathlib import Path
 
@@ -98,6 +99,37 @@ class NERPipelineTests(unittest.TestCase):
             specification["frozen_metrics"]["primary"],
             "exact_span_and_type_micro_f1",
         )
+
+    def test_mmbert_registry_pins_the_passing_offset_qualification(self):
+        root = Path(__file__).parents[1]
+        registry = json.loads(
+            (root / "experiments/ner/candidates.json").read_text(encoding="utf-8")
+        )
+        specification = json.loads(
+            (root / "experiments/ner/benchmark-spec.json").read_text(encoding="utf-8")
+        )
+        candidate = next(
+            item for item in registry["candidates"] if item["id"] == "mmbert-w2ner"
+        )
+        arm = next(
+            item for item in specification["arms"] if item["id"] == "mmbert-w2ner"
+        )
+        qualification = candidate["tokenizer_qualification"]
+        artifact_path = root / qualification["path"]
+        artifact_bytes = artifact_path.read_bytes()
+        artifact = json.loads(artifact_bytes)
+
+        self.assertEqual(
+            hashlib.sha256(artifact_bytes).hexdigest(), qualification["sha256"]
+        )
+        self.assertEqual(arm["tokenizer_qualification"], qualification)
+        self.assertTrue(artifact["passed"])
+        self.assertEqual(artifact["code_revision"], qualification["code_revision"])
+        self.assertEqual(
+            artifact["tokenizer_file_manifest_sha256"],
+            qualification["tokenizer_file_manifest_sha256"],
+        )
+        self.assertNotIn("tokenizer_offset_round_trip_test", arm["blockers"])
 
 
 if __name__ == "__main__":

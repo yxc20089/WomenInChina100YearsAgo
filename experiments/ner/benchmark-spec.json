@@ -177,7 +177,7 @@
       "id": "mmbert-w2ner",
       "candidate_id": "mmbert-w2ner",
       "adapter_family": "w2ner",
-      "status": "specified_not_implemented",
+      "status": "tokenizer_qualified_training_not_implemented",
       "model": "jhu-clsp/mmBERT-base",
       "revision": "c5955035435e2bf121cde7f3c8863ef52ff35d82",
       "modalities": [
@@ -188,9 +188,16 @@
       "head_implementation": "ljynlp/W2NER",
       "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
       "required_tokenizer_test": "unicode_character_offset_round_trip_on_traditional_chinese_without_spaces",
+      "tokenizer_qualification": {
+        "path": "experiments/ner/mmbert-tokenizer-offset-qualification.json",
+        "sha256": "20a09b9b750faed9dc744233a33cf3378961e3d7fb224d3ad9267e1b984b38b8",
+        "result": "passed_offset_plumbing_only",
+        "code_revision": "3ae5fb5ad8e93c901dbd249e3e7d3f50fc88499a",
+        "tokenizer_file_manifest_sha256": "66367f39282358dd81ab317b563d283dcecaff20cd70ac97c0bffa7da222314e",
+        "virtual_prefix_policy": "standalone_sentencepiece_prefix_duplicate_v1"
+      },
       "blockers": [
         "eligible_training_gold",
-        "tokenizer_offset_round_trip_test",
         "trained_head_sha256",
         "training_dataset_sha256",
         "gpu_training_run"

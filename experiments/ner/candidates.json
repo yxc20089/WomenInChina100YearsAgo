@@ -24,7 +24,15 @@
       "revision": "c5955035435e2bf121cde7f3c8863ef52ff35d82",
       "license": "MIT",
       "role": "new massively multilingual supervised encoder challenger with the identical W2NER head",
-      "evidence": "The official model and paper cover 1,800+ languages including Chinese, but mmBERT only ties XLM-R on WikiANN NER and its authors identify prefix-tokenization weakness for NER/POS. There is no historical, Traditional-Chinese, or OCR result, so this is a controlled challenger rather than a replacement for MacBERT."
+      "evidence": "The official model and paper cover 1,800+ languages including Chinese, but mmBERT only ties XLM-R on WikiANN NER and its authors identify prefix-tokenization weakness for NER/POS. There is no historical, Traditional-Chinese, or OCR result, so this is a controlled challenger rather than a replacement for MacBERT.",
+      "tokenizer_qualification": {
+        "path": "experiments/ner/mmbert-tokenizer-offset-qualification.json",
+        "sha256": "20a09b9b750faed9dc744233a33cf3378961e3d7fb224d3ad9267e1b984b38b8",
+        "result": "passed_offset_plumbing_only",
+        "code_revision": "3ae5fb5ad8e93c901dbd249e3e7d3f50fc88499a",
+        "tokenizer_file_manifest_sha256": "66367f39282358dd81ab317b563d283dcecaff20cd70ac97c0bffa7da222314e",
+        "virtual_prefix_policy": "standalone_sentencepiece_prefix_duplicate_v1"
+      }
     },
     {
       "id": "guji-roberta-w2ner",

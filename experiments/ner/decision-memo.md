@@ -29,6 +29,14 @@ and identifies a prefix-tokenization weakness. It has no historical Chinese or
 OCR evidence. Require a Traditional-Chinese character-offset round-trip test
 and give it the identical W2NER head, split, and training budget.
 
+That offset-only gate now passes on the pinned tokenizer: the committed
+six-case artifact has SHA-256
+`20a09b9b750faed9dc744233a33cf3378961e3d7fb224d3ad9267e1b984b38b8`, no
+unknown tokens, and two explicitly recorded standalone prefix markers handled
+under `standalone_sentencepiece_prefix_duplicate_v1`. This does not change the
+candidate ranking or supply NER-quality evidence; it only permits the mmBERT
+arm to enter the future same-head tournament.
+
 Use **GLiNER-X** as the executable open-type recall challenger. Retain **Otter
 CE** as research-only until its checkpoint-weight license is explicit. Use
 **NuExtract3** only as a routed difficult/image-context stage. Use

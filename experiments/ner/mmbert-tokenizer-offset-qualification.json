@@ -1,0 +1,1366 @@
+{
+  "schema_version": "1.1",
+  "artifact_kind": "ner_tokenizer_offset_qualification",
+  "generated_at": "2026-07-18T13:02:35.088127Z",
+  "fixture_id": "women-history-zh-tokenizer-offset-v1",
+  "fixture_sha256": "598347cacea2af785e5e0cf175cb8ba0bd9f44a02a4afbd1914f0b51475f32c8",
+  "model_name": "jhu-clsp/mmBERT-base",
+  "model_revision": "c5955035435e2bf121cde7f3c8863ef52ff35d82",
+  "code_revision": "3ae5fb5ad8e93c901dbd249e3e7d3f50fc88499a",
+  "tokenizer_class": "TokenizersBackend",
+  "tokenizer_is_fast": true,
+  "tokenizer_files": [
+    {
+      "path": "config.json",
+      "sha256": "47b40fd2e1df8299426dd5f4bb18c28f028cfafcb51b73645f83e596d187eb37",
+      "size_bytes": 1188
+    },
+    {
+      "path": "special_tokens_map.json",
+      "sha256": "baec30ea10906f16adb8c18af7a34023002c1746542612b8b41c9f09e1351351",
+      "size_bytes": 636
+    },
+    {
+      "path": "tokenizer.json",
+      "sha256": "197d4cc5406ee12cc50c8b5511f2393cc32d9db321545979ce041c1199178356",
+      "size_bytes": 17525329
+    },
+    {
+      "path": "tokenizer_config.json",
+      "sha256": "1d2f82c1341a79748e00efe82e67690f99d00b3c2a894f2b23128fd9d3519da3",
+      "size_bytes": 46440
+    }
+  ],
+  "tokenizer_file_manifest_sha256": "66367f39282358dd81ab317b563d283dcecaff20cd70ac97c0bffa7da222314e",
+  "transformers_version": "5.6.2",
+  "tokenizers_version": "0.22.2",
+  "virtual_prefix_policy": "standalone_sentencepiece_prefix_duplicate_v1",
+  "results": [
+    {
+      "case_id": "continuous-traditional",
+      "input_sha256": "ef1fef08907eeeed6bb5e3107627b7ea2b8a59efaebdfa0b7cfd12815f5e93d6",
+      "normalized_sha256": "ef1fef08907eeeed6bb5e3107627b7ea2b8a59efaebdfa0b7cfd12815f5e93d6",
+      "normalization_changed": false,
+      "input_characters": 23,
+      "tokens": [
+        {
+          "token_index": 0,
+          "token_id": 172242,
+          "token": "▁宋",
+          "start": 0,
+          "end": 1,
+          "surface": "宋",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 1,
+          "token_id": 101922,
+          "token": "女士",
+          "start": 1,
+          "end": 3,
+          "surface": "女士",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 2,
+          "token_id": 235655,
+          "token": "入",
+          "start": 3,
+          "end": 4,
+          "surface": "入",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 3,
+          "token_id": 236536,
+          "token": "學",
+          "start": 4,
+          "end": 5,
+          "surface": "學",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 4,
+          "token_id": 39606,
+          "token": "上海",
+          "start": 5,
+          "end": 7,
+          "surface": "上海",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 5,
+          "token_id": 38118,
+          "token": "女子",
+          "start": 7,
+          "end": 9,
+          "surface": "女子",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 6,
+          "token_id": 83235,
+          "token": "學校",
+          "start": 9,
+          "end": 11,
+          "surface": "學校",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 7,
+          "token_id": 235365,
+          "token": "，",
+          "start": 11,
+          "end": 12,
+          "surface": "，",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 8,
+          "token_id": 173714,
+          "token": "畢業",
+          "start": 12,
+          "end": 14,
+          "surface": "畢業",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 9,
+          "token_id": 235843,
+          "token": "後",
+          "start": 14,
+          "end": 15,
+          "surface": "後",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 10,
+          "token_id": 236148,
+          "token": "任",
+          "start": 15,
+          "end": 16,
+          "surface": "任",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 11,
+          "token_id": 237446,
+          "token": "職",
+          "start": 16,
+          "end": 17,
+          "surface": "職",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 12,
+          "token_id": 48486,
+          "token": "中國",
+          "start": 17,
+          "end": 19,
+          "surface": "中國",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 13,
+          "token_id": 238358,
+          "token": "婦",
+          "start": 19,
+          "end": 20,
+          "surface": "婦",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 14,
+          "token_id": 235736,
+          "token": "女",
+          "start": 20,
+          "end": 21,
+          "surface": "女",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 15,
+          "token_id": 236153,
+          "token": "會",
+          "start": 21,
+          "end": 22,
+          "surface": "會",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 16,
+          "token_id": 235362,
+          "token": "。",
+          "start": 22,
+          "end": 23,
+          "surface": "。",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        }
+      ],
+      "probes": [
+        {
+          "label": "person",
+          "expected_start": 0,
+          "expected_end": 3,
+          "expected_text": "宋女士",
+          "token_indices": [
+            0,
+            1
+          ],
+          "recovered_start": 0,
+          "recovered_end": 3,
+          "recovered_text": "宋女士",
+          "exact": true
+        },
+        {
+          "label": "school",
+          "expected_start": 5,
+          "expected_end": 11,
+          "expected_text": "上海女子學校",
+          "token_indices": [
+            4,
+            5,
+            6
+          ],
+          "recovered_start": 5,
+          "recovered_end": 11,
+          "recovered_text": "上海女子學校",
+          "exact": true
+        },
+        {
+          "label": "organization",
+          "expected_start": 17,
+          "expected_end": 22,
+          "expected_text": "中國婦女會",
+          "token_indices": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "recovered_start": 17,
+          "recovered_end": 22,
+          "recovered_text": "中國婦女會",
+          "exact": true
+        }
+      ],
+      "uncovered_non_whitespace_indices": [],
+      "multiply_covered_indices": [],
+      "unknown_token_indices": [],
+      "virtual_prefix_token_indices": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "case_id": "traditional-variants",
+      "input_sha256": "33a98ae40dc1cd1001ce05fd8ee8dee7494960b403d0a2ba3648318257ef5706",
+      "normalized_sha256": "33a98ae40dc1cd1001ce05fd8ee8dee7494960b403d0a2ba3648318257ef5706",
+      "normalization_changed": false,
+      "input_characters": 18,
+      "tokens": [
+        {
+          "token_index": 0,
+          "token_id": 194578,
+          "token": "▁梁",
+          "start": 0,
+          "end": 1,
+          "surface": "梁",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 1,
+          "token_id": 241168,
+          "token": "啓",
+          "start": 1,
+          "end": 2,
+          "surface": "啓",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 2,
+          "token_id": 236304,
+          "token": "超",
+          "start": 2,
+          "end": 3,
+          "surface": "超",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 3,
+          "token_id": 236679,
+          "token": "與",
+          "start": 3,
+          "end": 4,
+          "surface": "與",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 4,
+          "token_id": 238197,
+          "token": "梁",
+          "start": 4,
+          "end": 5,
+          "surface": "梁",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 5,
+          "token_id": 239690,
+          "token": "啟",
+          "start": 5,
+          "end": 6,
+          "surface": "啟",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 6,
+          "token_id": 236304,
+          "token": "超",
+          "start": 6,
+          "end": 7,
+          "surface": "超",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 7,
+          "token_id": 235365,
+          "token": "，",
+          "start": 7,
+          "end": 8,
+          "surface": "，",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 8,
+          "token_id": 103729,
+          "token": "臺灣",
+          "start": 8,
+          "end": 10,
+          "surface": "臺灣",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 9,
+          "token_id": 236679,
+          "token": "與",
+          "start": 10,
+          "end": 11,
+          "surface": "與",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 10,
+          "token_id": 40911,
+          "token": "台灣",
+          "start": 11,
+          "end": 13,
+          "surface": "台灣",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 11,
+          "token_id": 235365,
+          "token": "，",
+          "start": 13,
+          "end": 14,
+          "surface": "，",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 12,
+          "token_id": 237568,
+          "token": "裏",
+          "start": 14,
+          "end": 15,
+          "surface": "裏",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 13,
+          "token_id": 236679,
+          "token": "與",
+          "start": 15,
+          "end": 16,
+          "surface": "與",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 14,
+          "token_id": 237396,
+          "token": "裡",
+          "start": 16,
+          "end": 17,
+          "surface": "裡",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 15,
+          "token_id": 235362,
+          "token": "。",
+          "start": 17,
+          "end": 18,
+          "surface": "。",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        }
+      ],
+      "probes": [
+        {
+          "label": "person_variant_a",
+          "expected_start": 0,
+          "expected_end": 3,
+          "expected_text": "梁啓超",
+          "token_indices": [
+            0,
+            1,
+            2
+          ],
+          "recovered_start": 0,
+          "recovered_end": 3,
+          "recovered_text": "梁啓超",
+          "exact": true
+        },
+        {
+          "label": "person_variant_b",
+          "expected_start": 4,
+          "expected_end": 7,
+          "expected_text": "梁啟超",
+          "token_indices": [
+            4,
+            5,
+            6
+          ],
+          "recovered_start": 4,
+          "recovered_end": 7,
+          "recovered_text": "梁啟超",
+          "exact": true
+        },
+        {
+          "label": "place_variant_a",
+          "expected_start": 8,
+          "expected_end": 10,
+          "expected_text": "臺灣",
+          "token_indices": [
+            8
+          ],
+          "recovered_start": 8,
+          "recovered_end": 10,
+          "recovered_text": "臺灣",
+          "exact": true
+        },
+        {
+          "label": "place_variant_b",
+          "expected_start": 11,
+          "expected_end": 13,
+          "expected_text": "台灣",
+          "token_indices": [
+            10
+          ],
+          "recovered_start": 11,
+          "recovered_end": 13,
+          "recovered_text": "台灣",
+          "exact": true
+        },
+        {
+          "label": "character_variant_a",
+          "expected_start": 14,
+          "expected_end": 15,
+          "expected_text": "裏",
+          "token_indices": [
+            12
+          ],
+          "recovered_start": 14,
+          "recovered_end": 15,
+          "recovered_text": "裏",
+          "exact": true
+        },
+        {
+          "label": "character_variant_b",
+          "expected_start": 16,
+          "expected_end": 17,
+          "expected_text": "裡",
+          "token_indices": [
+            14
+          ],
+          "recovered_start": 16,
+          "recovered_end": 17,
+          "recovered_text": "裡",
+          "exact": true
+        }
+      ],
+      "uncovered_non_whitespace_indices": [],
+      "multiply_covered_indices": [],
+      "unknown_token_indices": [],
+      "virtual_prefix_token_indices": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "case_id": "supplementary-plane-character",
+      "input_sha256": "e2add1b66e28f3bde8238b782f596ac105f94153f048654e33d8e05e825b49b6",
+      "normalized_sha256": "e2add1b66e28f3bde8238b782f596ac105f94153f048654e33d8e05e825b49b6",
+      "normalization_changed": false,
+      "input_characters": 13,
+      "tokens": [
+        {
+          "token_index": 0,
+          "token_id": 235248,
+          "token": "▁",
+          "start": 0,
+          "end": 1,
+          "surface": "𠮷",
+          "is_unknown": false,
+          "is_virtual_prefix": true
+        },
+        {
+          "token_index": 1,
+          "token_id": 252640,
+          "token": "𠮷",
+          "start": 0,
+          "end": 1,
+          "surface": "𠮷",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 2,
+          "token_id": 101922,
+          "token": "女士",
+          "start": 1,
+          "end": 3,
+          "surface": "女士",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 3,
+          "token_id": 239633,
+          "token": "寓",
+          "start": 3,
+          "end": 4,
+          "surface": "寓",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 4,
+          "token_id": 246047,
+          "token": "滬",
+          "start": 4,
+          "end": 5,
+          "surface": "滬",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 5,
+          "token_id": 235365,
+          "token": "，",
+          "start": 5,
+          "end": 6,
+          "surface": "，",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 6,
+          "token_id": 235750,
+          "token": "名",
+          "start": 6,
+          "end": 7,
+          "surface": "名",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 7,
+          "token_id": 238413,
+          "token": "錄",
+          "start": 7,
+          "end": 8,
+          "surface": "錄",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 8,
+          "token_id": 235591,
+          "token": "作",
+          "start": 8,
+          "end": 9,
+          "surface": "作",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 9,
+          "token_id": 236868,
+          "token": "吉",
+          "start": 9,
+          "end": 10,
+          "surface": "吉",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 10,
+          "token_id": 101922,
+          "token": "女士",
+          "start": 10,
+          "end": 12,
+          "surface": "女士",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 11,
+          "token_id": 235362,
+          "token": "。",
+          "start": 12,
+          "end": 13,
+          "surface": "。",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        }
+      ],
+      "probes": [
+        {
+          "label": "rare_person",
+          "expected_start": 0,
+          "expected_end": 3,
+          "expected_text": "𠮷女士",
+          "token_indices": [
+            1,
+            2
+          ],
+          "recovered_start": 0,
+          "recovered_end": 3,
+          "recovered_text": "𠮷女士",
+          "exact": true
+        },
+        {
+          "label": "historical_place",
+          "expected_start": 4,
+          "expected_end": 5,
+          "expected_text": "滬",
+          "token_indices": [
+            4
+          ],
+          "recovered_start": 4,
+          "recovered_end": 5,
+          "recovered_text": "滬",
+          "exact": true
+        },
+        {
+          "label": "comparison_person",
+          "expected_start": 9,
+          "expected_end": 12,
+          "expected_text": "吉女士",
+          "token_indices": [
+            9,
+            10
+          ],
+          "recovered_start": 9,
+          "recovered_end": 12,
+          "recovered_text": "吉女士",
+          "exact": true
+        }
+      ],
+      "uncovered_non_whitespace_indices": [],
+      "multiply_covered_indices": [],
+      "unknown_token_indices": [],
+      "virtual_prefix_token_indices": [
+        0
+      ],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "case_id": "observed-ocr-confusions",
+      "input_sha256": "f03d45dea83e9e62089f101c287b2386b59052109f6be0a83ac561e2cd2ed790",
+      "normalized_sha256": "f03d45dea83e9e62089f101c287b2386b59052109f6be0a83ac561e2cd2ed790",
+      "normalization_changed": false,
+      "input_characters": 19,
+      "tokens": [
+        {
+          "token_index": 0,
+          "token_id": 145469,
+          "token": "▁上海",
+          "start": 0,
+          "end": 2,
+          "surface": "上海",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 1,
+          "token_id": 235736,
+          "token": "女",
+          "start": 2,
+          "end": 3,
+          "surface": "女",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 2,
+          "token_id": 247648,
+          "token": "孑",
+          "start": 3,
+          "end": 4,
+          "surface": "孑",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 3,
+          "token_id": 83235,
+          "token": "學校",
+          "start": 4,
+          "end": 6,
+          "surface": "學校",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 4,
+          "token_id": 235736,
+          "token": "女",
+          "start": 6,
+          "end": 7,
+          "surface": "女",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 5,
+          "token_id": 78312,
+          "token": "學生",
+          "start": 7,
+          "end": 9,
+          "surface": "學生",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 6,
+          "token_id": 235365,
+          "token": "，",
+          "start": 9,
+          "end": 10,
+          "surface": "，",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 7,
+          "token_id": 237772,
+          "token": "宋",
+          "start": 10,
+          "end": 11,
+          "surface": "宋",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 8,
+          "token_id": 235736,
+          "token": "女",
+          "start": 11,
+          "end": 12,
+          "surface": "女",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 9,
+          "token_id": 236475,
+          "token": "土",
+          "start": 12,
+          "end": 13,
+          "surface": "土",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 10,
+          "token_id": 236148,
+          "token": "任",
+          "start": 13,
+          "end": 14,
+          "surface": "任",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 11,
+          "token_id": 237446,
+          "token": "職",
+          "start": 14,
+          "end": 15,
+          "surface": "職",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 12,
+          "token_id": 238358,
+          "token": "婦",
+          "start": 15,
+          "end": 16,
+          "surface": "婦",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 13,
+          "token_id": 235736,
+          "token": "女",
+          "start": 16,
+          "end": 17,
+          "surface": "女",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 14,
+          "token_id": 236153,
+          "token": "會",
+          "start": 17,
+          "end": 18,
+          "surface": "會",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 15,
+          "token_id": 235362,
+          "token": "。",
+          "start": 18,
+          "end": 19,
+          "surface": "。",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        }
+      ],
+      "probes": [
+        {
+          "label": "ocr_school",
+          "expected_start": 0,
+          "expected_end": 6,
+          "expected_text": "上海女孑學校",
+          "token_indices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "recovered_start": 0,
+          "recovered_end": 6,
+          "recovered_text": "上海女孑學校",
+          "exact": true
+        },
+        {
+          "label": "ocr_person",
+          "expected_start": 10,
+          "expected_end": 13,
+          "expected_text": "宋女土",
+          "token_indices": [
+            7,
+            8,
+            9
+          ],
+          "recovered_start": 10,
+          "recovered_end": 13,
+          "recovered_text": "宋女土",
+          "exact": true
+        },
+        {
+          "label": "organization",
+          "expected_start": 15,
+          "expected_end": 18,
+          "expected_text": "婦女會",
+          "token_indices": [
+            12,
+            13,
+            14
+          ],
+          "recovered_start": 15,
+          "recovered_end": 18,
+          "recovered_text": "婦女會",
+          "exact": true
+        }
+      ],
+      "uncovered_non_whitespace_indices": [],
+      "multiply_covered_indices": [],
+      "unknown_token_indices": [],
+      "virtual_prefix_token_indices": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "case_id": "line-break-and-punctuation",
+      "input_sha256": "74074683bc46cc891e2e4a8b1383534cad624a4ff2958ba64426e3f73b41aa10",
+      "normalized_sha256": "74074683bc46cc891e2e4a8b1383534cad624a4ff2958ba64426e3f73b41aa10",
+      "normalization_changed": false,
+      "input_characters": 20,
+      "tokens": [
+        {
+          "token_index": 0,
+          "token_id": 145469,
+          "token": "▁上海",
+          "start": 0,
+          "end": 2,
+          "surface": "上海",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 1,
+          "token_id": 38118,
+          "token": "女子",
+          "start": 2,
+          "end": 4,
+          "surface": "女子",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 2,
+          "token_id": 83235,
+          "token": "學校",
+          "start": 4,
+          "end": 6,
+          "surface": "學校",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 3,
+          "token_id": 108,
+          "token": "\n",
+          "start": 6,
+          "end": 7,
+          "surface": "\n",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 4,
+          "token_id": 70304,
+          "token": "▁校",
+          "start": 7,
+          "end": 8,
+          "surface": "校",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 5,
+          "token_id": 236017,
+          "token": "長",
+          "start": 8,
+          "end": 9,
+          "surface": "長",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 6,
+          "token_id": 235465,
+          "token": "：",
+          "start": 9,
+          "end": 10,
+          "surface": "：",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 7,
+          "token_id": 238162,
+          "token": "陳",
+          "start": 10,
+          "end": 11,
+          "surface": "陳",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 8,
+          "token_id": 101922,
+          "token": "女士",
+          "start": 11,
+          "end": 13,
+          "surface": "女士",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 9,
+          "token_id": 236334,
+          "token": "；",
+          "start": 13,
+          "end": 14,
+          "surface": "；",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 10,
+          "token_id": 147344,
+          "token": "民國",
+          "start": 14,
+          "end": 16,
+          "surface": "民國",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 11,
+          "token_id": 77330,
+          "token": "十四",
+          "start": 16,
+          "end": 18,
+          "surface": "十四",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 12,
+          "token_id": 235489,
+          "token": "年",
+          "start": 18,
+          "end": 19,
+          "surface": "年",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 13,
+          "token_id": 235362,
+          "token": "。",
+          "start": 19,
+          "end": 20,
+          "surface": "。",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        }
+      ],
+      "probes": [
+        {
+          "label": "school",
+          "expected_start": 0,
+          "expected_end": 6,
+          "expected_text": "上海女子學校",
+          "token_indices": [
+            0,
+            1,
+            2
+          ],
+          "recovered_start": 0,
+          "recovered_end": 6,
+          "recovered_text": "上海女子學校",
+          "exact": true
+        },
+        {
+          "label": "person",
+          "expected_start": 10,
+          "expected_end": 13,
+          "expected_text": "陳女士",
+          "token_indices": [
+            7,
+            8
+          ],
+          "recovered_start": 10,
+          "recovered_end": 13,
+          "recovered_text": "陳女士",
+          "exact": true
+        },
+        {
+          "label": "date",
+          "expected_start": 14,
+          "expected_end": 19,
+          "expected_text": "民國十四年",
+          "token_indices": [
+            10,
+            11,
+            12
+          ],
+          "recovered_start": 14,
+          "recovered_end": 19,
+          "recovered_text": "民國十四年",
+          "exact": true
+        }
+      ],
+      "uncovered_non_whitespace_indices": [],
+      "multiply_covered_indices": [],
+      "unknown_token_indices": [],
+      "virtual_prefix_token_indices": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "case_id": "uncertain-and-replacement-glyphs",
+      "input_sha256": "46413d0d1f6044b673e3c49e09a5ec99ab87972f8aea0f2f6e5277764733d340",
+      "normalized_sha256": "46413d0d1f6044b673e3c49e09a5ec99ab87972f8aea0f2f6e5277764733d340",
+      "normalization_changed": false,
+      "input_characters": 19,
+      "tokens": [
+        {
+          "token_index": 0,
+          "token_id": 235248,
+          "token": "▁",
+          "start": 0,
+          "end": 1,
+          "surface": "某",
+          "is_unknown": false,
+          "is_virtual_prefix": true
+        },
+        {
+          "token_index": 1,
+          "token_id": 237393,
+          "token": "某",
+          "start": 0,
+          "end": 1,
+          "surface": "某",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 2,
+          "token_id": 101922,
+          "token": "女士",
+          "start": 1,
+          "end": 3,
+          "surface": "女士",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 3,
+          "token_id": 235586,
+          "token": "就",
+          "start": 3,
+          "end": 4,
+          "surface": "就",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 4,
+          "token_id": 237838,
+          "token": "讀",
+          "start": 4,
+          "end": 5,
+          "surface": "讀",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 5,
+          "token_id": 238094,
+          "token": "□",
+          "start": 5,
+          "end": 6,
+          "surface": "□",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 6,
+          "token_id": 235878,
+          "token": "海",
+          "start": 6,
+          "end": 7,
+          "surface": "海",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 7,
+          "token_id": 38118,
+          "token": "女子",
+          "start": 7,
+          "end": 9,
+          "surface": "女子",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 8,
+          "token_id": 83235,
+          "token": "學校",
+          "start": 9,
+          "end": 11,
+          "surface": "學校",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 9,
+          "token_id": 235365,
+          "token": "，",
+          "start": 11,
+          "end": 12,
+          "surface": "，",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 10,
+          "token_id": 235960,
+          "token": "字",
+          "start": 12,
+          "end": 13,
+          "surface": "字",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 11,
+          "token_id": 238279,
+          "token": "跡",
+          "start": 13,
+          "end": 14,
+          "surface": "跡",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 12,
+          "token_id": 236193,
+          "token": "�",
+          "start": 14,
+          "end": 15,
+          "surface": "�",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 13,
+          "token_id": 28319,
+          "token": "不可",
+          "start": 15,
+          "end": 17,
+          "surface": "不可",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 14,
+          "token_id": 239526,
+          "token": "辨",
+          "start": 17,
+          "end": 18,
+          "surface": "辨",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        },
+        {
+          "token_index": 15,
+          "token_id": 235362,
+          "token": "。",
+          "start": 18,
+          "end": 19,
+          "surface": "。",
+          "is_unknown": false,
+          "is_virtual_prefix": false
+        }
+      ],
+      "probes": [
+        {
+          "label": "person",
+          "expected_start": 0,
+          "expected_end": 3,
+          "expected_text": "某女士",
+          "token_indices": [
+            1,
+            2
+          ],
+          "recovered_start": 0,
+          "recovered_end": 3,
+          "recovered_text": "某女士",
+          "exact": true
+        },
+        {
+          "label": "uncertain_school",
+          "expected_start": 5,
+          "expected_end": 11,
+          "expected_text": "□海女子學校",
+          "token_indices": [
+            5,
+            6,
+            7,
+            8
+          ],
+          "recovered_start": 5,
+          "recovered_end": 11,
+          "recovered_text": "□海女子學校",
+          "exact": true
+        },
+        {
+          "label": "replacement_context",
+          "expected_start": 12,
+          "expected_end": 15,
+          "expected_text": "字跡�",
+          "token_indices": [
+            10,
+            11,
+            12
+          ],
+          "recovered_start": 12,
+          "recovered_end": 15,
+          "recovered_text": "字跡�",
+          "exact": true
+        }
+      ],
+      "uncovered_non_whitespace_indices": [],
+      "multiply_covered_indices": [],
+      "unknown_token_indices": [],
+      "virtual_prefix_token_indices": [
+        0
+      ],
+      "failures": [],
+      "passed": true
+    }
+  ],
+  "global_failures": [],
+  "warnings": [
+    "This artifact qualifies tokenizer offset integrity only; it is not NER accuracy evidence.",
+    "Passing does not authorize model selection, entity acceptance, or graph promotion.",
+    "Tokenizer emitted 2 standalone SentencePiece prefix markers with duplicated first-character offsets. They were retained in the audit record but excluded from character coverage and span alignment under standalone_sentencepiece_prefix_duplicate_v1; downstream adapters must apply the same policy."
+  ],
+  "passed": true
+}

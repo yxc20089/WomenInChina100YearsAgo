@@ -3,20 +3,44 @@
   "research_cutoff": "2026-07-18",
   "candidates": [
     {
+      "id": "macbert-w2ner",
+      "model": "hfl/chinese-macbert-base",
+      "revision": "a986e004d2a7f2a1c2f5a3edef4e20604a974ed1",
+      "license": "Apache-2.0",
+      "role": "first supervised fixed-ontology arm with an overlap-capable W2NER head",
+      "evidence": "A directly relevant study on retyped Shen Bao articles from 1872-1947 reports F1 58.26 for MacBERT versus 56.83 for SIKU. It is target-period evidence but not an OCR-robustness result."
+    },
+    {
+      "id": "guji-roberta-w2ner",
+      "model": "hsc748NLP/GujiRoBERTa_jian_fan",
+      "revision": "8e755704c4ae91eded4ebcabe17fecedb42d324f",
+      "license": null,
+      "role": "license-gated historical-encoder supervised arm with an identical W2NER head",
+      "evidence": "An EvaHan controlled comparison reports W2NER average F1 88.48 versus GlobalPointer 87.33 and CRF 86.33; GujiRoBERTa-W2NER reached 86.34 on the public test. This is clean ancient text, and the checkpoint card declares no license."
+    },
+    {
+      "id": "sikubert-w2ner",
+      "model": "SIKU-BERT/sikubert",
+      "revision": "fc656de2d6bde33919102dd3abe31c843f42226a",
+      "license": "Apache-2.0",
+      "role": "historical-encoder supervised arm with an identical W2NER head",
+      "evidence": "Pretrained on Siku Quanshu; the retyped Shen Bao comparison reports F1 56.83, below MacBERT's 58.26. Historical pretraining remains relevant, but neither result measures OCR transfer."
+    },
+    {
+      "id": "otter-ce-mmbert",
+      "model": "whoisjones/otter-ce-mmbert",
+      "revision": "aed019f74647c225e14bc6d0792afdd458dfdb2d",
+      "license": null,
+      "role": "license-gated compact open-type recall challenger",
+      "evidence": "The 2026 preprint reports coverage of 100+ languages and average gains over GLiNER-X-base, but no historical, Traditional-Chinese, or OCR result; the checkpoint card has no license metadata."
+    },
+    {
       "id": "gliner-x-large",
       "model": "knowledgator/gliner-x-large",
       "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
       "license": "Apache-2.0",
-      "role": "primary multilingual open-span challenger",
+      "role": "existing multilingual open-span recall challenger",
       "evidence": "Official model card reports zh_pud F1 0.6794; no historical, Traditional-Chinese, or OCR benchmark. A local first-50-region compatibility run required a fixed zh-hant Stanza splitter and produced 67 noisy candidates versus 5 from multi-v2.1, with only 2 exact span/type agreements; this does not establish accuracy."
-    },
-    {
-      "id": "sikubert",
-      "model": "SIKU-BERT/sikubert",
-      "revision": "fc656de2d6bde33919102dd3abe31c843f42226a",
-      "license": "Apache-2.0",
-      "role": "historical-Chinese supervised primary with an overlap-capable span head",
-      "evidence": "Pretrained on Siku Quanshu; requires a project-trained span/GlobalPointer-style head and Shen Bao validation. A single-label BIO/CRF arm is only a control because the project ontology permits overlaps."
     },
     {
       "id": "nuextract3",
@@ -27,12 +51,12 @@
       "evidence": "Multimodal schema extraction with verbatim strings; no disclosed historical-Chinese NER result."
     },
     {
-      "id": "qwen3.5-9b",
-      "model": "Qwen/Qwen3.5-9B",
-      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "id": "qwen3.6-27b",
+      "model": "Qwen/Qwen3.6-27B",
+      "revision": "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
       "license": "Apache-2.0",
-      "role": "general multimodal JSON-schema control",
-      "evidence": "Chinese-capable control with substantially higher compute; no historical NER evidence."
+      "role": "high-compute multimodal JSON-schema ceiling",
+      "evidence": "Chinese-capable 27B vision-language ceiling with stronger generic/document results than the earlier family; no historical NER evidence and roughly 55.6 GB BF16 weights."
     },
     {
       "id": "gliner-multi-v2.1",
@@ -51,6 +75,10 @@
     {
       "model": "gliner-community/gliner_large-v2.5",
       "reason": "May remain a control, but no published Chinese evaluation supports prioritizing it over GLiNER-X."
+    },
+    {
+      "model": "Qwen/Qwen3.5-9B",
+      "reason": "Retain only as a lower-cost control when 80 GB-class hardware is unavailable; NuExtract3's own generic structured-extraction comparison favors NuExtract3, and neither has target historical-Chinese NER evidence."
     }
   ]
 }

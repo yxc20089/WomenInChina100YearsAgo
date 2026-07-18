@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
 
 from wic_history.evidence import EntityType
 from wic_history.ner_pipeline import (
@@ -48,6 +50,30 @@ class NERPipelineTests(unittest.TestCase):
 
     def test_model_labels_cover_the_full_project_ontology(self):
         self.assertEqual(set(MODEL_LABELS.values()), set(EntityType))
+
+    def test_research_registry_pins_the_supervised_and_open_type_tournaments(self):
+        root = Path(__file__).parents[1]
+        registry = json.loads(
+            (root / "experiments/ner/candidates.json").read_text(encoding="utf-8")
+        )
+        candidates = {item["id"]: item for item in registry["candidates"]}
+        self.assertTrue(
+            {
+                "macbert-w2ner",
+                "guji-roberta-w2ner",
+                "sikubert-w2ner",
+                "otter-ce-mmbert",
+                "gliner-x-large",
+                "nuextract3",
+                "qwen3.6-27b",
+            }.issubset(candidates)
+        )
+        self.assertTrue(
+            all(len(candidate["revision"]) == 40 for candidate in candidates.values())
+        )
+        for candidate in candidates.values():
+            if candidate["license"] is None:
+                self.assertIn("license-gated", candidate["role"])
 
 
 if __name__ == "__main__":

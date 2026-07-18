@@ -87,14 +87,14 @@ NER and entity linking must be separate stages. Recognizing `宋庆龄` as a per
 ### Candidate stack
 
 1. **Rules and gazetteers** for dates, newspaper issue structure, addresses, schools, organizations, titles, and historical place names.
-2. **GLiNER benchmark**, testing both `gliner-community/gliner_large-v2.5` and an explicitly multilingual GLiNER checkpoint. The v2.5 model card labels the model multilingual but demonstrates English and does not report a historical-Chinese benchmark, so it is a candidate—not a default winner.
-3. **Chinese encoder fine-tune** on project annotations for high-volume inference once the ontology stabilizes.
-4. **Schema-constrained LLM extraction** as a higher-recall challenger for relations, events, implicit roles, and difficult passages. Require quotations/spans and reject outputs that cannot be grounded to OCR coordinates.
+2. **Supervised fixed-ontology tournament** using identical W2NER heads and training budgets on MacBERT, GujiRoBERTa-jian-fan (license-gated), and SIKU-BERT. MacBERT is the first arm because a directly relevant retyped *Shen Bao* study reports 58.26 F1 versus SIKU 56.83; neither score demonstrates OCR robustness.
+3. **Open-type recall challengers**: Otter CE mmBERT and GLiNER-X, with the current GLiNER-multi run retained as a baseline. Add one to the production union only if paired gold evaluation shows meaningful raw-OCR recall gain at bounded precision loss.
+4. **Schema-constrained multimodal extraction**: NuExtract3 on routed difficult cases and Qwen3.6-27B only as a high-compute ceiling. Require verbatim surfaces/exact offsets; general multimodal models are not assumed robust on historical Chinese scans.
 5. **Entity linking** using aliases/gazetteers, temporal and geographic compatibility, graph context, and a human-review queue.
 
 Start with entity types that support real research questions: `PERSON`, `ALIAS`, `PLACE`, `ADDRESS`, `ORGANIZATION`, `SCHOOL`, `OCCUPATION`, `ROLE_TITLE`, `PUBLICATION`, `EVENT`, `DATE`, `KINSHIP_TERM`, `PRODUCT`, and `ADVERTISEMENT`. Add relation/event schemas only after historians review examples.
 
-The evaluation set should contain at least 500 carefully reviewed snippets and report strict span F1, relaxed span F1, type F1, entity-linking accuracy, calibration, and recall by entity type. Report performance separately by OCR quality and decade.
+The evaluation set should contain at least 500 carefully reviewed snippets and report strict span F1, relaxed span F1, type F1, entity-linking accuracy, calibration, and recall by entity type. Report performance separately by OCR quality and decade. Compare corrected text, raw OCR and observed-confusion augmentation; select with paired issue-cluster bootstrap intervals rather than a generic leaderboard or unsupported absolute initial F1 threshold.
 
 ## 6. GraphRAG framework assessment
 

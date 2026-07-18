@@ -16,22 +16,25 @@ corrected/multimodal input, canonical input SHA-256, dataset/split, ontology,
 adapter and prompt/schema revision. Legacy 1.0 artifacts remain readable but do
 not satisfy the scored benchmark provenance gate.
 
-Evaluate each applicable model on two paired inputs: double-corrected text and
-the corresponding raw OCR. Split by issue/date rather than random snippets so
-near-duplicate newspaper language cannot leak across sets. Report exact and
-relaxed span F1 by type, hallucinated-span rate, evidence/offset validity,
-throughput, peak memory, and degradation as OCR CER rises.
+Evaluate each applicable model on paired double-corrected text, corresponding
+raw OCR, and observed-confusion noise augmentation. Split by issue/date rather
+than random snippets so near-duplicate newspaper language cannot leak across
+sets. Report exact and relaxed span F1 by type, hallucinated-span rate,
+evidence/offset validity, throughput, peak memory, and degradation as OCR CER
+rises.
 
-The production hypothesis is a cascade: gazetteers and rules; a SIKU-BERT-based
-project-specific span/token model plus GLiNER-X candidates; then NuExtract3 only
-for disagreements, rare types, implicit relations, or difficult page crops.
-Every stage must preserve exact source offsets and may abstain. Entity linking
-and claim review remain separate gates.
+The production hypothesis is a cascade: gazetteers and rules; the winner of an
+identical-head MacBERT/GujiRoBERTa/SIKU supervised tournament; Otter CE and/or
+GLiNER-X only if a raw-recoverable recall-union gate passes; then NuExtract3
+only for disagreements, rare types, implicit relations, or difficult page
+crops. Every stage must preserve exact source offsets and may abstain. Entity
+linking and claim review remain separate gates.
 
-Use an overlap-capable span/GlobalPointer-style SIKU head. A single-label BIO/CRF
-head is only a control because the policy permits nested spans and the same
-surface to carry distinct defensible types. Scores from different extractors are
-not comparable until calibrated, so artifacts retain every extractor's raw
+Use W2NER as the primary overlap/discontinuous-capable supervised head, compare
+it to GlobalPointer on one frozen backbone, and retain a single-label BIO/CRF
+head only as a flat control. The policy permits nested spans and the same
+surface to carry distinct defensible types. Scores from different extractors
+are not comparable until calibrated, so artifacts retain every extractor's raw
 support instead of discarding disagreements.
 
 ## Pinned compatibility comparison

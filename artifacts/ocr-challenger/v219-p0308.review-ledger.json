@@ -1,0 +1,183 @@
+{
+  "schema_version": "1.0",
+  "created_on": "2026-07-18",
+  "gold_status": "single_review_not_gold",
+  "cases": [
+    {
+      "target": {
+        "case_id": "C07",
+        "volume_number": 219,
+        "page_number": 308,
+        "source_image_sha256": "4a87398f84cb9cc80ee0f06232dc6cd020a1d582b25ef9d423f596c2c2478754",
+        "crop_uri": "artifacts/ocr-challenger/suite-v219-p0308/C07_vertical_disagreement.png",
+        "crop_sha256": "737bcc3cac0a77395d6a20ae446e076c5be12c8e900f507c6ee5d96f7561b0ee",
+        "crop_box": {
+          "left": 4940,
+          "top": 1280,
+          "right": 5130,
+          "bottom": 2310
+        }
+      },
+      "hypotheses": [
+        {
+          "hypothesis_id": "9e28f503-fb16-5cef-9ec6-e971820018ee",
+          "engine": "HunyuanOCR",
+          "model_name": "tencent/HunyuanOCR",
+          "model_revision": "de8f10ad2f00a0cefd790b526de8a65dcfdb3205",
+          "raw_text": "茶餘酒後。對着嬌兒慈母。愛能情人。說用齊市",
+          "raw_text_sha256": "355a47c5859d39a1f3a15c58471a0b4c4c6037975226ac9ee01a12c6b5bc0453"
+        },
+        {
+          "hypothesis_id": "533de11a-2d7d-5e06-9fa8-404a320ffce2",
+          "engine": "PaddleOCR",
+          "model_name": "PP-OCRv6",
+          "model_revision": "paddleocr-3.7.0-official",
+          "raw_text": "水。也可資",
+          "raw_text_sha256": "deeede6d25e4a8587aa69e0f4eceb4de9812c0bc7ac16c9ef6273f3d44fde755",
+          "confidence": 0.316
+        },
+        {
+          "hypothesis_id": "2146ca97-4e6d-5016-bf20-a004889fb8b1",
+          "engine": "PaddleOCR",
+          "model_name": "PP-OCRv6",
+          "model_revision": "paddleocr-3.7.0-official",
+          "raw_text": "茶餘酒後對者婚兒無母愛解仙人說無得東",
+          "raw_text_sha256": "cbe09a1fa72766a3ad51ee1e40d9edc07cb2341775e93be8906391c18e3d7fca",
+          "confidence": 0.562
+        }
+      ],
+      "reviews": [
+        {
+          "review_id": "a65ed338-6b58-5cc5-b06e-403fd8bf479f",
+          "reviewer_role": "project_owner",
+          "reviewed_on": "2026-07-18",
+          "decision": "partial",
+          "provided_text": "爱宠情人。",
+          "source_script_transcription": "愛寵情人。",
+          "evidence": [
+            {
+              "description": "Direct human reading of the enlarged source crop"
+            }
+          ],
+          "superseded_proposals": [
+            "愛能解人意。"
+          ],
+          "unresolved_note": "The final segment after 愛寵情人。 remains unreadable.",
+          "gold_eligible": false
+        }
+      ]
+    },
+    {
+      "target": {
+        "case_id": "C08",
+        "volume_number": 219,
+        "page_number": 308,
+        "source_image_sha256": "4a87398f84cb9cc80ee0f06232dc6cd020a1d582b25ef9d423f596c2c2478754",
+        "crop_uri": "artifacts/ocr-challenger/suite-v219-p0308/C08_vertical_degraded.png",
+        "crop_sha256": "cb0d2b3c3022adfe09629a6eb39db4977f23f53e7f9c99aad1cdb6753c4cf70e",
+        "crop_box": {
+          "left": 5800,
+          "top": 1280,
+          "right": 5960,
+          "bottom": 2310
+        }
+      },
+      "hypotheses": [
+        {
+          "hypothesis_id": "026abd68-4b52-5748-b720-3168aabe3b52",
+          "engine": "HunyuanOCR",
+          "model_name": "tencent/HunyuanOCR",
+          "model_revision": "de8f10ad2f00a0cefd790b526de8a65dcfdb3205",
+          "raw_text": "觀這片。不僅悅且娛心。還可增長見識。因為高",
+          "raw_text_sha256": "be7ea605d8d7d72c32990c3b7b7e1baf42d2b54e60360c0e266038ede9003e57"
+        },
+        {
+          "hypothesis_id": "056bb32a-d61a-5897-80d5-4e436e20e07e",
+          "engine": "PaddleOCR",
+          "model_name": "PP-OCRv6",
+          "model_revision": "paddleocr-3.7.0-official",
+          "raw_text": "觀治片下僅悅目娛小可地辰見論因爲",
+          "raw_text_sha256": "bd82e27a8d0d6a26f4a90f3309ffed6ace8cf33714fdea3d6efeba0955bd828a",
+          "confidence": 0.442
+        }
+      ],
+      "reviews": [
+        {
+          "review_id": "ee3aa165-7c7e-5fbd-93a6-6659384824e5",
+          "reviewer_role": "project_owner",
+          "reviewed_on": "2026-07-18",
+          "decision": "corrected",
+          "provided_text": "不僅悅目娛心",
+          "source_script_transcription": "不僅悅目娛心",
+          "evidence": [
+            {
+              "description": "Direct human confirmation of the target phrase; the crop boundary truncates later text"
+            }
+          ],
+          "superseded_proposals": [],
+          "gold_eligible": false
+        }
+      ]
+    },
+    {
+      "target": {
+        "case_id": "C09",
+        "volume_number": 219,
+        "page_number": 308,
+        "source_image_sha256": "4a87398f84cb9cc80ee0f06232dc6cd020a1d582b25ef9d423f596c2c2478754",
+        "crop_uri": "artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png",
+        "crop_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
+        "crop_box": {
+          "left": 2780,
+          "top": 3180,
+          "right": 3030,
+          "bottom": 4470
+        }
+      },
+      "hypotheses": [
+        {
+          "hypothesis_id": "ab64827f-0b41-57db-a800-96b56e285db5",
+          "engine": "HunyuanOCR",
+          "model_name": "tencent/HunyuanOCR",
+          "model_revision": "de8f10ad2f00a0cefd790b526de8a65dcfdb3205",
+          "raw_text": "較上次更受歡迎、英皇時召霍臨宮中、與之談話、並請\n 其作畫、居約六七年、彼離英而遊歷、先至比利士之白\n 魯捨爾、大受當地藝術界之殷待、後重至白塞爾、少居",
+          "raw_text_sha256": "b9ebc36594b8a1284f73e76526a1a087c099db05a517b0d4205921defa36fd26"
+        },
+        {
+          "hypothesis_id": "f62a6a8c-c02c-59db-adbc-33dc258521f9",
+          "engine": "PaddleOCR",
+          "model_name": "PP-OCRv6",
+          "model_revision": "paddleocr-3.7.0-official",
+          "raw_text": "較上次更受歡迎英皇時召雷臨宮中與之談話並",
+          "raw_text_sha256": "42c141cf68265b8fc4aec79d2f77b66860a77ff574fdd36f04841f5946a1670c",
+          "confidence": 0.901
+        }
+      ],
+      "reviews": [
+        {
+          "review_id": "698111f6-ad19-5b19-be18-a14afb297e8b",
+          "reviewer_role": "project_owner",
+          "reviewed_on": "2026-07-18",
+          "decision": "context_resolved",
+          "provided_text": "英皇時召彼臨宮中",
+          "source_script_transcription": "英皇時召彼臨宮中",
+          "evidence": [
+            {
+              "description": "彼 is the object of 召; 臨宮中 is the verb phrase; the following pronoun chain contains 與之、其作畫、彼離英"
+            },
+            {
+              "description": "Adjacent columns identify the artist as 霍爾平（Hans Holbein）, excluding 霍臨 as a person name",
+              "crop_uri": "artifacts/ocr-challenger/suite-v219-p0308/C09_holbein_context.png",
+              "crop_sha256": "30d6afaa9116e39f3aab9b57e9918b0ef53f579c72b1d5ac1b01175bd51af8a0"
+            }
+          ],
+          "superseded_proposals": [
+            "英皇時召霍臨宮中",
+            "霍臨 as a person name"
+          ],
+          "gold_eligible": false
+        }
+      ]
+    }
+  ]
+}

@@ -32,9 +32,9 @@ Context can rank hypotheses, but it cannot silently replace an unclear glyph.
 | C04 | clean RTL date | `二月十五日期` | `期星日五十月二` (0.998) | Hunyuan omitted `星`; supported reading is `二月十五日星期` |
 | C05 | small RTL sentence | `片新换更日期星及四期星逢每院本意注，` | relevant line `片新换更日期星及四期星逢每院本意注` (0.966) | Both expose image order; supported reading is `注意本院每逢星期四及星期日更換新片`; both simplify `換` in raw output |
 | C06 | Latin LTR control | `(ERNST LUBITSCH)` / `# KISS ME AGAIN` | `(ERNST LUBTTSCH)` (0.952), `KISS ME AGAIN` (0.963) | Hunyuan glyphs exact but inserts Markdown `#` |
-| C07 | disputed vertical column | `茶餘酒後。對着嬌兒慈母。愛能情人。說用齊市` | low-confidence conflicting strings | Crop and context support `茶餘酒後。對着嬌兒慈母。愛能解人意。`; Hunyuan's `愛能情人` is wrong and the ending remains unresolved |
-| C08 | degraded vertical column | `觀這片。不僅悅且娛心。還可增長見識。因為高` | noisy, but contains `悅目` | Mostly strong Hunyuan recovery; crop and idiom support `悅目`, not Hunyuan's `悅且`; ending remains incomplete |
-| C09 | clean long vertical text | see transcript below | three noisier columns, including `英皇時召雷臨宮中` | Hunyuan is substantially better overall; crop and sentence logic strongly favor `彼` over its `霍`, pending human confirmation |
+| C07 | disputed vertical column | `茶餘酒後。對着嬌兒慈母。愛能情人。說用齊市` | low-confidence conflicting strings | Human review corrects the phrase to `愛寵情人。`; Hunyuan substituted `能` for `寵`; the final segment remains unresolved |
+| C08 | degraded vertical column | `觀這片。不僅悅且娛心。還可增長見識。因為高` | noisy, but contains `悅目` | Human review confirms `不僅悅目娛心`; Hunyuan substituted `且` for `目`; the crop ending is incomplete |
+| C09 | clean long vertical text | see transcript below | three noisier columns, including `英皇時召雷臨宮中` | Contextual human review resolves `英皇時召彼臨宮中`: `彼` is the object of `召`, while `臨宮中` is the verb phrase; neighboring text identifies `霍爾平（Hans Holbein）`, not `霍臨` |
 | C10 | dense degraded line | incoherent multi-line prose | three low-confidence incoherent lines | Reject both; Hunyuan output is not safely grounded |
 | C11 | blank control | `图中没有文字` | no regions | Correct abstention; response language is Simplified Chinese |
 
@@ -46,15 +46,19 @@ Context can rank hypotheses, but it cannot silently replace an unclear glyph.
  魯捨爾、大受當地藝術界之殷待、後重至白塞爾、少居
 ```
 
-The first-line phrase is logically expected to be `英皇時召彼臨宮中`: the
-pronoun `彼` has an antecedent and yields a grammatical sentence. This is a
-context-ranked glyph hypothesis, not permission to overwrite the crop.
+The reviewed first-line phrase is `英皇時召彼臨宮中`: `彼` is the object of
+`召`, and `臨宮中` means coming to the palace. Neighboring columns identify
+the subject as `霍爾平（Hans Holbein）`; `霍臨` is therefore not a person name.
+The raw Hunyuan `霍` and Paddle `雷` readings remain preserved.
 
 ## Human checks requested
 
-- **C07:** verify `愛能解人意` and transcribe the column ending.
-- **C08:** confirm whether the phrase is `不僅悅目娛心`.
-- **C09:** confirm whether the character in `英皇時召＿臨宮中` is `彼`.
+- **C07:** the reviewed phrase is `愛寵情人。`; transcribe only the unresolved
+  column ending if it becomes legible from another scan or source.
+- **C08:** resolved as `不僅悅目娛心`; the text after the crop boundary is not
+  claimed by this test.
+- **C09:** resolved as `英皇時召彼臨宮中` using the glyph, grammar, pronoun
+  chain, and adjacent identification of `霍爾平（Hans Holbein）`.
 
 Review crops:
 
@@ -64,6 +68,8 @@ Review crops:
   and [4× review image](../../artifacts/ocr-challenger/suite-v219-p0308/C08_main-4x.png)
 - [C09 original](../../artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png)
   and [4× review image](../../artifacts/ocr-challenger/suite-v219-p0308/C09_right-4x.png)
+- [C09 adjacent Holbein identification](../../artifacts/ocr-challenger/suite-v219-p0308/C09_holbein_context.png)
+  and [3× review image](../../artifacts/ocr-challenger/suite-v219-p0308/C09_holbein_context-3x.png)
 
 ## Decision
 
@@ -78,3 +84,21 @@ The suite rejects unconditional RTL reversal: C04 and C05 need reversal, while
 C06 must stay LTR and vertical columns need layout reconstruction. Reading
 direction therefore belongs to the layout layer and must be recorded per text
 line or region.
+
+## C07 correction history
+
+The project owner reviewed the enlarged source crop and supplied `爱宠情人。`.
+The source-script transcription is recorded as `愛寵情人。`. This supersedes
+the report's earlier contextual hypothesis `愛能解人意`, which was incorrect.
+It does not alter either model's raw output, and it is not labeled independent
+two-review gold. The unreadable final segment remains explicitly unresolved.
+
+## C08 and C09 correction history
+
+The project owner confirmed C08 as `不僅悅目娛心`. For C09, the initial visual
+hypothesis `霍` and possible segmentation `霍臨` were checked against the
+adjacent columns. Those columns name `霍爾平（Hans Holbein）`, while the target
+sentence continues with `與之談話、並請其作畫` and later `彼離英`. The
+reviewed reading is therefore `英皇時召彼臨宮中`, with `臨宮中` functioning
+as the verb phrase. These are single-project-review corrections, not
+independent two-review benchmark gold.

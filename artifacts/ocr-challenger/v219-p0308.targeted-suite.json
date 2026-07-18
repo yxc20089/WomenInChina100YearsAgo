@@ -106,7 +106,16 @@
         {"text": "水。也可資", "confidence": 0.316},
         {"text": "茶餘酒後對者婚兒無母愛解仙人說無得東", "confidence": 0.562}
       ],
-      "adjudication": "Crop and context support 茶餘酒後。對着嬌兒慈母。愛能解人意。; Hunyuan's 愛能情人 is wrong and the ending remains unresolved",
+      "adjudication": "Human review corrects the phrase to 愛寵情人。; Hunyuan substituted 能 for 寵; the final segment remains unresolved",
+      "human_review": {
+        "reviewer_role": "project_owner",
+        "reviewed_at": "2026-07-18",
+        "provided_text": "爱宠情人。",
+        "source_script_transcription": "愛寵情人。",
+        "supersedes_contextual_hypothesis": "愛能解人意。",
+        "unresolved_suffix": true,
+        "status": "single_human_review_not_independent_adjudicated_gold"
+      },
       "needs_human_review": true
     },
     {
@@ -119,13 +128,25 @@
       "paddle_raw": [
         {"text": "觀治片下僅悅目娛小可地辰見論因爲", "confidence": 0.442}
       ],
-      "adjudication": "Mostly strong Hunyuan recovery, but crop and idiom favor 悅目 over 悅且; ending is incomplete",
-      "needs_human_review": true
+      "adjudication": "Human review confirms 不僅悅目娛心; Hunyuan substituted 且 for 目; the crop ending is incomplete",
+      "human_review": {
+        "reviewer_role": "project_owner",
+        "reviewed_at": "2026-07-18",
+        "provided_text": "不僅悅目娛心",
+        "source_script_transcription": "不僅悅目娛心",
+        "crop_boundary_truncation": true,
+        "status": "single_human_review_not_independent_adjudicated_gold"
+      },
+      "needs_human_review": false
     },
     {
       "id": "C09",
       "path": "suite-v219-p0308/C09_vertical_clean.png",
       "review_path": "suite-v219-p0308/C09_right-4x.png",
+      "context_path": "suite-v219-p0308/C09_holbein_context.png",
+      "context_review_path": "suite-v219-p0308/C09_holbein_context-3x.png",
+      "context_png_sha256": "30d6afaa9116e39f3aab9b57e9918b0ef53f579c72b1d5ac1b01175bd51af8a0",
+      "context_crop_box_ltrb_half_open": [4200, 3150, 4660, 4500],
       "png_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
       "crop_box_ltrb_half_open": [2780, 3180, 3030, 4470],
       "hunyuan_raw": "較上次更受歡迎、英皇時召霍臨宮中、與之談話、並請\n 其作畫、居約六七年、彼離英而遊歷、先至比利士之白\n 魯捨爾、大受當地藝術界之殷待、後重至白塞爾、少居",
@@ -135,8 +156,22 @@
         {"text": "其作畫居約六七年彼離英而遊歷先至比利七之白", "confidence": 0.907},
         {"text": "較上次更受歡迎英皇時召雷臨宮中與之談話並", "confidence": 0.901}
       ],
-      "adjudication": "Hunyuan is better overall; crop and grammar strongly favor 彼 rather than its 霍 in 英皇時召彼臨宮中",
-      "needs_human_review": true
+      "adjudication": "Contextual human review resolves 英皇時召彼臨宮中: 彼 is the object of 召 and 臨宮中 is the verb phrase; adjacent text identifies 霍爾平（Hans Holbein）, not a person named 霍臨",
+      "human_review": {
+        "reviewer_role": "project_owner",
+        "reviewed_at": "2026-07-18",
+        "initial_visual_hypothesis": "霍",
+        "initial_name_hypothesis": "霍臨",
+        "source_script_transcription": "英皇時召彼臨宮中",
+        "context_evidence": [
+          "adjacent columns identify 霍爾平（Hans Holbein）",
+          "彼 is the object of 召",
+          "臨宮中 is the verb phrase",
+          "the following pronoun chain contains 與之、其作畫、彼離英"
+        ],
+        "status": "single_human_review_not_independent_adjudicated_gold"
+      },
+      "needs_human_review": false
     },
     {
       "id": "C10",

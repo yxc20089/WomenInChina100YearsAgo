@@ -3,6 +3,8 @@
 Evidence-first tools and research notes for reconstructing women's history from the digitized *Shen Bao* archive.
 
 The current technical design is in [docs/technical-design.md](docs/technical-design.md).
+The first-build extraction and staged identity-resolution choices are in
+[docs/extraction-and-identity-resolution-decision.md](docs/extraction-and-identity-resolution-decision.md).
 
 ## Corpus audit
 

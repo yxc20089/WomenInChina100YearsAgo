@@ -33,6 +33,7 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - Pinned GraphRAG 3.1.1 and LightRAG 1.5.4 package CLIs were installed and inspected in isolated environments. The shared-export validator, GraphRAG workspace preparation and authenticated LightRAG REST adapter are implemented; indexing is waiting for a recorded experiment LLM/embedding configuration and review-quality article units.
 - Lexical, dense and hybrid retrieval each achieve Recall@5 1.0, MRR 1.0 and citation-pointer rate 1.0 on the single exact-match smoke question. This validates metric plumbing only and is explicitly not a historian-facing quality result.
 - The NER gold contract now requires two distinct independent reviews and an adjudication, validates corrected/raw exact offsets, and rejects duplicate identities/spans. The scorer reports exact/relaxed and per-type metrics, invalid evidence, OCR CER/loss, raw recoverability, end-to-end recall, decade/layout/quality strata, duration and recorded peak memory. It is tested on synthetic fixtures; no historical gold set exists yet.
+- The OCR/layout gold contract likewise requires source-image hashes, dimensions, two reviews and adjudication, model-independent convex polygons and unique reading orders. Its scorer refuses mixed revisions or changed images and reports detection F1/IoU, area coverage, matched and reading-order CER, order/kind/direction accuracy, invalid geometry, throughput/memory and page strata. It is synthetic-fixture tested; the historical lossless gold renders remain pending.
 
 The slice intentionally contains no reviewed historical entities or claims. Its insight endpoint therefore returns zero items with an explicit warning. It must not be described as a reconstructed knowledge graph until historian review data exists.
 
@@ -364,7 +365,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 1. Finish human review of the 500-page visual screen and select 150–250 gold pages.
 2. Pilot and approve the drafted annotation guidelines for original characters, normalization, layout and women-centered entities.
 3. Render gold pages losslessly and run PP-StructureV3/PP-OCRv6 versus the difficult-page challengers.
-4. Use the implemented NER gold validator/scorer and add OCR/layout scoring against double-reviewed annotations.
+4. Use the implemented OCR/layout and NER gold validators/scorers against double-reviewed annotations.
 5. Have historians test the implemented mention/entity-resolution and cited-claim queues without promoting current GLiNER smoke outputs.
 6. Create reviewed article segmentation and historian-authored retrieval questions.
 7. Use the implemented shared export to evaluate LightRAG and Microsoft GraphRAG only after the hybrid baseline is scored.
@@ -375,8 +376,8 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 |---|---|---|
 | Source/archive | Existing S3 raw prefix + new versioned derivative area | Selected architecture |
 | Validation/rendering | PDF/JBIG2 and DjVu-aware batch pipeline | Implemented for screening; gold lossless flow pending |
-| Evidence OCR | PP-StructureV3 + PP-OCRv6 | Benchmark leader candidate |
-| Difficult OCR | PaddleOCR-VL-1.6 | Benchmark fallback candidate |
+| Evidence OCR | PP-StructureV3 + PP-OCRv6 | Benchmark leader candidate; adjudicated gold contract/scorer implemented, historical pages pending |
+| Difficult OCR | PaddleOCR-VL-1.6 | Benchmark fallback candidate; identical-image comparison pending |
 | Authoritative database | PostgreSQL 17 | Implemented and live-tested locally |
 | Embeddings near evidence | pgvector 0.8.5 + BGE-M3 challenger | Implemented for smoke slice; benchmark pending |
 | Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline and smoke metrics; reranker/historian evaluation pending |
@@ -389,5 +390,5 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Graph-RAG comparator | Microsoft GraphRAG 3.1.1 (`14a00ad…`) Global + DRIFT | Selected bounded experiment; shared export implemented |
 | LazyGraphRAG | Track product/research availability | Not currently selected as deployable OSS |
 | Model handoff | OpenAI-compatible adapter with prompt hashing and untrusted-OCR boundary | Implemented; live model not configured; scene generation abstains without reviewed claims |
-| Evaluation | Frozen JSONL judgments + Recall@k, MRR and citation-pointer scoring | Implemented smoke harness; historian-authored question set pending |
+| Evaluation | Frozen OCR/NER/RAG judgments with evidence-validity and task metrics | OCR/NER contracts and scorers plus retrieval smoke harness implemented; historian-authored sets pending |
 | Simulation | None in factual system | Explicitly deferred |

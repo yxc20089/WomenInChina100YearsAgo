@@ -155,4 +155,9 @@ independent annotations have been adjudicated, `wic-ner-score` validates their
 offsets and produces exact/relaxed, evidence-validity, OCR-loss, per-type and
 decade/genre/layout/quality model reports. No current smoke artifact is gold data.
 
+The same policy defines model-independent OCR/layout polygons. `wic-ocr-score`
+compares byte-identical page artifacts using detection F1/IoU, CER,
+reading-order, region-kind/direction, geometry, throughput and stratified
+metrics. Benchmark commands and refusal conditions are under `experiments/ocr/`.
+
 The committed OCR/NER files are technical smoke artifacts from a lossy screening derivative. They demonstrate provenance, coordinates, persistence, and retrieval; they are not gold transcriptions or reviewed historical assertions.

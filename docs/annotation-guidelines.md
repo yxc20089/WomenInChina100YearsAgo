@@ -37,7 +37,36 @@ Every annotated span must satisfy exact substring equality. Character offsets
 are zero-based, end-exclusive Unicode-character offsets; they are not UTF-8
 byte offsets.
 
-## 3. Entity boundary rules
+## 3. OCR and layout regions
+
+- Annotate only the frozen lossless render identified by its SHA-256. A model
+  run on a rescaled, recompressed, deskewed, or otherwise different image is a
+  different benchmark input.
+- Draw a tight positive-area convex polygon around each coherent text line,
+  caption, headline, table cell/row, or other evaluable region. Polygons must
+  stay inside the image and must not self-intersect.
+- Use the most specific supported region kind. Photographs and illustrations
+  may have empty transcription; their separately printed captions are distinct
+  `caption` regions.
+- Assign each region a unique integer reading order. For conventional vertical
+  Chinese, read down a column and proceed from the rightmost column to the
+  left, unless the printed composition clearly indicates another sequence.
+- In mixed pages, follow the semantic sequence visible in the composition and
+  record uncertainty. Do not infer article membership solely from geometric
+  proximity.
+- Bound tables and advertisements consistently across reviewers. When one
+  polygon would mix unrelated reading sequences, split it into defensible
+  subregions.
+- Region UUIDs in the adjudication are model-independent gold identities. Never
+  reuse a PaddleOCR or other model region UUID as the gold identity.
+
+OCR scoring uses one-to-one polygon matches at a declared IoU threshold. Report
+region detection precision/recall/F1, mean matched IoU, covered gold area,
+matched-region CER, full-page reading-order CER, pairwise reading-order
+accuracy, region-kind and text-direction accuracy, invalid geometry,
+pages/second, peak memory, and page-level failures.
+
+## 4. Entity boundary rules
 
 Annotate the longest semantically complete printed mention. Include surname and
 name, `氏` when it is part of the referential form, and an attached disambiguator
@@ -55,7 +84,7 @@ guess which real-world person it denotes. Gender, marital status, ethnicity,
 reputation, class, and similar attributes are separately evidenced claims, not
 NER labels.
 
-## 4. Ontology 1.0
+## 5. Ontology 1.0
 
 | Label | Include | Exclude / distinguish |
 |---|---|---|
@@ -78,7 +107,7 @@ Annotators must flag recurring cases that do not fit these rules. Change the
 ontology only through a versioned decision applied consistently to the full
 gold set.
 
-## 5. Raw-OCR alignment
+## 6. Raw-OCR alignment
 
 Each adjudicated entity always has corrected-text offsets. Also provide
 `raw_start`, `raw_end`, and `raw_text` when a human can identify one contiguous
@@ -92,7 +121,7 @@ This distinction supports two honest raw-input measures:
 - end-to-end recall over all adjudicated entities, which also counts entities
   lost by OCR.
 
-## 6. Review and adjudication
+## 7. Review and adjudication
 
 1. Reviewer A transcribes and annotates without seeing Reviewer B or model output.
 2. Reviewer B does the same independently.

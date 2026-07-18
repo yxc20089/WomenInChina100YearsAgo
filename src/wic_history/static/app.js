@@ -43,6 +43,11 @@ function reviewer() {
   return value;
 }
 
+function pageImageUrl(volumeNumber, pageNumber, derivativeId = null) {
+  const base = `/api/page-image/${volumeNumber}/${pageNumber}`;
+  return derivativeId ? `${base}?derivative_id=${encodeURIComponent(derivativeId)}` : base;
+}
+
 function appendHighlightedText(node, text, start, end) {
   node.replaceChildren();
   node.append(document.createTextNode(text.slice(0, start)));
@@ -129,7 +134,9 @@ function renderMention(item) {
   fragment.querySelector('.mention-meta').textContent = `${item.entity_type} · “${item.mention_text}” · ${(item.confidence || 0).toFixed(3)}`;
   appendHighlightedText(fragment.querySelector('.mention-context'), item.region_text, item.text_start, item.text_end);
   fragment.querySelector('.mention-provenance').textContent = `Volume ${item.volume_number} · ${item.publication_year} · page ${item.page_number} · ${item.model_name} @ ${item.model_revision}`;
-  fragment.querySelector('.mention-scan').href = `/api/page-image/${item.volume_number}/${item.page_number}`;
+  fragment.querySelector('.mention-scan').href = pageImageUrl(
+    item.volume_number, item.page_number, item.derivative_id
+  );
   const statusNode = fragment.querySelector('.decision-status');
   const resolution = fragment.querySelector('.resolution-actions');
   const buttons = fragment.querySelectorAll('.accept-mention, .reject-mention, .defer-mention');
@@ -202,7 +209,9 @@ function renderClaim(item) {
     citation.className = 'scan-link';
     citation.target = '_blank';
     citation.rel = 'noopener';
-    citation.href = `/api/page-image/${evidence.volume_number}/${evidence.page_number}`;
+    citation.href = pageImageUrl(
+      evidence.volume_number, evidence.page_number, evidence.derivative_id
+    );
     citation.textContent = `Volume ${evidence.volume_number} · ${evidence.publication_year} · page ${evidence.page_number} ↗`;
     evidenceNode.append(block, citation);
   });
@@ -335,7 +344,9 @@ function render(data) {
     card.querySelector('blockquote').textContent = hit.text || '〔empty OCR region〕';
     card.querySelector('.score').textContent = `${hit.explanation.retriever} · score ${hit.score.toFixed(5)}`;
     card.querySelector('.pointer').textContent = JSON.stringify(hit.source, null, 2);
-    card.querySelector('.scan-link').href = `/api/page-image/${hit.source.volume_number}/${hit.source.page_number}`;
+    card.querySelector('.scan-link').href = pageImageUrl(
+      hit.source.volume_number, hit.source.page_number, hit.source.derivative_id
+    );
     results.append(card);
   });
   status.textContent = `${data.hits.length} cited region${data.hits.length === 1 ? '' : 's'} · ${data.mode}`;

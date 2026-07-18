@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from uuid import uuid4
 
-from wic_history.search import region_document, region_index_body
+from wic_history.search import REGION_PROJECTION_SQL, region_document, region_index_body
 
 
 class SearchProjectionTests(unittest.TestCase):
@@ -20,7 +20,12 @@ class SearchProjectionTests(unittest.TestCase):
             "page_id": uuid4(),
             "run_id": uuid4(),
             "source_uri": "s3://bucket/volume.pdf",
+            "source_sha256": "a" * 64,
+            "derivative_id": uuid4(),
             "source_image_uri": "s3://bucket/page.png",
+            "source_image_sha256": "b" * 64,
+            "evidence_tier": "historian_selected_gold",
+            "ocr_selection_basis": "historian_approved",
             "volume_number": 3,
             "publication_year": 1874,
             "page_number": 12,
@@ -45,6 +50,12 @@ class SearchProjectionTests(unittest.TestCase):
         self.assertEqual(document["region_id"], str(region_id))
         self.assertEqual(document["source_uri"], "s3://bucket/volume.pdf")
         self.assertEqual(document["polygon"], row["polygon"])
+        self.assertEqual(document["derivative_id"], str(row["derivative_id"]))
+
+    def test_projection_includes_only_the_active_ocr_selection(self):
+        self.assertIn("JOIN evidence.page_ocr_selection", REGION_PROJECTION_SQL)
+        self.assertIn("selection.superseded_at IS NULL", REGION_PROJECTION_SQL)
+        self.assertIn("JOIN evidence.ocr_run_input", REGION_PROJECTION_SQL)
 
 
 if __name__ == "__main__":

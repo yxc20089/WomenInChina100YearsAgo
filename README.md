@@ -120,13 +120,29 @@ OCR ingestion retains every byte-distinct page image in
 reviewed evidence tier, then resolution. Screening images are never overwritten
 when a lossless pilot or gold render arrives.
 
+Each OCR run is also bound to its exact derivative. Retrieval projects only the
+one active page/run selection; changing models or choosing a benchmark winner is
+an explicit, audited operation:
+
+```bash
+uv run wic-ingest --database-url "$DATABASE_URL" ocr-select \
+  --volume 219 --page 308 \
+  --run-id cc2310a1-c174-4598-8360-1742da5d0262 \
+  --basis technical_default --selected-by 'researcher-name' \
+  --note 'Source-resolution non-gold pipeline selection'
+```
+
 Generate BGE-M3 embeddings, rebuild the OpenSearch projection, and issue an evidence-citing hybrid query:
 
 ```bash
-uv run wic-embed --database-url "$DATABASE_URL" --source-ocr-run-id 213e0078-59d5-4a56-8811-a59e40ed0800
+uv run wic-embed --database-url "$DATABASE_URL" --source-ocr-run-id cc2310a1-c174-4598-8360-1742da5d0262
 uv run wic-search --opensearch-url "$OPENSEARCH_URL" project --database-url "$DATABASE_URL" --recreate
-uv run wic-search --opensearch-url "$OPENSEARCH_URL" query '富紳淑女' --mode hybrid --limit 5
+uv run wic-search --opensearch-url "$OPENSEARCH_URL" query '士女' --mode hybrid --limit 5
 ```
+
+OpenSearch v2 indexes only active OCR selections. Every hit carries the source
+object hash, derivative UUID/hash/tier, OCR run, exact region polygon, and the
+selection basis used to admit that run.
 
 Project reviewed claims/entities to Neo4j, export an identical citation-mapped
 corpus for the isolated RAG comparisons, and start the local researcher API:

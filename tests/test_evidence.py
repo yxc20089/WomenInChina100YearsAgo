@@ -27,6 +27,14 @@ class EvidenceContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "provided together"):
             SourcePointer(source_uri="s3://bucket/key", page_number=1, text_start=3)
 
+    def test_source_pointer_validates_derivative_hash(self):
+        with self.assertRaises(ValidationError):
+            SourcePointer(
+                source_uri="s3://bucket/key",
+                page_number=1,
+                image_sha256="not-a-sha256",
+            )
+
     def test_claim_requires_grounded_single_object(self):
         run = ProcessingRun(
             kind=RunKind.RELATION,

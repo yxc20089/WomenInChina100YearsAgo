@@ -30,6 +30,7 @@ class DatabaseContractTests(unittest.TestCase):
                 "002_review_workflow_indexes.sql",
                 "003_claim_review_index.sql",
                 "004_page_derivatives.sql",
+                "005_ocr_run_selection.sql",
             ],
         )
 
@@ -39,6 +40,15 @@ class DatabaseContractTests(unittest.TestCase):
         self.assertIn("historian_selected_gold", sql)
         self.assertIn("preferred_derivative_id", sql)
         self.assertIn("UNIQUE (page_id, image_sha256)", sql)
+
+    def test_ocr_projection_requires_an_explicit_active_run(self):
+        sql = Path("db/migrations/005_ocr_run_selection.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("CREATE TABLE evidence.ocr_run_input", sql)
+        self.assertIn("CREATE TABLE evidence.page_ocr_selection", sql)
+        self.assertIn("WHERE superseded_at IS NULL", sql)
+        self.assertIn("historian_approved", sql)
 
 
 if __name__ == "__main__":

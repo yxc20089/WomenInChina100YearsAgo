@@ -15,12 +15,20 @@ REVIEWED_CLAIM_CONTEXT_SQL = """
            subject.canonical_name AS subject_name,
            object.canonical_name AS object_name,
            ce.region_id, ce.text_start, ce.text_end, ce.polygon,
-           s.source_uri, v.volume_number, v.publication_year, p.page_number
+           s.source_uri, s.sha256 AS source_sha256,
+           input.derivative_id, derivative.image_sha256,
+           derivative.evidence_tier,
+           v.volume_number, v.publication_year, p.page_number
     FROM evidence.claim c
     JOIN evidence.entity subject ON subject.entity_id = c.subject_entity_id
     LEFT JOIN evidence.entity object ON object.entity_id = c.object_entity_id
     JOIN evidence.claim_evidence ce USING (claim_id)
     JOIN evidence.ocr_region r USING (region_id)
+    LEFT JOIN evidence.ocr_run_input input
+      ON input.run_id = r.run_id AND input.page_id = r.page_id
+    LEFT JOIN archive.page_derivative derivative
+      ON derivative.derivative_id = input.derivative_id
+     AND derivative.page_id = input.page_id
     JOIN archive.page p USING (page_id)
     JOIN archive.volume v USING (volume_id)
     JOIN archive.source_object s USING (source_object_id)
@@ -52,6 +60,10 @@ def claim_items_from_rows(rows: Iterable[dict[str, Any]]) -> list[ScenarioEviden
         item["sources"].append(
             SourcePointer(
                 source_uri=row["source_uri"],
+                source_sha256=row.get("source_sha256"),
+                derivative_id=row.get("derivative_id"),
+                image_sha256=row.get("image_sha256"),
+                evidence_tier=row.get("evidence_tier"),
                 volume_number=row["volume_number"],
                 publication_year=row["publication_year"],
                 page_number=row["page_number"],

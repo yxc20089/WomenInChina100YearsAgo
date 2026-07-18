@@ -34,6 +34,14 @@ class Polygon(StrictModel):
 class SourcePointer(StrictModel):
     source_uri: str
     source_sha256: str | None = None
+    derivative_id: UUID | None = None
+    image_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    evidence_tier: Literal[
+        "screening_derivative",
+        "unreviewed_input",
+        "non_gold_lossless_pilot",
+        "historian_selected_gold",
+    ] | None = None
     volume_number: int | None = Field(default=None, ge=1)
     publication_year: int | None = Field(default=None, ge=1800, le=2100)
     page_number: int = Field(ge=1)

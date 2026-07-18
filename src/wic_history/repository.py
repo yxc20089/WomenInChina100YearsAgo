@@ -13,6 +13,7 @@ import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
+from uuid import UUID
 
 from .evidence import ClaimArtifact, EntityLinkArtifact, NERArtifact, OCRPageArtifact
 
@@ -37,7 +38,18 @@ class OCRIngestResult:
     page_id: str
     derivative_id: str
     run_id: str
+    active_selection_id: str
     regions_verified: int
+
+
+@dataclass(frozen=True, slots=True)
+class OCRSelectionResult:
+    selection_id: str
+    page_id: str
+    derivative_id: str
+    run_id: str
+    selection_basis: str
+    selected_by: str
 
 
 def _psycopg() -> tuple[Any, Any]:
@@ -233,6 +245,123 @@ def _image_media_type(image_uri: str) -> str:
     }.get(suffix, "image/unknown")
 
 
+def _ocr_evidence_tier(artifact: OCRPageArtifact) -> str:
+    configured = artifact.run.configuration.get("evidence_tier")
+    if configured is not None:
+        return configured
+    if any("lossy screening derivative" in warning for warning in artifact.warnings):
+        return "screening_derivative"
+    return "unreviewed_input"
+
+
+def _activate_ocr_selection(
+    connection: Any,
+    *,
+    page_id: Any,
+    run_id: Any,
+    derivative_id: Any,
+    selection_basis: str,
+    selected_by: str,
+    note: str | None,
+) -> OCRSelectionResult:
+    selected_by = selected_by.strip()
+    if not selected_by:
+        raise ValueError("selected_by must not be blank")
+    if selection_basis not in {
+        "technical_default",
+        "benchmark_winner",
+        "historian_approved",
+    }:
+        raise ValueError(f"Unsupported OCR selection basis: {selection_basis}")
+    current = connection.execute(
+        """
+        SELECT selection_id, run_id, derivative_id, selection_basis,
+               selected_by, note
+        FROM evidence.page_ocr_selection
+        WHERE page_id = %s AND superseded_at IS NULL
+        FOR UPDATE
+        """,
+        (page_id,),
+    ).fetchone()
+    desired = (run_id, derivative_id, selection_basis, selected_by, note)
+    if current is not None and current[1:] == desired:
+        return OCRSelectionResult(
+            str(current[0]),
+            str(page_id),
+            str(derivative_id),
+            str(run_id),
+            selection_basis,
+            selected_by,
+        )
+    if current is not None:
+        connection.execute(
+            """
+            UPDATE evidence.page_ocr_selection
+            SET superseded_at = now()
+            WHERE selection_id = %s AND superseded_at IS NULL
+            """,
+            (current[0],),
+        )
+    selection_id = connection.execute(
+        """
+        INSERT INTO evidence.page_ocr_selection (
+            page_id, run_id, derivative_id, selection_basis, selected_by, note
+        ) VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING selection_id
+        """,
+        (page_id, run_id, derivative_id, selection_basis, selected_by, note),
+    ).fetchone()[0]
+    return OCRSelectionResult(
+        str(selection_id),
+        str(page_id),
+        str(derivative_id),
+        str(run_id),
+        selection_basis,
+        selected_by,
+    )
+
+
+def select_ocr_run(
+    database_url: str,
+    *,
+    volume_number: int,
+    page_number: int,
+    run_id: UUID,
+    selection_basis: str,
+    selected_by: str,
+    note: str | None = None,
+) -> OCRSelectionResult:
+    """Explicitly select one registered OCR run while retaining selection history."""
+    psycopg, _ = _psycopg()
+    with psycopg.connect(database_url) as connection:
+        row = connection.execute(
+            """
+            SELECT input.page_id, input.derivative_id
+            FROM evidence.ocr_run_input input
+            JOIN evidence.processing_run run USING (run_id)
+            JOIN archive.page page USING (page_id)
+            JOIN archive.volume volume USING (volume_id)
+            WHERE input.run_id = %s
+              AND volume.volume_number = %s
+              AND page.page_number = %s
+              AND run.kind = 'ocr'
+              AND run.status = 'completed'
+            """,
+            (run_id, volume_number, page_number),
+        ).fetchone()
+        if row is None:
+            raise ValueError("OCR run is not a completed registered input for that page")
+        return _activate_ocr_selection(
+            connection,
+            page_id=row[0],
+            run_id=run_id,
+            derivative_id=row[1],
+            selection_basis=selection_basis,
+            selected_by=selected_by,
+            note=note,
+        )
+
+
 def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResult:
     """Validate and atomically store a coordinate-preserving OCR artifact."""
     psycopg, Jsonb = _psycopg()
@@ -280,9 +409,7 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
                 )
 
         _verify_run(connection, artifact, Jsonb)
-        evidence_tier = artifact.run.configuration.get(
-            "evidence_tier", "unreviewed_input"
-        )
+        evidence_tier = _ocr_evidence_tier(artifact)
         if evidence_tier not in EVIDENCE_TIER_RANKS:
             raise ValueError(f"Unsupported OCR evidence tier: {evidence_tier}")
         preference_rank = EVIDENCE_TIER_RANKS[evidence_tier]
@@ -310,6 +437,8 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
         derivative_metadata = {
             "last_observed_ocr_artifact_id": str(artifact.artifact_id),
             "last_observed_ocr_run_id": str(artifact.run.run_id),
+            "artifact_schema_version": artifact.schema_version,
+            "warnings": artifact.warnings,
         }
         derivative_id = connection.execute(
             """
@@ -377,6 +506,35 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
             raise ValueError(
                 "Stored page derivative conflicts with immutable image bytes or dimensions"
             )
+
+        connection.execute(
+            """
+            INSERT INTO evidence.ocr_run_input (
+                run_id, page_id, derivative_id, artifact_id, artifact_uri,
+                evidence_tier, metadata
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (run_id, page_id) DO NOTHING
+            """,
+            (
+                artifact.run.run_id,
+                page_id,
+                derivative_id,
+                artifact.artifact_id,
+                artifact_path.as_posix(),
+                evidence_tier,
+                Jsonb({"image_sha256": artifact.image_sha256}),
+            ),
+        )
+        stored_input = connection.execute(
+            """
+            SELECT derivative_id, artifact_id, evidence_tier
+            FROM evidence.ocr_run_input
+            WHERE run_id = %s AND page_id = %s
+            """,
+            (artifact.run.run_id, page_id),
+        ).fetchone()
+        if stored_input != (derivative_id, artifact.artifact_id, evidence_tier):
+            raise ValueError("Stored OCR run input differs from the immutable artifact")
 
         preferred = connection.execute(
             """
@@ -448,11 +606,64 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
                 "Stored OCR regions differ from the artifact; evidence rows are immutable"
             )
 
+        active = connection.execute(
+            """
+            SELECT selection.selection_id, selection.run_id,
+                   selection.derivative_id, selection.selection_basis,
+                   selection.selected_by, derivative.preference_rank
+            FROM evidence.page_ocr_selection selection
+            JOIN archive.page_derivative derivative
+              ON derivative.derivative_id = selection.derivative_id
+            WHERE selection.page_id = %s AND selection.superseded_at IS NULL
+            FOR UPDATE OF selection
+            """,
+            (page_id,),
+        ).fetchone()
+        if active is None:
+            selection = _activate_ocr_selection(
+                connection,
+                page_id=page_id,
+                run_id=artifact.run.run_id,
+                derivative_id=derivative_id,
+                selection_basis="technical_default",
+                selected_by="system:ocr-ingest",
+                note="First registered OCR run for this page.",
+            )
+        elif active[1] == artifact.run.run_id:
+            selection = OCRSelectionResult(
+                str(active[0]),
+                str(page_id),
+                str(active[2]),
+                str(active[1]),
+                active[3],
+                active[4],
+            )
+        elif preferred[0] == derivative_id and preference_rank > active[5]:
+            selection = _activate_ocr_selection(
+                connection,
+                page_id=page_id,
+                run_id=artifact.run.run_id,
+                derivative_id=derivative_id,
+                selection_basis="technical_default",
+                selected_by="system:ocr-ingest",
+                note="Automatically selected because the input derivative has a higher evidence tier.",
+            )
+        else:
+            selection = OCRSelectionResult(
+                str(active[0]),
+                str(page_id),
+                str(active[2]),
+                str(active[1]),
+                active[3],
+                active[4],
+            )
+
     return OCRIngestResult(
         artifact_id=str(artifact.artifact_id),
         page_id=str(page_id),
         derivative_id=str(derivative_id),
         run_id=str(artifact.run.run_id),
+        active_selection_id=selection.selection_id,
         regions_verified=len(rows),
     )
 
@@ -787,6 +998,19 @@ def build_parser() -> argparse.ArgumentParser:
     manifest.add_argument("path", type=Path)
     ocr = subparsers.add_parser("ocr", help="Load one or more OCR artifact JSON files")
     ocr.add_argument("paths", type=Path, nargs="+")
+    selection = subparsers.add_parser(
+        "ocr-select", help="Select one registered OCR run for retrieval"
+    )
+    selection.add_argument("--volume", type=int, required=True)
+    selection.add_argument("--page", type=int, required=True)
+    selection.add_argument("--run-id", type=UUID, required=True)
+    selection.add_argument(
+        "--basis",
+        choices=("technical_default", "benchmark_winner", "historian_approved"),
+        required=True,
+    )
+    selection.add_argument("--selected-by", required=True)
+    selection.add_argument("--note")
     ner = subparsers.add_parser("ner", help="Load one or more NER candidate artifacts")
     ner.add_argument("paths", type=Path, nargs="+")
     links = subparsers.add_parser("links", help="Load one or more entity-link artifacts")
@@ -802,6 +1026,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("DATABASE_URL or --database-url is required")
     if args.command == "manifest":
         result: Any = ingest_manifest(args.database_url, args.path)
+        print(json.dumps(asdict(result), ensure_ascii=False))
+        return 0
+    if args.command == "ocr-select":
+        result = select_ocr_run(
+            args.database_url,
+            volume_number=args.volume,
+            page_number=args.page,
+            run_id=args.run_id,
+            selection_basis=args.basis,
+            selected_by=args.selected_by,
+            note=args.note,
+        )
         print(json.dumps(asdict(result), ensure_ascii=False))
         return 0
     for path in args.paths:

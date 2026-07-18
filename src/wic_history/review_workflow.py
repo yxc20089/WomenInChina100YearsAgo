@@ -45,7 +45,10 @@ class MentionQueueItem(StrictModel):
     region_id: UUID
     region_text: str
     source_uri: str
+    derivative_id: UUID | None = None
     source_image_uri: str | None = None
+    source_image_sha256: str | None = None
+    evidence_tier: str | None = None
     volume_number: int
     publication_year: int
     page_number: int
@@ -109,7 +112,10 @@ class ClaimEvidenceView(StrictModel):
     text_end: int | None = None
     polygon: dict[str, Any] | None = None
     source_uri: str
+    derivative_id: UUID | None = None
     source_image_uri: str | None = None
+    source_image_sha256: str | None = None
+    evidence_tier: str | None = None
     volume_number: int
     publication_year: int
     page_id: UUID
@@ -161,11 +167,20 @@ MENTION_QUEUE_SQL = """
            m.mention_text, m.normalized_text, m.text_start, m.text_end,
            m.confidence, m.polygon, m.attributes,
            r.region_id, r.raw_text AS region_text,
-           s.source_uri, p.source_image_uri, v.volume_number,
+           s.source_uri, input.derivative_id,
+           COALESCE(derivative.image_uri, p.source_image_uri) AS source_image_uri,
+           derivative.image_sha256 AS source_image_sha256,
+           derivative.evidence_tier,
+           v.volume_number,
            v.publication_year, p.page_number,
            pr.model_name, pr.model_revision
     FROM evidence.entity_mention m
     JOIN evidence.ocr_region r USING (region_id)
+    LEFT JOIN evidence.ocr_run_input input
+      ON input.run_id = r.run_id AND input.page_id = r.page_id
+    LEFT JOIN archive.page_derivative derivative
+      ON derivative.derivative_id = input.derivative_id
+     AND derivative.page_id = input.page_id
     JOIN archive.page p USING (page_id)
     JOIN archive.volume v USING (volume_id)
     JOIN archive.source_object s USING (source_object_id)
@@ -326,10 +341,20 @@ def list_claim_queue(
                 """
                 SELECT ce.claim_id, ce.region_id, r.raw_text AS region_text,
                        ce.evidence_quote, ce.text_start, ce.text_end, ce.polygon,
-                       s.source_uri, p.source_image_uri, v.volume_number,
+                       s.source_uri, input.derivative_id,
+                       COALESCE(derivative.image_uri, p.source_image_uri)
+                           AS source_image_uri,
+                       derivative.image_sha256 AS source_image_sha256,
+                       derivative.evidence_tier,
+                       v.volume_number,
                        v.publication_year, p.page_id, p.page_number
                 FROM evidence.claim_evidence ce
                 JOIN evidence.ocr_region r USING (region_id)
+                LEFT JOIN evidence.ocr_run_input input
+                  ON input.run_id = r.run_id AND input.page_id = r.page_id
+                LEFT JOIN archive.page_derivative derivative
+                  ON derivative.derivative_id = input.derivative_id
+                 AND derivative.page_id = input.page_id
                 JOIN archive.page p USING (page_id)
                 JOIN archive.volume v USING (volume_id)
                 JOIN archive.source_object s USING (source_object_id)

@@ -21,7 +21,7 @@ from .evidence import (
 from .embedding_pipeline import BGEEmbedder, DEFAULT_MODEL, DEFAULT_REVISION
 
 
-DEFAULT_INDEX = "wic-regions-v1"
+DEFAULT_INDEX = "wic-regions-v2"
 DEFAULT_ALIAS = "wic-regions-current"
 
 
@@ -42,7 +42,12 @@ def region_index_body() -> dict[str, Any]:
                 "page_id": {"type": "keyword"},
                 "run_id": {"type": "keyword"},
                 "source_uri": {"type": "keyword"},
+                "source_sha256": {"type": "keyword"},
+                "derivative_id": {"type": "keyword"},
                 "source_image_uri": {"type": "keyword"},
+                "source_image_sha256": {"type": "keyword"},
+                "evidence_tier": {"type": "keyword"},
+                "ocr_selection_basis": {"type": "keyword"},
                 "volume_number": {"type": "integer"},
                 "publication_year": {"type": "integer"},
                 "page_number": {"type": "integer"},
@@ -102,7 +107,12 @@ def region_document(row: dict[str, Any], indexed_at: str) -> dict[str, Any]:
         "page_id": str(row["page_id"]),
         "run_id": str(row["run_id"]),
         "source_uri": row["source_uri"],
+        "source_sha256": row["source_sha256"],
+        "derivative_id": str(row["derivative_id"]),
         "source_image_uri": row["source_image_uri"],
+        "source_image_sha256": row["source_image_sha256"],
+        "evidence_tier": row["evidence_tier"],
+        "ocr_selection_basis": row["ocr_selection_basis"],
         "volume_number": row["volume_number"],
         "publication_year": row["publication_year"],
         "page_number": row["page_number"],
@@ -131,9 +141,14 @@ def region_document(row: dict[str, Any], indexed_at: str) -> dict[str, Any]:
 REGION_PROJECTION_SQL = """
     SELECT r.region_id, r.page_id, r.run_id, r.region_kind, r.reading_order,
            r.polygon, r.raw_text, r.normalized_text, r.confidence, r.language,
-           r.direction, p.page_number, p.source_image_uri,
-           p.metadata->'warnings' AS page_warnings,
+           r.direction, p.page_number, derivative.derivative_id,
+           derivative.image_uri AS source_image_uri,
+           derivative.image_sha256 AS source_image_sha256,
+           derivative.evidence_tier,
+           derivative.metadata->'warnings' AS page_warnings,
+           selection.selection_basis AS ocr_selection_basis,
            v.volume_number, v.publication_year, s.source_uri,
+           s.sha256 AS source_sha256,
            pr.model_name AS ocr_model, pr.model_revision AS ocr_model_revision,
            em.embedding_text, em.embedding_model, em.embedding_model_revision,
            ARRAY(
@@ -151,6 +166,17 @@ REGION_PROJECTION_SQL = """
     JOIN archive.volume v USING (volume_id)
     JOIN archive.source_object s USING (source_object_id)
     JOIN evidence.processing_run pr USING (run_id)
+    JOIN evidence.page_ocr_selection selection
+      ON selection.page_id = r.page_id
+     AND selection.run_id = r.run_id
+     AND selection.superseded_at IS NULL
+    JOIN evidence.ocr_run_input input
+      ON input.run_id = selection.run_id
+     AND input.page_id = selection.page_id
+     AND input.derivative_id = selection.derivative_id
+    JOIN archive.page_derivative derivative
+      ON derivative.derivative_id = input.derivative_id
+     AND derivative.page_id = input.page_id
     LEFT JOIN LATERAL (
         SELECT e.embedding::text AS embedding_text,
                e.model_name AS embedding_model,
@@ -190,9 +216,18 @@ def project_regions(
             """
             INSERT INTO retrieval.projection_build (
                 build_id, projection_kind, source_schema_version, configuration
-            ) VALUES (%s, 'opensearch', '1.0', %s::jsonb)
+            ) VALUES (%s, 'opensearch', '2.0', %s::jsonb)
             """,
-            (build_id, json.dumps({"index_name": index_name, "alias": alias})),
+            (
+                build_id,
+                json.dumps(
+                    {
+                        "index_name": index_name,
+                        "alias": alias,
+                        "ocr_run_policy": "active_page_selection_only",
+                    }
+                ),
+            ),
         )
         database.commit()
         if search.indices.exists(index=index_name):
@@ -311,6 +346,10 @@ def lexical_search(
                 score=float(item["_score"]),
                 source=SourcePointer(
                     source_uri=source["source_uri"],
+                    source_sha256=source["source_sha256"],
+                    derivative_id=UUID(source["derivative_id"]),
+                    image_sha256=source["source_image_sha256"],
+                    evidence_tier=source["evidence_tier"],
                     volume_number=source["volume_number"],
                     publication_year=source["publication_year"],
                     page_number=source["page_number"],
@@ -325,13 +364,18 @@ def lexical_search(
                     "retriever": "OpenSearch CJK lexical",
                     "index": item["_index"],
                     "page_warnings": source["page_warnings"],
+                    "derivative_id": source["derivative_id"],
+                    "evidence_tier": source["evidence_tier"],
+                    "ocr_selection_basis": source["ocr_selection_basis"],
                 },
             )
         )
-    warnings = []
-    if any(hit.explanation["page_warnings"] for hit in hits):
-        warnings.append("One or more hits come from provisional or lossy OCR artifacts.")
-    return RetrievalResponse(query=query, mode=RetrievalMode.LEXICAL, hits=hits, warnings=warnings)
+    return RetrievalResponse(
+        query=query,
+        mode=RetrievalMode.LEXICAL,
+        hits=hits,
+        warnings=_artifact_warnings(hits),
+    )
 
 
 def dense_search(
@@ -428,6 +472,10 @@ def _retrieval_hits(response: dict[str, Any]) -> list[RetrievalHit]:
                 score=float(item["_score"]),
                 source=SourcePointer(
                     source_uri=source["source_uri"],
+                    source_sha256=source["source_sha256"],
+                    derivative_id=UUID(source["derivative_id"]),
+                    image_sha256=source["source_image_sha256"],
+                    evidence_tier=source["evidence_tier"],
                     volume_number=source["volume_number"],
                     publication_year=source["publication_year"],
                     page_number=source["page_number"],
@@ -442,6 +490,9 @@ def _retrieval_hits(response: dict[str, Any]) -> list[RetrievalHit]:
                     "retriever": "OpenSearch BGE-M3 dense",
                     "index": item["_index"],
                     "page_warnings": source["page_warnings"],
+                    "derivative_id": source["derivative_id"],
+                    "evidence_tier": source["evidence_tier"],
+                    "ocr_selection_basis": source["ocr_selection_basis"],
                 },
             )
         )
@@ -450,8 +501,12 @@ def _retrieval_hits(response: dict[str, Any]) -> list[RetrievalHit]:
 
 def _artifact_warnings(hits: list[RetrievalHit]) -> list[str]:
     return (
-        ["One or more hits come from provisional or lossy OCR artifacts."]
-        if any(hit.explanation.get("page_warnings") for hit in hits)
+        ["One or more hits come from OCR that is not historian-selected gold."]
+        if any(
+            hit.explanation.get("page_warnings")
+            or hit.explanation.get("evidence_tier") != "historian_selected_gold"
+            for hit in hits
+        )
         else []
     )
 

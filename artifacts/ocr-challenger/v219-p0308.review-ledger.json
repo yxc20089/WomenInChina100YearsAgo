@@ -159,20 +159,20 @@
           "reviewer_role": "project_owner",
           "reviewed_on": "2026-07-18",
           "decision": "context_resolved",
-          "provided_text": "英皇時召彼臨宮中",
-          "source_script_transcription": "英皇時召彼臨宮中",
+          "provided_text": "英皇時召霍臨宮中",
+          "source_script_transcription": "英皇時召霍臨宮中",
           "evidence": [
             {
-              "description": "彼 is the object of 召; 臨宮中 is the verb phrase; the following pronoun chain contains 與之、其作畫、彼離英"
+              "description": "Human segmentation is 英皇／時召／霍／臨／宮中: 霍 is the shortened person mention and 臨宮中 is the verb phrase"
             },
             {
-              "description": "Adjacent columns identify the artist as 霍爾平（Hans Holbein）, excluding 霍臨 as a person name",
+              "description": "Adjacent columns identify the artist as 霍爾平（Hans Holbein）, supporting 霍 as its shortened mention and excluding 霍臨 as a person name",
               "crop_uri": "artifacts/ocr-challenger/suite-v219-p0308/C09_holbein_context.png",
               "crop_sha256": "30d6afaa9116e39f3aab9b57e9918b0ef53f579c72b1d5ac1b01175bd51af8a0"
             }
           ],
           "superseded_proposals": [
-            "英皇時召霍臨宮中",
+            "英皇時召彼臨宮中",
             "霍臨 as a person name"
           ],
           "gold_eligible": false

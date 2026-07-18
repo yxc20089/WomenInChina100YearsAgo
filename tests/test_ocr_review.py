@@ -34,7 +34,7 @@ class OCRReviewTests(unittest.TestCase):
         )
         self.assertEqual(
             ledger.cases[2].reviews[0].source_script_transcription,
-            "英皇時召彼臨宮中",
+            "英皇時召霍臨宮中",
         )
 
     def test_rejects_changed_raw_model_text(self):

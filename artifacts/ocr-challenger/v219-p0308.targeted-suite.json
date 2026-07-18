@@ -156,18 +156,19 @@
         {"text": "其作畫居約六七年彼離英而遊歷先至比利七之白", "confidence": 0.907},
         {"text": "較上次更受歡迎英皇時召雷臨宮中與之談話並", "confidence": 0.901}
       ],
-      "adjudication": "Contextual human review resolves 英皇時召彼臨宮中: 彼 is the object of 召 and 臨宮中 is the verb phrase; adjacent text identifies 霍爾平（Hans Holbein）, not a person named 霍臨",
+      "adjudication": "Human review confirms Hunyuan's 英皇時召霍臨宮中; segment as 英皇／時召／霍／臨／宮中: 霍 is a shortened person mention for 霍爾平（Hans Holbein） and 臨 is the verb",
       "human_review": {
         "reviewer_role": "project_owner",
         "reviewed_at": "2026-07-18",
         "initial_visual_hypothesis": "霍",
         "initial_name_hypothesis": "霍臨",
-        "source_script_transcription": "英皇時召彼臨宮中",
+        "source_script_transcription": "英皇時召霍臨宮中",
+        "segmentation": ["英皇", "時召", "霍", "臨", "宮中"],
+        "supersedes_contextual_hypothesis": "英皇時召彼臨宮中",
         "context_evidence": [
           "adjacent columns identify 霍爾平（Hans Holbein）",
-          "彼 is the object of 召",
-          "臨宮中 is the verb phrase",
-          "the following pronoun chain contains 與之、其作畫、彼離英"
+          "霍 is the shortened person mention referring to 霍爾平",
+          "臨宮中 is the verb phrase, so 霍臨 is not a person name"
         ],
         "status": "single_human_review_not_independent_adjudicated_gold"
       },

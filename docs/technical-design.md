@@ -32,6 +32,7 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - A common RAG smoke export accounts for all 1,138 regions: 1,131 text-bearing regions map back from exact page-text character offsets to scan polygons; seven empty regions are recorded as omitted. GraphRAG and LightRAG receive the same text input.
 - Pinned GraphRAG 3.1.1 and LightRAG 1.5.4 package CLIs were installed and inspected in isolated environments. The shared-export validator, GraphRAG workspace preparation and authenticated LightRAG REST adapter are implemented; indexing is waiting for a recorded experiment LLM/embedding configuration and review-quality article units.
 - Lexical, dense and hybrid retrieval each achieve Recall@5 1.0, MRR 1.0 and citation-pointer rate 1.0 on the single exact-match smoke question. This validates metric plumbing only and is explicitly not a historian-facing quality result.
+- The NER gold contract now requires two distinct independent reviews and an adjudication, validates corrected/raw exact offsets, and rejects duplicate identities/spans. The scorer reports exact/relaxed and per-type metrics, invalid evidence, OCR CER/loss, raw recoverability, end-to-end recall, decade/layout/quality strata, duration and recorded peak memory. It is tested on synthetic fixtures; no historical gold set exists yet.
 
 The slice intentionally contains no reviewed historical entities or claims. Its insight endpoint therefore returns zero items with an explicit warning. It must not be described as a reconstructed knowledge graph until historian review data exists.
 
@@ -361,9 +362,9 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 ## 12. Immediate implementation backlog
 
 1. Finish human review of the 500-page visual screen and select 150–250 gold pages.
-2. Write annotation guidelines for original characters, normalization, layout and women-centered entities.
+2. Pilot and approve the drafted annotation guidelines for original characters, normalization, layout and women-centered entities.
 3. Render gold pages losslessly and run PP-StructureV3/PP-OCRv6 versus the difficult-page challengers.
-4. Build OCR/layout and NER metric computation against double-reviewed annotations.
+4. Use the implemented NER gold validator/scorer and add OCR/layout scoring against double-reviewed annotations.
 5. Have historians test the implemented mention/entity-resolution and cited-claim queues without promoting current GLiNER smoke outputs.
 6. Create reviewed article segmentation and historian-authored retrieval questions.
 7. Use the implemented shared export to evaluate LightRAG and Microsoft GraphRAG only after the hybrid baseline is scored.
@@ -381,7 +382,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline and smoke metrics; reranker/historian evaluation pending |
 | Graph exploration | Neo4j Community derived projection | Selected for pilot if graph questions justify it |
 | Standards export | CIDOC CRM profile + PROV-O + Web Annotation, validated with Jena/SHACL | Selected architecture |
-| NER | Rules + SIKU-BERT supervised head + GLiNER-X union; NuExtract3 difficult-case challenger | Pinned benchmark registry committed; candidate storage implemented; gold comparison pending |
+| NER | Rules + SIKU-BERT supervised head + GLiNER-X union; NuExtract3 difficult-case challenger | Registry, adjudicated-gold contract and scorer implemented; historian annotation/model comparison pending |
 | Relation/event extraction | Schema-constrained Chinese-capable LLM with grounded offsets | Benchmark/model selection required |
 | Human review and insights | Transactional PostgreSQL decisions + reviewed-only Neo4j analytical signals | Mention, entity-resolution and cited-claim queues implemented; graph staleness and reversible projection tested; adjudication/reversal pending |
 | Graph-RAG experiment | LightRAG 1.5.4 (`9a45b64…`) | Selected first isolated experiment; shared export implemented |

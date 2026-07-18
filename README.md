@@ -149,4 +149,10 @@ GraphRAG/LightRAG requirements and the fair-comparison protocol are under
 `experiments/rag/`; retrieval judgments and metrics are under
 `experiments/retrieval/`.
 
+Gold transcription/NER policy is in
+[`docs/annotation-guidelines.md`](docs/annotation-guidelines.md). Once two
+independent annotations have been adjudicated, `wic-ner-score` validates their
+offsets and produces exact/relaxed, evidence-validity, OCR-loss, per-type and
+decade/genre/layout/quality model reports. No current smoke artifact is gold data.
+
 The committed OCR/NER files are technical smoke artifacts from a lossy screening derivative. They demonstrate provenance, coordinates, persistence, and retrieval; they are not gold transcriptions or reviewed historical assertions.

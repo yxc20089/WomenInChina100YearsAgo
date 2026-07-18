@@ -45,6 +45,7 @@ wic-rag-export = "wic_history.rag_experiment:main"
 wic-eval = "wic_history.evaluation:main"
 wic-rag-adapter = "wic_history.rag_adapters:main"
 wic-ner-compare = "wic_history.ner_compare:main"
+wic-ner-score = "wic_history.ner_gold:main"
 
 
 [tool.setuptools.packages.find]

@@ -3,6 +3,12 @@
 The pinned candidate registry is `candidates.json`. It is a shortlist, not a
 production selection.
 
+The annotation policy and adjudication rules are in
+[`docs/annotation-guidelines.md`](../../docs/annotation-guidelines.md). The
+machine-readable contract is implemented by `wic_history.ner_gold.NERGoldSet`.
+It rejects fewer than two distinct reviewers, bad corrected/raw offsets,
+surface mismatches, duplicate spans, and duplicate snippet/region identities.
+
 Evaluate each applicable model on two paired inputs: double-corrected text and
 the corresponding raw OCR. Split by issue/date rather than random snippets so
 near-duplicate newspaper language cannot leak across sets. Report exact and
@@ -42,3 +48,21 @@ GLiNER-X candidates include suspicious OCR fragments. This is evidence of
 greater candidate volume and major disagreement—not better accuracy. The
 reproducible report is `artifacts/ner-smoke/comparison-first50.json`; only the
 paired gold benchmark can select the model and threshold.
+
+Score an artifact on both paired inputs after the adjudicated gold set is
+frozen:
+
+```bash
+uv run wic-ner-score --gold artifacts/gold/ner-v1.json \
+  --predictions artifacts/ner-benchmark/gliner-x.corrected.json \
+  --input-text corrected --output artifacts/ner-benchmark/gliner-x.corrected.score.json
+uv run wic-ner-score --gold artifacts/gold/ner-v1.json \
+  --predictions artifacts/ner-benchmark/gliner-x.raw-ocr.json \
+  --input-text raw_ocr --output artifacts/ner-benchmark/gliner-x.raw-ocr.score.json
+```
+
+The scorer penalizes invalid/out-of-gold predictions as false positives and
+also reports them separately. Raw recoverable recall isolates NER behavior;
+end-to-end raw recall includes entities destroyed by OCR. It additionally emits
+per-type, decade, page-genre, layout and scan-quality exact scores, aggregate OCR CER,
+duration/throughput, and recorded peak memory when the model run supplies it.

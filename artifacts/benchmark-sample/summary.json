@@ -1,0 +1,104 @@
+{
+  "plan_version": "1.0",
+  "source_manifest": "artifacts/corpus-audit/manifest.jsonl",
+  "candidate_page_count": 500,
+  "selected_volume_count": 10,
+  "purpose": "Candidate pool for visual screening before 150-250 page gold-set selection",
+  "selected_volumes": [
+    {
+      "stratum": "early_1872",
+      "target_year": 1872,
+      "volume_number": 1,
+      "publication_year": 1872,
+      "page_count": 842,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本1.pdf"
+    },
+    {
+      "stratum": "turn_of_century_1900",
+      "target_year": 1900,
+      "volume_number": 64,
+      "publication_year": 1900,
+      "page_count": 777,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本64.pdf"
+    },
+    {
+      "stratum": "djvu_1908",
+      "target_year": 1908,
+      "volume_number": 93,
+      "publication_year": 1908,
+      "page_count": 841,
+      "extension": ".djvu",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本93.djvu"
+    },
+    {
+      "stratum": "pre_pilot_1920",
+      "target_year": 1920,
+      "volume_number": 165,
+      "publication_year": 1920,
+      "page_count": 1103,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本165.pdf"
+    },
+    {
+      "stratum": "pilot_1924",
+      "target_year": 1924,
+      "volume_number": 202,
+      "publication_year": 1924,
+      "page_count": 689,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本202.pdf"
+    },
+    {
+      "stratum": "pilot_1925",
+      "target_year": 1925,
+      "volume_number": 219,
+      "publication_year": 1925,
+      "page_count": 627,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf"
+    },
+    {
+      "stratum": "pilot_1926",
+      "target_year": 1926,
+      "volume_number": 230,
+      "publication_year": 1926,
+      "page_count": 749,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本230.pdf"
+    },
+    {
+      "stratum": "mid_1930s",
+      "target_year": 1935,
+      "volume_number": 328,
+      "publication_year": 1935,
+      "page_count": 815,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本328.pdf"
+    },
+    {
+      "stratum": "wartime_1940",
+      "target_year": 1940,
+      "volume_number": 370,
+      "publication_year": 1940,
+      "page_count": 817,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本370.pdf"
+    },
+    {
+      "stratum": "late_1949",
+      "target_year": 1949,
+      "volume_number": 400,
+      "publication_year": 1949,
+      "page_count": 914,
+      "extension": ".pdf",
+      "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本400.pdf"
+    }
+  ],
+  "required_review": [
+    "Render candidates and assign page genre and scan-quality strata.",
+    "Select 150-250 gold pages with deliberate coverage of layout and degradation.",
+    "Do not treat this mechanically sampled pool as the final gold set."
+  ]
+}

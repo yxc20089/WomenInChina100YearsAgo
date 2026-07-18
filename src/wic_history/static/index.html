@@ -83,20 +83,66 @@
       <div class="review-heading">
         <div>
           <p class="eyebrow">Human review gate</p>
-          <h2>NER candidate queue</h2>
+          <h2>Evidence review queues</h2>
         </div>
         <button id="close-review" class="quiet" type="button">Back to search</button>
       </div>
-      <p>Accepting a span does not create an entity. Entity resolution is a separate, explicit decision recorded with your reviewer name.</p>
+      <p>Every action records the name below. This local prototype has no authentication, so keep it on loopback and use a stable researcher ID.</p>
       <label class="reviewer-label">Reviewer
         <input id="reviewer" autocomplete="name" placeholder="Your name or researcher ID">
       </label>
-      <div class="review-toolbar">
-        <span id="review-summary">Not loaded</span>
-        <button id="refresh-review" class="quiet" type="button">Refresh</button>
+      <div class="segmentation-review-section">
+        <div class="review-heading">
+          <div>
+            <p class="eyebrow">Issue / article boundary gate</p>
+            <h2>Coherent-unit proposals</h2>
+          </div>
+          <button id="refresh-segmentations" class="quiet" type="button">Refresh segmentations</button>
+        </div>
+        <p>Machine windows are not articles. Inspect every boundary against the scan, edit by exporting/importing a new proposal, then record a review. Acceptance and activation are separate actions.</p>
+        <p id="segmentation-summary">Not loaded</p>
+        <div id="segmentation-items"></div>
+        <button id="more-segmentations" type="button" hidden>Load more segmentations</button>
+        <section id="segmentation-detail" class="segmentation-detail" hidden>
+          <div class="review-heading">
+            <h3 id="segmentation-detail-title">Segmentation proposal</h3>
+            <button id="close-segmentation-detail" class="quiet" type="button">Close detail</button>
+          </div>
+          <p id="segmentation-detail-meta" class="mention-provenance"></p>
+          <a id="segmentation-scan" class="scan-link" target="_blank" rel="noopener">Open full scan ↗</a>
+          <div id="segmentation-detail-warnings"></div>
+          <div id="segmentation-unit-previews"></div>
+          <label class="segmentation-editor-label">Editable proposal JSON
+            <textarea id="segmentation-editor" spellcheck="false"></textarea>
+          </label>
+          <label class="segmentation-note-label">Review note
+            <textarea id="segmentation-review-note" maxlength="5000" placeholder="What was checked or what needs revision?"></textarea>
+          </label>
+          <div class="mention-actions">
+            <button id="import-segmentation" class="quiet" type="button">Import edits as new unapproved proposal</button>
+            <button id="accept-segmentation" type="button">Record accepted review</button>
+            <button id="reject-segmentation" class="danger" type="button">Reject proposal</button>
+            <button id="defer-segmentation" class="quiet" type="button">Needs revision</button>
+          </div>
+          <div id="segmentation-review-history"></div>
+          <p id="segmentation-decision-status" class="decision-status" aria-live="polite"></p>
+        </section>
       </div>
-      <div id="review-items"></div>
-      <button id="more-review" type="button" hidden>Load more</button>
+      <div class="claim-review-section">
+        <div class="review-heading">
+          <div>
+            <p class="eyebrow">Named-entity review gate</p>
+            <h2>NER candidate queue</h2>
+          </div>
+          <button id="refresh-review" class="quiet" type="button">Refresh NER</button>
+        </div>
+        <p>Accepting a span does not create an entity. Entity resolution is a separate, explicit decision recorded with your reviewer name.</p>
+        <div class="review-toolbar">
+          <span id="review-summary">Not loaded</span>
+        </div>
+        <div id="review-items"></div>
+        <button id="more-review" type="button" hidden>Load more</button>
+      </div>
       <div class="claim-review-section">
         <div class="review-heading">
           <div>

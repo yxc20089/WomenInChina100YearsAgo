@@ -50,6 +50,7 @@ class SegmentationActivationResult:
     review_id: str
     superseded_selections: int
     approved_units: int
+    reused: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -259,6 +260,7 @@ def export_segmentation_artifact(database_url: str, run_id: UUID) -> dict[str, A
         "schema_version": "1.0",
         "status": "segmentation_proposal_edit",
         "source_proposal_run_id": str(run_id),
+        "source_proposal_sha256": segmentation["proposal_sha256"],
         "page_id": str(segmentation["page_id"]),
         "source_ocr_run_id": str(segmentation["source_ocr_run_id"]),
         "source_ocr_selection_id": str(segmentation["source_ocr_selection_id"]),
@@ -288,6 +290,21 @@ def import_historian_segmentation(
         raise ValueError("historian segmentation requires at least one unit")
     psycopg, dict_row, Jsonb = _psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        source_proposal_run_id = artifact.get("source_proposal_run_id")
+        source_proposal_sha256 = artifact.get("source_proposal_sha256")
+        if source_proposal_run_id and source_proposal_sha256:
+            source_proposal = connection.execute(
+                """
+                SELECT proposal_sha256 FROM evidence.article_segmentation
+                WHERE run_id = %s
+                """,
+                (UUID(source_proposal_run_id),),
+            ).fetchone()
+            if (
+                not source_proposal
+                or source_proposal["proposal_sha256"] != source_proposal_sha256
+            ):
+                raise ValueError("source proposal hash does not match immutable database state")
         source_rows = connection.execute(
             """
             SELECT region.region_id, region.raw_text, region.normalized_text,
@@ -372,6 +389,7 @@ def import_historian_segmentation(
         configuration = {
             "artifact_schema_version": "1.0",
             "source_proposal_run_id": artifact.get("source_proposal_run_id"),
+            "source_proposal_sha256": artifact.get("source_proposal_sha256"),
         }
         now = datetime.now(timezone.utc)
         connection.execute(
@@ -597,8 +615,8 @@ def _verify_current_complete_segmentation(connection: Any, run_id: UUID) -> dict
         (run_id,),
     ).fetchall()
     units = connection.execute(
-        "SELECT count(*) FROM evidence.article WHERE run_id = %s", (run_id,)
-    ).fetchone()[0]
+        "SELECT count(*) AS count FROM evidence.article WHERE run_id = %s", (run_id,)
+    ).fetchone()["count"]
     if units < 1:
         raise ValueError("segmentation has no coherent-unit proposals")
     validate_span_coverage(source_rows, member_rows)
@@ -617,6 +635,9 @@ def review_segmentation(
     decision: str,
     reviewer: str,
     note: str | None = None,
+    review_id: UUID | None = None,
+    expected_proposal_sha256: str | None = None,
+    expected_input_sha256: str | None = None,
 ) -> SegmentationReviewResult:
     if decision not in {"accept", "reject", "needs_revision"}:
         raise ValueError("decision must be accept, reject, or needs_revision")
@@ -624,16 +645,62 @@ def review_segmentation(
         raise ValueError("reviewer is required")
     psycopg, dict_row, _ = _psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        review_id = review_id or uuid4()
+        stored = connection.execute(
+            """
+            SELECT run_id, decision, reviewer, note
+            FROM evidence.article_segmentation_review WHERE review_id = %s
+            """,
+            (review_id,),
+        ).fetchone()
+        expected = {
+            "run_id": run_id,
+            "decision": decision,
+            "reviewer": reviewer,
+            "note": note,
+        }
+        if stored:
+            if stored != expected:
+                raise ValueError(f"review UUID {review_id} already has different content")
+            return SegmentationReviewResult(str(review_id), str(run_id), decision, reviewer)
+        identity = connection.execute(
+            """
+            SELECT proposal_sha256, input_sha256
+            FROM evidence.article_segmentation WHERE run_id = %s
+            """,
+            (run_id,),
+        ).fetchone()
+        if not identity:
+            raise ValueError(f"unknown segmentation run {run_id}")
+        if (
+            expected_proposal_sha256 is not None
+            and identity["proposal_sha256"] != expected_proposal_sha256
+        ):
+            raise ValueError("segmentation proposal hash changed; reload before review")
+        if (
+            expected_input_sha256 is not None
+            and identity["input_sha256"] != expected_input_sha256
+        ):
+            raise ValueError("segmentation input hash changed; reload before review")
         _verify_current_complete_segmentation(connection, run_id)
-        review_id = uuid4()
         connection.execute(
             """
             INSERT INTO evidence.article_segmentation_review (
                 review_id, run_id, decision, reviewer, note
             ) VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (review_id) DO NOTHING
             """,
             (review_id, run_id, decision, reviewer, note),
         )
+        stored = connection.execute(
+            """
+            SELECT run_id, decision, reviewer, note
+            FROM evidence.article_segmentation_review WHERE review_id = %s
+            """,
+            (review_id,),
+        ).fetchone()
+        if stored != expected:
+            raise ValueError(f"review UUID {review_id} already has different content")
     return SegmentationReviewResult(str(review_id), str(run_id), decision, reviewer)
 
 
@@ -642,6 +709,8 @@ def activate_segmentation(
     review_id: UUID,
     *,
     selected_by: str,
+    expected_previous_selection_id: UUID | None,
+    expected_proposal_sha256: str | None = None,
 ) -> SegmentationActivationResult:
     if not selected_by.strip():
         raise ValueError("selected_by is required")
@@ -650,7 +719,8 @@ def activate_segmentation(
         review = connection.execute(
             """
             SELECT review.review_id, review.run_id, review.decision,
-                   segmentation.page_id
+                   review.reviewed_at, segmentation.page_id,
+                   segmentation.proposal_sha256
             FROM evidence.article_segmentation_review review
             JOIN evidence.article_segmentation segmentation USING (run_id)
             WHERE review.review_id = %s
@@ -661,7 +731,69 @@ def activate_segmentation(
             raise ValueError(f"unknown segmentation review {review_id}")
         if review["decision"] != "accept":
             raise ValueError("only an accepted segmentation review can be activated")
+        if (
+            expected_proposal_sha256 is not None
+            and review["proposal_sha256"] != expected_proposal_sha256
+        ):
+            raise ValueError("segmentation proposal hash changed; reload before activation")
+        existing = connection.execute(
+            """
+            SELECT selection_id, page_id, run_id
+            FROM evidence.page_article_segmentation_selection
+            WHERE review_id = %s
+            """,
+            (review_id,),
+        ).fetchone()
+        if existing:
+            approved_units = connection.execute(
+                """
+                SELECT count(*) AS count FROM evidence.coherent_unit_revision
+                WHERE approval_selection_id = %s
+                """,
+                (existing["selection_id"],),
+            ).fetchone()["count"]
+            return SegmentationActivationResult(
+                str(existing["selection_id"]), str(existing["run_id"]),
+                str(existing["page_id"]), str(review_id), 0, approved_units, True,
+            )
         _verify_current_complete_segmentation(connection, review["run_id"])
+        connection.execute(
+            "SELECT page_id FROM archive.page WHERE page_id = %s FOR UPDATE",
+            (review["page_id"],),
+        ).fetchone()
+        later_blocker = connection.execute(
+            """
+            SELECT review_id, decision
+            FROM evidence.article_segmentation_review
+            WHERE run_id = %s
+              AND (reviewed_at, review_id) > (%s, %s)
+              AND decision IN ('reject', 'needs_revision')
+            ORDER BY reviewed_at DESC, review_id DESC
+            LIMIT 1
+            """,
+            (review["run_id"], review["reviewed_at"], review_id),
+        ).fetchone()
+        if later_blocker:
+            raise ValueError(
+                "accepted review is superseded by a later "
+                f"{later_blocker['decision']} decision {later_blocker['review_id']}"
+            )
+        current_selection = connection.execute(
+            """
+            SELECT selection_id
+            FROM evidence.page_article_segmentation_selection
+            WHERE page_id = %s AND superseded_at IS NULL
+            """,
+            (review["page_id"],),
+        ).fetchone()
+        current_selection_id = (
+            current_selection["selection_id"] if current_selection else None
+        )
+        if current_selection_id != expected_previous_selection_id:
+            raise ValueError(
+                "active page segmentation changed; reload before activation "
+                f"(expected {expected_previous_selection_id}, found {current_selection_id})"
+            )
         old_selection_ids = [
             row["selection_id"]
             for row in connection.execute(
@@ -737,11 +869,11 @@ def activate_segmentation(
             )
             revision_number = connection.execute(
                 """
-                SELECT COALESCE(max(revision_number), 0) + 1
+                SELECT COALESCE(max(revision_number), 0) + 1 AS revision_number
                 FROM evidence.coherent_unit_revision WHERE unit_id = %s
                 """,
                 (unit_id,),
-            ).fetchone()[0]
+            ).fetchone()["revision_number"]
             content = []
             for member in members:
                 start = member["text_start"] if member["text_start"] is not None else 0
@@ -798,7 +930,7 @@ def activate_segmentation(
                 )
     return SegmentationActivationResult(
         str(selection_id), str(review["run_id"]), str(review["page_id"]),
-        str(review_id), superseded, len(by_article),
+        str(review_id), superseded, len(by_article), False,
     )
 
 
@@ -922,6 +1054,7 @@ def _parser() -> argparse.ArgumentParser:
     activate = subparsers.add_parser("activate")
     activate.add_argument("--review-id", type=UUID, required=True)
     activate.add_argument("--selected-by", required=True)
+    activate.add_argument("--expected-previous-selection-id", type=UUID)
 
     issue = subparsers.add_parser("create-issue")
     issue.add_argument("--publication-date", type=date.fromisoformat)
@@ -983,7 +1116,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     elif args.command == "activate":
         payload = asdict(
             activate_segmentation(
-                args.database_url, args.review_id, selected_by=args.selected_by
+                args.database_url,
+                args.review_id,
+                selected_by=args.selected_by,
+                expected_previous_selection_id=args.expected_previous_selection_id,
             )
         )
     elif args.command == "create-issue":

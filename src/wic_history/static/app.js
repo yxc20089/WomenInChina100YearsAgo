@@ -29,6 +29,12 @@ const explorationPanel = document.querySelector('#exploration-panel');
 const claimReviewItems = document.querySelector('#claim-review-items');
 const claimReviewSummary = document.querySelector('#claim-review-summary');
 const moreClaims = document.querySelector('#more-claims');
+const segmentationItems = document.querySelector('#segmentation-items');
+const segmentationSummary = document.querySelector('#segmentation-summary');
+const moreSegmentations = document.querySelector('#more-segmentations');
+const segmentationDetail = document.querySelector('#segmentation-detail');
+const segmentationEditor = document.querySelector('#segmentation-editor');
+const segmentationStatus = document.querySelector('#segmentation-decision-status');
 let lastRequest = null;
 let reviewOffset = 0;
 const reviewLimit = 20;
@@ -36,6 +42,10 @@ let reviewTotal = 0;
 let claimOffset = 0;
 const claimLimit = 20;
 let claimTotal = 0;
+let segmentationOffset = 0;
+const segmentationLimit = 20;
+let segmentationTotal = 0;
+let currentSegmentation = null;
 let chatHistory = [];
 
 reviewerInput.value = localStorage.getItem('wic-reviewer') || '';
@@ -74,6 +84,241 @@ async function postReview(url, body) {
   if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
   return response.json();
 }
+
+async function postJson(url, body) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  return response.json();
+}
+
+function renderSegmentationSummary(item) {
+  const card = document.createElement('article');
+  card.className = 'mention-card segmentation-card';
+  const heading = document.createElement('h3');
+  heading.textContent = `Volume ${item.volume_number} · ${item.publication_year} · page ${item.page_number}`;
+  const kind = document.createElement('p');
+  kind.className = 'mention-meta';
+  kind.textContent = `${item.proposal_kind.replaceAll('_', ' ')} · ${item.method} v${item.method_version}`;
+  const counts = document.createElement('p');
+  counts.textContent = `${item.units} proposed unit(s) · ${item.member_spans} source span(s) · ${item.review_count} review(s) · ${item.approved_units} active approved unit(s)`;
+  const provenance = document.createElement('p');
+  provenance.className = 'mention-provenance';
+  provenance.textContent = `Proposed by ${item.proposed_by} · ${item.run_id} · derivative ${item.derivative_id} · ${item.evidence_tier}`;
+  const state = document.createElement('p');
+  state.className = item.source_selection_active ? 'decision-status' : 'warning';
+  if (item.active_selection_id) {
+    state.textContent = `ACTIVE reviewed selection ${item.active_selection_id}`;
+  } else if (!item.source_selection_active) {
+    state.textContent = 'STALE: the source OCR selection is no longer active.';
+  } else if (item.latest_decision) {
+    state.textContent = `Latest review: ${item.latest_decision} by ${item.latest_reviewer}`;
+  } else {
+    state.textContent = 'Unreviewed proposal.';
+  }
+  const inspect = document.createElement('button');
+  inspect.type = 'button';
+  inspect.textContent = 'Inspect every unit';
+  inspect.addEventListener('click', () => openSegmentation(item.run_id));
+  const scan = document.createElement('a');
+  scan.className = 'mention-scan';
+  scan.target = '_blank';
+  scan.rel = 'noopener';
+  scan.href = pageImageUrl(item.volume_number, item.page_number, item.derivative_id);
+  scan.textContent = 'Open exact scan ↗';
+  const actions = document.createElement('div');
+  actions.className = 'mention-actions';
+  actions.append(inspect, scan);
+  card.append(kind, heading, counts, provenance, state, actions);
+  segmentationItems.append(card);
+}
+
+async function loadSegmentations(reset = false) {
+  if (reset) {
+    segmentationOffset = 0;
+    segmentationItems.replaceChildren();
+  }
+  segmentationSummary.textContent = 'Loading segmentation proposals…';
+  const response = await fetch(`/api/review/segmentations?limit=${segmentationLimit}&offset=${segmentationOffset}`);
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  const data = await response.json();
+  segmentationTotal = data.total;
+  data.items.forEach(renderSegmentationSummary);
+  segmentationOffset += data.items.length;
+  segmentationSummary.textContent = `${segmentationOffset} of ${segmentationTotal} immutable proposals loaded. ${data.warnings.join(' ')}`;
+  moreSegmentations.hidden = segmentationOffset >= segmentationTotal;
+}
+
+function renderSegmentationUnits(units) {
+  const container = document.querySelector('#segmentation-unit-previews');
+  container.replaceChildren();
+  units.forEach(unit => {
+    const details = document.createElement('details');
+    details.className = 'segmentation-unit';
+    const summary = document.createElement('summary');
+    summary.textContent = `Unit ${unit.ordinal} · ${unit.unit_kind} · ${unit.region_spans} exact span(s)${unit.title ? ` · ${unit.title}` : ''}`;
+    const text = document.createElement('pre');
+    text.textContent = unit.text || '〔empty OCR spans〕';
+    const spans = document.createElement('div');
+    spans.className = 'segmentation-spans';
+    unit.spans.forEach(span => {
+      const spanDetails = document.createElement('details');
+      const spanSummary = document.createElement('summary');
+      spanSummary.textContent = `OCR ${span.reading_order} · ${span.region_id} · [${span.text_start}, ${span.text_end}) · “${span.text}”`;
+      const geometry = document.createElement('pre');
+      geometry.textContent = JSON.stringify(span.polygon, null, 2);
+      spanDetails.append(spanSummary, geometry);
+      spans.append(spanDetails);
+    });
+    details.append(summary, text, spans);
+    container.append(details);
+  });
+}
+
+function renderSegmentationReviews(data) {
+  const container = document.querySelector('#segmentation-review-history');
+  container.replaceChildren();
+  const heading = document.createElement('h4');
+  heading.textContent = 'Immutable review history';
+  container.append(heading);
+  if (!data.reviews.length) {
+    const empty = document.createElement('p');
+    empty.textContent = 'No reviews recorded.';
+    container.append(empty);
+    return;
+  }
+  data.reviews.forEach(review => {
+    const row = document.createElement('div');
+    row.className = 'segmentation-review-row';
+    const text = document.createElement('p');
+    text.textContent = `${review.decision} · ${review.reviewer} · ${review.reviewed_at}${review.note ? ` · ${review.note}` : ''}`;
+    row.append(text);
+    if (review.activated_selection_id) {
+      const state = document.createElement('p');
+      state.className = 'decision-status';
+      state.textContent = `${review.selection_active ? 'Active' : 'Superseded'} selection ${review.activated_selection_id}`;
+      row.append(state);
+    } else if (review.decision === 'accept') {
+      const activate = document.createElement('button');
+      activate.type = 'button';
+      activate.className = 'activation-button';
+      activate.textContent = 'Activate this accepted review';
+      activate.disabled = !data.reviewable;
+      activate.addEventListener('click', async () => {
+        try {
+          const previous = data.summary.current_page_selection_id || 'none';
+          if (!window.confirm(`Activate ${data.units.length} reviewed units and supersede current page selection ${previous}? This is separate from acceptance.`)) return;
+          activate.disabled = true;
+          const result = await postJson(`/api/review/segmentation-reviews/${review.review_id}/activate`, {
+            selected_by: reviewer(),
+            expected_previous_selection_id: data.summary.current_page_selection_id,
+            expected_proposal_sha256: data.summary.proposal_sha256,
+            confirmation: 'ACTIVATE_ACCEPTED_SEGMENTATION',
+          });
+          segmentationStatus.textContent = `Activated selection ${result.selection_id}; ${result.approved_units} approved units copied.${result.reused ? ' Existing activation reused.' : ''}`;
+          await Promise.all([openSegmentation(data.summary.run_id), loadSegmentations(true)]);
+        } catch (error) {
+          segmentationStatus.textContent = error.message;
+          activate.disabled = false;
+        }
+      });
+      row.append(activate);
+    }
+    container.append(row);
+  });
+}
+
+async function openSegmentation(runId) {
+  segmentationDetail.hidden = false;
+  segmentationStatus.textContent = 'Loading exact spans and scan provenance…';
+  const response = await fetch(`/api/review/segmentations/${runId}`);
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  const data = await response.json();
+  currentSegmentation = data;
+  document.querySelector('#segmentation-detail-title').textContent = `Volume ${data.summary.volume_number} · page ${data.summary.page_number} · ${data.units.length} proposed units`;
+  document.querySelector('#segmentation-detail-meta').textContent = `Run ${data.summary.run_id} · proposal ${data.summary.proposal_sha256} · input ${data.summary.input_sha256} · derivative ${data.summary.derivative_id} / ${data.summary.image_sha256} · ${data.summary.image_width}×${data.summary.image_height} · ${data.summary.evidence_tier}`;
+  const scan = document.querySelector('#segmentation-scan');
+  scan.href = pageImageUrl(data.summary.volume_number, data.summary.page_number, data.summary.derivative_id);
+  const warningContainer = document.querySelector('#segmentation-detail-warnings');
+  warningContainer.replaceChildren();
+  [...data.warnings, ...data.review_blockers].forEach(message => {
+    const warning = document.createElement('p');
+    warning.className = 'warning';
+    warning.textContent = message;
+    warningContainer.append(warning);
+  });
+  const coverage = document.createElement('p');
+  coverage.className = data.coverage_complete ? 'decision-status' : 'warning';
+  coverage.textContent = `${data.covered_regions}/${data.source_regions} OCR regions · ${data.member_spans} exact spans · coverage ${data.coverage_complete ? 'complete' : 'BLOCKED'} · scan hash ${data.scan_available ? 'verified' : 'BLOCKED'}`;
+  warningContainer.prepend(coverage);
+  renderSegmentationUnits(data.units);
+  segmentationEditor.value = JSON.stringify(data.editable_artifact, null, 2);
+  document.querySelector('#segmentation-review-note').value = '';
+  const decisionButtons = [
+    document.querySelector('#accept-segmentation'),
+    document.querySelector('#reject-segmentation'),
+    document.querySelector('#defer-segmentation'),
+  ];
+  decisionButtons.forEach(button => { button.disabled = !data.reviewable; });
+  renderSegmentationReviews(data);
+  segmentationStatus.textContent = data.reviewable
+    ? 'Loaded. Acceptance will record a review only; it will not activate units.'
+    : `Review blocked: ${data.review_blockers.join(' ')}`;
+  segmentationDetail.scrollIntoView({behavior: 'smooth', block: 'start'});
+  return data;
+}
+
+async function recordSegmentationDecision(decision) {
+  if (!currentSegmentation) return;
+  try {
+    const note = document.querySelector('#segmentation-review-note').value.trim() || null;
+    if (decision === 'accept' && !window.confirm('Confirm that you inspected every unit, every exact span, and the registered scan. This records acceptance but does NOT activate it.')) return;
+    const result = await postJson(`/api/review/segmentations/${currentSegmentation.summary.run_id}/reviews`, {
+      review_id: crypto.randomUUID(),
+      decision,
+      reviewer: reviewer(),
+      note,
+      expected_proposal_sha256: currentSegmentation.summary.proposal_sha256,
+      expected_input_sha256: currentSegmentation.summary.input_sha256,
+      checked_all_units: decision === 'accept',
+      confirmation: 'RECORD_REVIEW_WITHOUT_ACTIVATION',
+    });
+    segmentationStatus.textContent = `Recorded ${result.decision} review ${result.review_id}. No activation occurred.`;
+    await Promise.all([openSegmentation(currentSegmentation.summary.run_id), loadSegmentations(true)]);
+  } catch (error) {
+    segmentationStatus.textContent = error.message;
+  }
+}
+
+document.querySelector('#import-segmentation').addEventListener('click', async () => {
+  try {
+    const artifact = JSON.parse(segmentationEditor.value);
+    if (!window.confirm('Create a NEW immutable, unapproved proposal from this JSON? This does not alter or approve the current proposal.')) return;
+    const result = await postJson('/api/review/segmentation-imports', {
+      artifact,
+      proposed_by: reviewer(),
+      confirmation: 'CREATE_UNAPPROVED_PROPOSAL',
+    });
+    segmentationStatus.textContent = `${result.reused ? 'Reused' : 'Created'} unapproved proposal ${result.run_id}.`;
+    await loadSegmentations(true);
+    await openSegmentation(result.run_id);
+  } catch (error) {
+    segmentationStatus.textContent = `Import blocked: ${error.message}`;
+  }
+});
+
+document.querySelector('#accept-segmentation').addEventListener('click', () => recordSegmentationDecision('accept'));
+document.querySelector('#reject-segmentation').addEventListener('click', () => recordSegmentationDecision('reject'));
+document.querySelector('#defer-segmentation').addEventListener('click', () => recordSegmentationDecision('needs_revision'));
+document.querySelector('#close-segmentation-detail').addEventListener('click', () => {
+  segmentationDetail.hidden = true;
+  currentSegmentation = null;
+});
+document.querySelector('#refresh-segmentations').addEventListener('click', () => loadSegmentations(true));
+moreSegmentations.addEventListener('click', () => loadSegmentations(false));
 
 function renderResolutionActions(container, item) {
   container.replaceChildren();
@@ -190,8 +435,9 @@ reviewButton.addEventListener('click', async () => {
   reviewPanel.hidden = false;
   reviewPanel.scrollIntoView({behavior: 'smooth'});
   try {
-    await Promise.all([loadReview(true), loadClaims(true)]);
+    await Promise.all([loadSegmentations(true), loadReview(true), loadClaims(true)]);
   } catch (error) {
+    segmentationSummary.textContent = error.message;
     reviewSummary.textContent = error.message;
     claimReviewSummary.textContent = error.message;
   }

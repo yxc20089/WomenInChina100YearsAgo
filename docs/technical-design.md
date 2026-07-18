@@ -307,6 +307,14 @@ A graph approach enters production only where it materially outperforms the hybr
 
 `wic-rag-export` creates citation-preserving comparison input. `--unit ocr_page` remains an explicitly labeled smoke-test compromise. `--unit reviewed_coherent_unit` reads only active revisions copied after a named accepted segmentation review and maps exact document offsets through coherent-unit spans to OCR-region UUIDs, raw offsets, polygons and scan URIs. It hard-fails when no reviewed units exist. Generated graph entities, relations, community reports and summaries never flow back into the evidence plane as reviewed facts.
 
+The main localhost researcher UI exposes the immutable segmentation queue and
+exact scan/span detail. Editing imports a new proposal. Review acceptance does
+not activate it; activation is a second confirmed request with proposal hashes,
+an expected previous selection ID, a per-page row lock and an idempotent review
+constraint. The UI is an operational prototype, not an identity system: it
+must remain loopback-only until authentication, authorization and CSRF controls
+exist.
+
 ## 9. Storage and identifiers
 
 Minimum authoritative records:

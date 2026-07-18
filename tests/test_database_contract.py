@@ -38,6 +38,7 @@ class DatabaseContractTests(unittest.TestCase):
                 "010_article_segmentation_review.sql",
                 "011_segmentation_span_splits.sql",
                 "012_coherent_unit_provenance_guards.sql",
+                "013_segmentation_action_idempotency.sql",
             ],
         )
 
@@ -58,6 +59,12 @@ class DatabaseContractTests(unittest.TestCase):
         )
         self.assertIn("coherent_revision_proposal_selection_trigger", sql)
         self.assertIn("coherent_span_proposal_membership_trigger", sql)
+
+    def test_one_review_cannot_be_activated_twice(self):
+        sql = Path("db/migrations/013_segmentation_action_idempotency.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("UNIQUE (review_id)", sql)
 
     def test_page_derivatives_preserve_multiple_image_tiers(self):
         sql = Path("db/migrations/004_page_derivatives.sql").read_text(encoding="utf-8")

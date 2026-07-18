@@ -70,8 +70,15 @@ Reassignment supersedes the old page assignment rather than overwriting it.
 
 ## Review and activate
 
-The current CLI records whole-proposal review. Use it only after a historian
-has checked every boundary, order, unit type, and title against the scan:
+Open the main researcher application at `http://127.0.0.1:8766`, choose
+**Review machine candidates**, then open **Coherent-unit proposals**. The detail
+view verifies the exact registered scan hash and displays every unit, raw text
+span, offset and polygon. Its JSON editor imports changes as a new unapproved
+proposal; it never changes the proposal being viewed.
+
+The UI and CLI record whole-proposal review. Use either only after a historian
+has checked every boundary, order, unit type, title, and exact span against the
+scan:
 
 ```bash
 uv run wic-segment --database-url "$DATABASE_URL" review \
@@ -79,13 +86,20 @@ uv run wic-segment --database-url "$DATABASE_URL" review \
   --reviewer HISTORIAN_ID --note 'Checked against source scan'
 
 uv run wic-segment --database-url "$DATABASE_URL" activate \
-  --review-id ACCEPTED_REVIEW_UUID --selected-by HISTORIAN_ID
+  --review-id ACCEPTED_REVIEW_UUID --selected-by HISTORIAN_ID \
+  --expected-previous-selection-id CURRENT_SELECTION_UUID
 ```
+
+Omit `--expected-previous-selection-id` only when the page has no active
+segmentation. The UI always sends the value it loaded, including explicit
+`null`; activation fails if another reviewer changed it in the meantime.
 
 `reject` and `needs_revision` reviews cannot be activated; PostgreSQL enforces
 that rule independently of the CLI. Activation also fails if the exact source
 OCR selection has been superseded or if any source region is missing or
-duplicated. It creates new approved coherent-unit revisions and exact
+duplicated, if the proposal/input hash changed, or if a later review requested
+revision/rejection. Network retries reuse the original review and activation
+UUIDs. Successful activation creates new approved coherent-unit revisions and exact
 end-exclusive OCR-region spans; it never mutates proposal rows.
 
 The current live proposals have **not** been reviewed or activated. One
@@ -108,3 +122,7 @@ Edits must create a new `historian_authored` proposal or coherent-unit revision;
 the database rejects updates/deletes of proposal and review rows. A reviewed
 unit may span pages, and its member offsets allow a reviewer to split one OCR
 region without changing OCR evidence.
+
+The researcher API has no authentication or CSRF protection. Reviewer names
+are audit labels, not verified identities. Keep it bound to loopback until an
+authenticated deployment is designed.

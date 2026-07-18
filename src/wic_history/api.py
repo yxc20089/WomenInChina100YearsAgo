@@ -30,6 +30,21 @@ from .exploration import ExplorationReport, build_exploration_report
 from .insights import InsightReport, build_insight_report
 from .ingestion_jobs import batch_failures, batch_status
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
+from .segmentation_review import (
+    SegmentationActivationRequest,
+    SegmentationActivationResultView,
+    SegmentationDetailResponse,
+    SegmentationImportRequest,
+    SegmentationProposalResultView,
+    SegmentationQueueResponse,
+    SegmentationReviewRequest,
+    SegmentationReviewResultView,
+    activate_reviewed_segmentation,
+    import_segmentation_edit,
+    list_segmentation_queue,
+    record_segmentation_review,
+    segmentation_detail,
+)
 from .review_workflow import (
     ClaimQueueResponse,
     ClaimReviewRequest,
@@ -166,8 +181,8 @@ def create_app(
     neo4j_password: str | None = None,
 ) -> Any:
     try:
-        from fastapi import FastAPI, HTTPException
-        from fastapi.responses import FileResponse
+        from fastapi import FastAPI, HTTPException, Request
+        from fastapi.responses import FileResponse, JSONResponse
         from fastapi.staticfiles import StaticFiles
     except ImportError as exc:  # pragma: no cover - minimal installations
         raise RuntimeError("Install the API extra: uv sync --extra api") from exc
@@ -182,6 +197,24 @@ def create_app(
     app.state.embedder = None
     app.state.generator = None
     app.state.generator_loaded = False
+
+    @app.middleware("http")
+    async def cap_segmentation_mutations(request: Request, call_next: Any) -> Any:
+        if (
+            request.method == "POST"
+            and request.url.path.startswith("/api/review/segmentation")
+        ):
+            maximum = 5 * 1024 * 1024
+            content_length = request.headers.get("content-length")
+            if content_length and int(content_length) > maximum:
+                return JSONResponse(
+                    {"detail": "segmentation request exceeds 5 MiB"}, status_code=413
+                )
+            if not content_length and len(await request.body()) > maximum:
+                return JSONResponse(
+                    {"detail": "segmentation request exceeds 5 MiB"}, status_code=413
+                )
+        return await call_next(request)
 
     def run_search(request: SearchRequest) -> RetrievalResponse:
         if request.year_start and request.year_end and request.year_end < request.year_start:
@@ -419,6 +452,108 @@ def create_app(
             raise
         except Exception as exc:
             review_error(exc)
+
+    @app.get("/api/review/segmentations", response_model=SegmentationQueueResponse)
+    def segmentation_queue(limit: int = 25, offset: int = 0) -> SegmentationQueueResponse:
+        try:
+            return list_segmentation_queue(
+                require_database(), limit=limit, offset=offset
+            )
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Segmentation queue unavailable: {exc}"
+            ) from exc
+
+    @app.get(
+        "/api/review/segmentations/{run_id}",
+        response_model=SegmentationDetailResponse,
+    )
+    def segmentation_proposal(run_id: UUID) -> SegmentationDetailResponse:
+        try:
+            return segmentation_detail(require_database(), run_id)
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Segmentation detail unavailable: {exc}"
+            ) from exc
+
+    @app.post(
+        "/api/review/segmentation-imports",
+        response_model=SegmentationProposalResultView,
+    )
+    def import_segmentation(
+        request: SegmentationImportRequest,
+    ) -> SegmentationProposalResultView:
+        try:
+            return SegmentationProposalResultView.model_validate(
+                asdict(import_segmentation_edit(require_database(), request))
+            )
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Segmentation import unavailable: {exc}"
+            ) from exc
+
+    @app.post(
+        "/api/review/segmentations/{run_id}/reviews",
+        response_model=SegmentationReviewResultView,
+    )
+    def decide_segmentation(
+        run_id: UUID, request: SegmentationReviewRequest
+    ) -> SegmentationReviewResultView:
+        try:
+            if request.decision == "accept":
+                detail = segmentation_detail(require_database(), run_id)
+                if not detail.reviewable:
+                    raise ValueError(
+                        "segmentation is not reviewable: "
+                        + "; ".join(detail.review_blockers)
+                    )
+            return SegmentationReviewResultView.model_validate(
+                asdict(record_segmentation_review(require_database(), run_id, request))
+            )
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Segmentation review unavailable: {exc}"
+            ) from exc
+
+    @app.post(
+        "/api/review/segmentation-reviews/{review_id}/activate",
+        response_model=SegmentationActivationResultView,
+    )
+    def activate_segmentation_review(
+        review_id: UUID, request: SegmentationActivationRequest
+    ) -> SegmentationActivationResultView:
+        try:
+            return SegmentationActivationResultView.model_validate(
+                asdict(
+                    activate_reviewed_segmentation(
+                        require_database(), review_id, request
+                    )
+                )
+            )
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Segmentation activation unavailable: {exc}"
+            ) from exc
 
     @app.get("/api/insights", response_model=InsightReport)
     def insights() -> InsightReport:

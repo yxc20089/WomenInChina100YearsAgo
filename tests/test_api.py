@@ -21,6 +21,8 @@ from wic_history.evidence import (
 )
 from wic_history.exploration import ExplorationCounts, ExplorationReport
 from wic_history.review_workflow import ClaimQueueResponse, MentionQueueResponse
+from wic_history.segmentation import SegmentationProposalResult
+from wic_history.segmentation_review import SegmentationQueueResponse
 from wic_history.insights import (
     EvidenceCounts,
     GraphProjectionStatus,
@@ -319,6 +321,107 @@ class APITests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["total"], 0)
         loader.assert_called_once()
+
+    def test_segmentation_queue_is_exposed_without_mutation(self):
+        queue = SegmentationQueueResponse(
+            total=0,
+            limit=25,
+            offset=0,
+            items=[],
+            warnings=["proposal counts are not article counts"],
+        )
+        with patch(
+            "wic_history.api.list_segmentation_queue", return_value=queue
+        ) as loader:
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get("/api/review/segmentations")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["total"], 0)
+        loader.assert_called_once()
+
+    def test_segmentation_import_static_route_is_not_shadowed_by_uuid_detail(self):
+        result = SegmentationProposalResult(
+            run_id="00000000-0000-0000-0000-000000000001",
+            page_id="00000000-0000-0000-0000-000000000002",
+            source_ocr_run_id="00000000-0000-0000-0000-000000000003",
+            proposal_sha256="a" * 64,
+            units=1,
+            regions=1,
+            reused=False,
+        )
+        artifact = {
+            "schema_version": "1.0",
+            "status": "segmentation_proposal_edit",
+            "source_proposal_run_id": "00000000-0000-0000-0000-000000000004",
+            "source_proposal_sha256": "b" * 64,
+            "page_id": "00000000-0000-0000-0000-000000000002",
+            "source_ocr_run_id": "00000000-0000-0000-0000-000000000003",
+            "source_ocr_selection_id": "00000000-0000-0000-0000-000000000005",
+            "input_sha256": "c" * 64,
+            "instructions": [],
+            "units": [
+                {
+                    "ordinal": 0,
+                    "title": None,
+                    "unit_kind": "other",
+                    "confidence": None,
+                    "spans": [
+                        {
+                            "region_id": "00000000-0000-0000-0000-000000000006",
+                            "text_start": 0,
+                            "text_end": 1,
+                            "role": "body",
+                        }
+                    ],
+                }
+            ],
+        }
+        with patch(
+            "wic_history.api.import_segmentation_edit", return_value=result
+        ) as importer:
+            response = TestClient(
+                create_app(database_url="postgresql://example")
+            ).post(
+                "/api/review/segmentation-imports",
+                json={
+                    "artifact": artifact,
+                    "proposed_by": "historian-a",
+                    "confirmation": "CREATE_UNAPPROVED_PROPOSAL",
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["run_id"], result.run_id)
+        importer.assert_called_once()
+
+    def test_segmentation_accept_requires_explicit_complete_check(self):
+        response = TestClient(
+            create_app(database_url="postgresql://example")
+        ).post(
+            "/api/review/segmentations/00000000-0000-0000-0000-000000000001/reviews",
+            json={
+                "review_id": "00000000-0000-0000-0000-000000000002",
+                "decision": "accept",
+                "reviewer": "historian-a",
+                "expected_proposal_sha256": "a" * 64,
+                "expected_input_sha256": "b" * 64,
+                "checked_all_units": False,
+                "confirmation": "RECORD_REVIEW_WITHOUT_ACTIVATION",
+            },
+        )
+        self.assertEqual(response.status_code, 422)
+
+    def test_segmentation_activation_requires_expected_previous_selection(self):
+        response = TestClient(
+            create_app(database_url="postgresql://example")
+        ).post(
+            "/api/review/segmentation-reviews/00000000-0000-0000-0000-000000000001/activate",
+            json={
+                "selected_by": "historian-a",
+                "expected_proposal_sha256": "a" * 64,
+                "confirmation": "ACTIVATE_ACCEPTED_SEGMENTATION",
+            },
+        )
+        self.assertEqual(response.status_code, 422)
 
 
 if __name__ == "__main__":

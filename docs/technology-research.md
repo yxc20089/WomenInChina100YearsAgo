@@ -87,14 +87,14 @@ NER and entity linking must be separate stages. Recognizing `宋庆龄` as a per
 ### Candidate stack
 
 1. **Rules and gazetteers** for dates, newspaper issue structure, addresses, schools, organizations, titles, and historical place names.
-2. **Supervised fixed-ontology tournament** using identical W2NER heads and training budgets on MacBERT, GujiRoBERTa-jian-fan (license-gated), and SIKU-BERT. MacBERT is the first arm because a directly relevant retyped *Shen Bao* study reports 58.26 F1 versus SIKU 56.83; neither score demonstrates OCR robustness.
-3. **Open-type recall challengers**: Otter CE mmBERT and GLiNER-X, with the current GLiNER-multi run retained as a baseline. Add one to the production union only if paired gold evaluation shows meaningful raw-OCR recall gain at bounded precision loss.
+2. **Supervised fixed-ontology tournament** using the official W2NER implementation pinned at `a34ff841891919001080edefb50e14fa9dc15e1c` and identical training budgets on MacBERT, MacBERT with training-issue-only domain-adaptive continued pretraining, GujiRoBERTa-jian-fan (license-gated), and SIKU-BERT. MacBERT is the first arm because a directly relevant retyped *Shen Bao* study reports 58.26 F1 versus SIKU 56.83; neither score demonstrates OCR robustness. The DAPT arm is a proposed experiment with no released checkpoint or score, and must freeze its training-only corpus hash.
+3. **Open-type recall challenger**: GLiNER-X, with the current GLiNER-multi run retained as a baseline. Add GLiNER-X to the production union only if paired gold evaluation shows meaningful raw-OCR recall gain at bounded precision loss. Otter CE mmBERT remains research-only because its checkpoint declares no weight license and provides no Chinese-specific, historical, OCR or nested-entity result.
 4. **Schema-constrained multimodal extraction**: NuExtract3 on routed difficult cases and Qwen3.6-27B only as a high-compute ceiling. Require verbatim surfaces/exact offsets; general multimodal models are not assumed robust on historical Chinese scans.
 5. **Entity linking** using aliases/gazetteers, temporal and geographic compatibility, graph context, and a human-review queue.
 
 Start with entity types that support real research questions: `PERSON`, `ALIAS`, `PLACE`, `ADDRESS`, `ORGANIZATION`, `SCHOOL`, `OCCUPATION`, `ROLE_TITLE`, `PUBLICATION`, `EVENT`, `DATE`, `KINSHIP_TERM`, `PRODUCT`, and `ADVERTISEMENT`. Add relation/event schemas only after historians review examples.
 
-The evaluation set should contain at least 500 carefully reviewed snippets and report strict span F1, relaxed span F1, type F1, entity-linking accuracy, calibration, and recall by entity type. Report performance separately by OCR quality and decade. Compare corrected text, raw OCR and observed-confusion augmentation; select with paired issue-cluster bootstrap intervals rather than a generic leaderboard or unsupported absolute initial F1 threshold.
+The evaluation set should contain at least 500 carefully reviewed snippets from at least 30 historian-assigned issues and three decades. Its locked test split should contain at least 100 mentions for each core type and 30 for every reported rare type. Report strict span F1, relaxed span F1, type F1, entity-linking accuracy, calibration, and recall by entity type, OCR quality and decade. Compare corrected text, raw OCR and observed-confusion augmentation; select with paired issue-cluster bootstrap intervals rather than a generic leaderboard or unsupported absolute initial F1 threshold.
 
 ## 6. GraphRAG framework assessment
 

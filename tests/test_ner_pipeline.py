@@ -75,6 +75,29 @@ class NERPipelineTests(unittest.TestCase):
             if candidate["license"] is None:
                 self.assertIn("license-gated", candidate["role"])
 
+    def test_benchmark_spec_has_no_claimed_results_and_covers_registry(self):
+        root = Path(__file__).parents[1]
+        registry = json.loads(
+            (root / "experiments/ner/candidates.json").read_text(encoding="utf-8")
+        )
+        specification = json.loads(
+            (root / "experiments/ner/benchmark-spec.json").read_text(encoding="utf-8")
+        )
+        represented = {
+            arm["candidate_id"]
+            for arm in specification["arms"]
+            if arm["candidate_id"] is not None
+        }
+        self.assertEqual(
+            represented,
+            {candidate["id"] for candidate in registry["candidates"]},
+        )
+        self.assertEqual(specification["benchmark_results"], [])
+        self.assertEqual(
+            specification["frozen_metrics"]["primary"],
+            "exact_span_and_type_micro_f1",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

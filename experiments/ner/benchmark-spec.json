@@ -1,0 +1,287 @@
+{
+  "schema_version": "1.0",
+  "research_cutoff": "2026-07-18",
+  "decision_status": "protocol_frozen_no_winner",
+  "ontology_version": "women-history-zh-v1",
+  "benchmark_results": [],
+  "eligibility": {
+    "minimum_adjudicated_snippets": 500,
+    "minimum_issues": 30,
+    "minimum_publication_decades": 3,
+    "minimum_locked_test_mentions_per_core_type": 100,
+    "minimum_locked_test_mentions_per_reported_rare_type": 30,
+    "core_types": [
+      "person",
+      "place",
+      "organization",
+      "school",
+      "occupation",
+      "date"
+    ],
+    "required_splits": [
+      "train",
+      "development",
+      "test"
+    ],
+    "split_unit": "historian_approved_issue",
+    "target_split_ratio": {
+      "train": 0.6,
+      "development": 0.2,
+      "test": 0.2
+    },
+    "reviews_per_snippet": 2,
+    "requires_independent_adjudication": true,
+    "required_input_variants": [
+      "raw_ocr",
+      "corrected_text"
+    ],
+    "multimodal_is_separate_ablation": true
+  },
+  "frozen_metrics": {
+    "primary": "exact_span_and_type_micro_f1",
+    "selection_uncertainty": "paired_issue_cluster_bootstrap_95_percent_interval",
+    "quality": [
+      "exact_span_and_type_macro_f1",
+      "per_type_exact_f1",
+      "relaxed_overlap_f1",
+      "raw_recoverability",
+      "end_to_end_raw_exact_recall",
+      "invalid_evidence_rate",
+      "duplicate_prediction_rate",
+      "calibration_and_risk_coverage"
+    ],
+    "strata": [
+      "publication_decade",
+      "page_genre",
+      "layout",
+      "scan_quality",
+      "ocr_cer"
+    ],
+    "performance": [
+      "unicode_characters_per_second",
+      "regions_per_second",
+      "latency_p50_seconds",
+      "latency_p95_seconds",
+      "peak_memory_bytes",
+      "cost_per_million_unicode_characters"
+    ],
+    "diagnostic_only": [
+      "candidate_mentions_per_second"
+    ]
+  },
+  "required_provenance": [
+    "exact_gold_file_sha256",
+    "exact_issue_split_manifest_sha256",
+    "canonical_benchmark_dataset_sha256",
+    "model_commit",
+    "project_code_commit",
+    "ontology_version",
+    "input_variant_and_hash",
+    "source_ocr_run_and_region",
+    "runtime_and_device",
+    "trained_head_and_training_dataset_hashes_for_supervised_models",
+    "head_implementation_commit_for_supervised_models",
+    "continued_pretraining_corpus_hash_for_dapt_models",
+    "prompt_schema_revision_for_structured_generation"
+  ],
+  "arms": [
+    {
+      "id": "rules-v1",
+      "candidate_id": null,
+      "adapter_family": "rules",
+      "status": "executable_cpu_baseline",
+      "model": "historical-women-zh-rules",
+      "revision": "rules-v1",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "deterministic_precision_and_plumbing_baseline",
+      "blockers": []
+    },
+    {
+      "id": "gliner-multi-v2.1",
+      "candidate_id": "gliner-multi-v2.1",
+      "adapter_family": "gliner",
+      "status": "executable_after_optional_dependency_install",
+      "model": "urchade/gliner_multi-v2.1",
+      "revision": "443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "existing_open_type_control",
+      "blockers": [
+        "eligible_adjudicated_gold"
+      ]
+    },
+    {
+      "id": "gliner-x-large",
+      "candidate_id": "gliner-x-large",
+      "adapter_family": "gliner",
+      "status": "executable_after_optional_dependency_and_fixed_zh_hant_tokenizer_install",
+      "model": "knowledgator/gliner-x-large",
+      "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "open_type_recall_challenger",
+      "blockers": [
+        "eligible_adjudicated_gold"
+      ]
+    },
+    {
+      "id": "macbert-w2ner",
+      "candidate_id": "macbert-w2ner",
+      "adapter_family": "w2ner",
+      "status": "specified_not_implemented",
+      "model": "hfl/chinese-macbert-base",
+      "revision": "a986e004d2a7f2a1c2f5a3edef4e20604a974ed1",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "first_supervised_fixed_ontology_arm",
+      "requires_identical_head_and_search_budget": true,
+      "head_implementation": "ljynlp/W2NER",
+      "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+      "blockers": [
+        "eligible_training_gold",
+        "trained_head_sha256",
+        "training_dataset_sha256",
+        "gpu_training_run"
+      ]
+    },
+    {
+      "id": "macbert-dapt-w2ner",
+      "candidate_id": "macbert-dapt-w2ner",
+      "adapter_family": "w2ner",
+      "status": "proposed_not_trained",
+      "model": "hfl/chinese-macbert-base",
+      "revision": "a986e004d2a7f2a1c2f5a3edef4e20604a974ed1",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "target_domain_continued_pretraining_challenger",
+      "requires_identical_head_and_search_budget": true,
+      "head_implementation": "ljynlp/W2NER",
+      "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+      "dapt_corpus_policy": "training_issues_only_after_issue_split",
+      "blockers": [
+        "eligible_training_gold",
+        "training_issue_only_dapt_corpus_sha256",
+        "continued_pretraining_checkpoint_sha256",
+        "trained_head_sha256",
+        "training_dataset_sha256",
+        "gpu_pretraining_and_training_run"
+      ]
+    },
+    {
+      "id": "guji-roberta-w2ner",
+      "candidate_id": "guji-roberta-w2ner",
+      "adapter_family": "w2ner",
+      "status": "license_and_implementation_blocked",
+      "model": "hsc748NLP/GujiRoBERTa_jian_fan",
+      "revision": "8e755704c4ae91eded4ebcabe17fecedb42d324f",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "historical_encoder_supervised_arm",
+      "requires_identical_head_and_search_budget": true,
+      "head_implementation": "ljynlp/W2NER",
+      "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+      "blockers": [
+        "checkpoint_license_clearance",
+        "eligible_training_gold",
+        "trained_head_sha256",
+        "training_dataset_sha256",
+        "gpu_training_run"
+      ]
+    },
+    {
+      "id": "sikubert-w2ner",
+      "candidate_id": "sikubert-w2ner",
+      "adapter_family": "w2ner",
+      "status": "specified_not_implemented",
+      "model": "SIKU-BERT/sikubert",
+      "revision": "fc656de2d6bde33919102dd3abe31c843f42226a",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "historical_encoder_supervised_arm",
+      "requires_identical_head_and_search_budget": true,
+      "head_implementation": "ljynlp/W2NER",
+      "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+      "blockers": [
+        "digitization_provenance_review",
+        "eligible_training_gold",
+        "trained_head_sha256",
+        "training_dataset_sha256",
+        "gpu_training_run"
+      ]
+    },
+    {
+      "id": "otter-ce-mmbert",
+      "candidate_id": "otter-ce-mmbert",
+      "adapter_family": "open_ner",
+      "status": "license_and_adapter_blocked",
+      "model": "whoisjones/otter-ce-mmbert",
+      "revision": "aed019f74647c225e14bc6d0792afdd458dfdb2d",
+      "modalities": [
+        "text"
+      ],
+      "selection_role": "compact_open_type_recall_challenger",
+      "blockers": [
+        "checkpoint_license_clearance",
+        "exact_offset_adapter",
+        "eligible_adjudicated_gold"
+      ]
+    },
+    {
+      "id": "nuextract3",
+      "candidate_id": "nuextract3",
+      "adapter_family": "structured_generation",
+      "status": "routed_adapter_not_implemented",
+      "model": "numind/NuExtract3",
+      "revision": "2e9fca82ee641e6bb6e1f5d905241e994be27a07",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "selection_role": "difficult_case_and_image_context_challenger",
+      "maximum_route_fraction": 0.2,
+      "blockers": [
+        "frozen_prompt_and_output_schema",
+        "verbatim_surface_to_exact_offset_resolver",
+        "image_crop_manifest",
+        "eligible_adjudicated_gold",
+        "gpu_inference_run"
+      ]
+    },
+    {
+      "id": "qwen3.6-27b",
+      "candidate_id": "qwen3.6-27b",
+      "adapter_family": "structured_generation",
+      "status": "high_compute_ceiling_not_implemented",
+      "model": "Qwen/Qwen3.6-27B",
+      "revision": "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "selection_role": "multimodal_structured_output_ceiling",
+      "maximum_route_fraction": 0.2,
+      "blockers": [
+        "frozen_prompt_and_output_schema",
+        "verbatim_surface_to_exact_offset_resolver",
+        "image_crop_manifest",
+        "eligible_adjudicated_gold",
+        "80gb_class_gpu"
+      ]
+    }
+  ],
+  "selection_gates": {
+    "evidence_integrity": "zero_persisted_invalid_offsets_missing_surfaces_duplicates_or_unpinned_artifacts",
+    "supervised_winner": "positive_lower_95_percent_issue_cluster_bootstrap_bound_or_within_one_f1_point_with_three_times_throughput_or_one_third_cost",
+    "open_type_union": "at_least_three_raw_recoverable_recall_points_with_no_more_than_five_precision_points_lost",
+    "routed_structured_generation": "at_most_twenty_percent_routed_and_at_least_five_routed_or_two_overall_exact_f1_points_with_below_0_5_percent_ambiguous_surfaces",
+    "historical_acceptance": "always_requires_human_review"
+  }
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from collections import Counter
 from datetime import datetime
@@ -13,6 +14,11 @@ from uuid import UUID
 from pydantic import Field, model_validator
 
 from .evidence import EntityType, NERArtifact, SourcePointer, StrictModel
+from .ner_adapters.base import (
+    BenchmarkPredictionArtifact,
+    NERBenchmarkDataset,
+    benchmark_dataset_sha256,
+)
 
 
 class GoldEntitySpan(StrictModel):
@@ -279,10 +285,12 @@ def _stratified_exact_metrics(
 
 def score_ner_artifact(
     gold: NERGoldSet,
-    predictions: NERArtifact,
+    predictions: NERArtifact | BenchmarkPredictionArtifact,
     input_text: Literal["corrected", "raw_ocr"],
     *,
     confidence_threshold: float = 0.0,
+    gold_sha256: str | None = None,
+    benchmark_dataset: NERBenchmarkDataset | None = None,
 ) -> dict[str, Any]:
     expected_variant = "corrected_text" if input_text == "corrected" else "raw_ocr"
     if (
@@ -292,12 +300,94 @@ def score_ner_artifact(
         raise ValueError(
             "prediction input_variant disagrees with the requested scoring text"
         )
+    benchmark_predictions = (
+        predictions if isinstance(predictions, BenchmarkPredictionArtifact) else None
+    )
+    if benchmark_predictions is not None:
+        if benchmark_predictions.source_gold_dataset_id != gold.dataset_id:
+            raise ValueError("benchmark prediction gold dataset ID disagrees with gold")
+        if (
+            gold_sha256 is not None
+            and benchmark_predictions.source_gold_sha256 != gold_sha256
+        ):
+            raise ValueError("benchmark prediction gold file hash disagrees with gold")
+        if benchmark_dataset is not None:
+            if (
+                benchmark_predictions.benchmark_dataset_sha256
+                != benchmark_dataset_sha256(benchmark_dataset)
+            ):
+                raise ValueError("benchmark prediction dataset hash disagrees with dataset")
+            if (
+                benchmark_predictions.benchmark_dataset_id != benchmark_dataset.dataset_id
+                or benchmark_predictions.source_gold_dataset_id
+                != benchmark_dataset.source_gold_dataset_id
+                or benchmark_predictions.source_gold_sha256
+                != benchmark_dataset.source_gold_sha256
+                or benchmark_predictions.split_manifest_sha256
+                != benchmark_dataset.split_manifest_sha256
+                or benchmark_predictions.ontology_version
+                != benchmark_dataset.ontology_version
+            ):
+                raise ValueError("benchmark prediction provenance disagrees with dataset")
+            selected_inputs = [
+                item
+                for item in benchmark_dataset.inputs
+                if item.split == benchmark_predictions.split
+                and item.input_variant == benchmark_predictions.input_variant
+            ]
+            if len(selected_inputs) != len(benchmark_predictions.results):
+                raise ValueError("benchmark prediction result count disagrees with dataset")
+            for result, benchmark_input in zip(
+                benchmark_predictions.results, selected_inputs, strict=True
+            ):
+                expected_mapping = (
+                    benchmark_input.input_id,
+                    benchmark_input.snippet_id,
+                    benchmark_input.issue_id,
+                    benchmark_input.gold_region_id,
+                    benchmark_input.source_ocr_run_id,
+                    benchmark_input.source_ocr_region_id,
+                    benchmark_input.text_sha256,
+                )
+                result_mapping = (
+                    result.input_id,
+                    result.snippet_id,
+                    result.issue_id,
+                    result.gold_region_id,
+                    result.source_ocr_run_id,
+                    result.source_ocr_region_id,
+                    result.input_text_sha256,
+                )
+                if result_mapping != expected_mapping:
+                    raise ValueError("benchmark result mapping disagrees with dataset")
+        gold_by_source_region = {
+            _source_ocr_region_id(snippet): snippet for snippet in gold.snippets
+        }
+        scoring_snippets = []
+        for result in benchmark_predictions.results:
+            snippet = gold_by_source_region.get(result.source_ocr_region_id)
+            if snippet is None:
+                raise ValueError("benchmark result source region is absent from gold")
+            if result.snippet_id != snippet.snippet_id:
+                raise ValueError("benchmark result snippet ID disagrees with gold")
+            if result.gold_region_id != _gold_region_id(snippet):
+                raise ValueError("benchmark result gold region mapping disagrees with gold")
+            target_text = (
+                snippet.adjudication.corrected_text
+                if input_text == "corrected"
+                else snippet.raw_ocr_text
+            )
+            if hashlib.sha256(target_text.encode()).hexdigest() != result.input_text_sha256:
+                raise ValueError("benchmark result input text hash disagrees with gold")
+            scoring_snippets.append(snippet)
+    else:
+        scoring_snippets = gold.snippets
     snippets_by_region = {
-        _source_ocr_region_id(snippet): snippet for snippet in gold.snippets
+        _source_ocr_region_id(snippet): snippet for snippet in scoring_snippets
     }
     expected: set[SpanKey] = set()
     total_adjudicated = 0
-    for snippet in gold.snippets:
+    for snippet in scoring_snippets:
         region_id = _gold_region_id(snippet)
         total_adjudicated += len(snippet.adjudication.entities)
         for entity in snippet.adjudication.entities:
@@ -337,18 +427,20 @@ def score_ner_artifact(
         reason = None
         if snippet is None:
             reason = "region_not_in_gold_set"
-        elif pointer.text_start is None or pointer.text_end is None:
-            reason = "missing_offsets"
         else:
-            target_text = (
-                snippet.adjudication.corrected_text
-                if input_text == "corrected"
-                else snippet.raw_ocr_text
-            )
-            if pointer.text_end > len(target_text):
-                reason = "offsets_out_of_range"
-            elif target_text[pointer.text_start : pointer.text_end] != mention.text:
-                reason = "surface_disagrees_with_target_offsets"
+            prediction_count_by_region[_gold_region_id(snippet)] += 1
+            if pointer.text_start is None or pointer.text_end is None:
+                reason = "missing_offsets"
+            else:
+                target_text = (
+                    snippet.adjudication.corrected_text
+                    if input_text == "corrected"
+                    else snippet.raw_ocr_text
+                )
+                if pointer.text_end > len(target_text):
+                    reason = "offsets_out_of_range"
+                elif target_text[pointer.text_start : pointer.text_end] != mention.text:
+                    reason = "surface_disagrees_with_target_offsets"
         if reason:
             invalid_predictions.append(
                 {
@@ -359,7 +451,6 @@ def score_ner_artifact(
             )
             continue
         gold_region_id = _gold_region_id(snippet)
-        prediction_count_by_region[gold_region_id] += 1
         key = (
             gold_region_id,
             pointer.text_start,
@@ -388,13 +479,13 @@ def score_ner_artifact(
         )
 
     total_corrected_characters = sum(
-        len(snippet.adjudication.corrected_text) for snippet in gold.snippets
+        len(snippet.adjudication.corrected_text) for snippet in scoring_snippets
     )
     total_character_errors = sum(
         character_error_distance(
             snippet.adjudication.corrected_text, snippet.raw_ocr_text
         )
-        for snippet in gold.snippets
+        for snippet in scoring_snippets
     )
     duration_seconds = (
         (predictions.run.completed_at - predictions.run.started_at).total_seconds()
@@ -406,14 +497,14 @@ def score_ner_artifact(
     by_scan_quality = _stratified_exact_metrics(
         {
             _gold_region_id(snippet): snippet.scan_quality
-            for snippet in gold.snippets
+            for snippet in scoring_snippets
         },
         expected,
         predicted_keys,
         prediction_count_by_region,
     )
     by_layout = _stratified_exact_metrics(
-        {_gold_region_id(snippet): snippet.layout for snippet in gold.snippets},
+        {_gold_region_id(snippet): snippet.layout for snippet in scoring_snippets},
         expected,
         predicted_keys,
         prediction_count_by_region,
@@ -421,7 +512,7 @@ def score_ner_artifact(
     by_page_genre = _stratified_exact_metrics(
         {
             _gold_region_id(snippet): snippet.page_genre
-            for snippet in gold.snippets
+            for snippet in scoring_snippets
         },
         expected,
         predicted_keys,
@@ -434,11 +525,24 @@ def score_ner_artifact(
                 if snippet.source.publication_year is not None
                 else "unknown"
             )
-            for snippet in gold.snippets
+            for snippet in scoring_snippets
         },
         expected,
         predicted_keys,
         prediction_count_by_region,
+    )
+    by_issue = (
+        _stratified_exact_metrics(
+            {
+                result.gold_region_id: result.issue_id
+                for result in benchmark_predictions.results
+            },
+            expected,
+            predicted_keys,
+            prediction_count_by_region,
+        )
+        if benchmark_predictions is not None
+        else None
     )
     return {
         "schema_version": "1.0",
@@ -447,11 +551,36 @@ def score_ner_artifact(
         "input_text": input_text,
         "model_name": predictions.run.model_name,
         "model_revision": predictions.run.model_revision,
+        "adapter_id": (
+            benchmark_predictions.adapter.adapter_id
+            if benchmark_predictions is not None
+            else predictions.adapter_id
+        ),
         "prediction_artifact_schema_version": predictions.schema_version,
         "input_sha256": predictions.input_sha256,
-        "dataset_split": predictions.split_id,
+        "dataset_split": (
+            benchmark_predictions.split
+            if benchmark_predictions is not None
+            else predictions.split_id
+        ),
+        "benchmark_dataset_sha256": (
+            benchmark_predictions.benchmark_dataset_sha256
+            if benchmark_predictions is not None
+            else None
+        ),
+        "source_gold_sha256_verified": (
+            gold_sha256 is not None and benchmark_predictions is not None
+        ),
+        "benchmark_dataset_sha256_verified": (
+            benchmark_dataset is not None and benchmark_predictions is not None
+        ),
+        "source_gold_sha256": (
+            benchmark_predictions.source_gold_sha256
+            if benchmark_predictions is not None
+            else None
+        ),
         "model_duration_seconds": duration_seconds,
-        "mentions_per_second": (
+        "candidate_mentions_per_second_diagnostic": (
             len(predictions.mentions) / duration_seconds
             if duration_seconds and duration_seconds > 0
             else None
@@ -475,7 +604,7 @@ def score_ner_artifact(
         "cold_start_seconds": predictions.run.configuration.get("cold_start_seconds"),
         "peak_memory_bytes": predictions.run.configuration.get("peak_memory_bytes"),
         "confidence_threshold": confidence_threshold,
-        "snippets": len(gold.snippets),
+        "snippets": len(scoring_snippets),
         "gold_entities": len(expected),
         "total_adjudicated_entities": total_adjudicated,
         "raw_recoverable_entities": (
@@ -513,9 +642,21 @@ def score_ner_artifact(
         "by_layout": by_layout,
         "by_page_genre": by_page_genre,
         "by_decade": by_decade,
+        "by_issue": by_issue,
         "warnings": [
             "Scores are valid only for independently annotated and adjudicated gold data.",
             "Raw-OCR exact recall over recoverable spans isolates NER; end-to-end recall also counts OCR-lost entities.",
+            "Candidate mentions per second is output density, not a model-selection throughput metric; compare regions and Unicode characters per second.",
+            *(
+                ["Gold file SHA-256 was not verified by this in-memory scoring call."]
+                if benchmark_predictions is not None and gold_sha256 is None
+                else []
+            ),
+            *(
+                ["Benchmark dataset mappings were not verified by this in-memory scoring call."]
+                if benchmark_predictions is not None and benchmark_dataset is None
+                else []
+            ),
         ],
     }
 
@@ -526,6 +667,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--predictions", type=Path, required=True)
     parser.add_argument("--input-text", choices=("corrected", "raw_ocr"), required=True)
     parser.add_argument("--confidence-threshold", type=float, default=0.0)
+    parser.add_argument("--benchmark-dataset", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -534,15 +676,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if not 0 <= args.confidence_threshold <= 1:
         raise SystemExit("--confidence-threshold must be between 0 and 1")
-    gold = NERGoldSet.model_validate_json(args.gold.read_text(encoding="utf-8"))
-    predictions = NERArtifact.model_validate_json(
-        args.predictions.read_text(encoding="utf-8")
-    )
+    gold_bytes = args.gold.read_bytes()
+    gold = NERGoldSet.model_validate_json(gold_bytes)
+    prediction_json = json.loads(args.predictions.read_text(encoding="utf-8"))
+    if prediction_json.get("artifact_kind") == "ner_benchmark_predictions":
+        predictions = BenchmarkPredictionArtifact.model_validate(prediction_json)
+        gold_sha256 = hashlib.sha256(gold_bytes).hexdigest()
+        if args.benchmark_dataset is None:
+            raise SystemExit(
+                "--benchmark-dataset is required for benchmark prediction artifacts"
+            )
+        benchmark_dataset = NERBenchmarkDataset.model_validate_json(
+            args.benchmark_dataset.read_text(encoding="utf-8")
+        )
+    else:
+        if args.benchmark_dataset is not None:
+            raise SystemExit(
+                "--benchmark-dataset applies only to benchmark prediction artifacts"
+            )
+        predictions = NERArtifact.model_validate(prediction_json)
+        gold_sha256 = None
+        benchmark_dataset = None
     report = score_ner_artifact(
         gold,
         predictions,
         args.input_text,
         confidence_threshold=args.confidence_threshold,
+        gold_sha256=gold_sha256,
+        benchmark_dataset=benchmark_dataset,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(

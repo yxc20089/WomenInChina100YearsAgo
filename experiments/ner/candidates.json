@@ -11,6 +11,14 @@
       "evidence": "A directly relevant study on retyped Shen Bao articles from 1872-1947 reports F1 58.26 for MacBERT versus 56.83 for SIKU. It is target-period evidence but not an OCR-robustness result."
     },
     {
+      "id": "macbert-dapt-w2ner",
+      "model": "hfl/chinese-macbert-base",
+      "revision": "a986e004d2a7f2a1c2f5a3edef4e20604a974ed1",
+      "license": "Apache-2.0",
+      "role": "proposed target-domain continued-pretraining challenger with the identical W2NER head",
+      "evidence": "No released project checkpoint or score exists. The closest Shen Bao study found MacBERT strongest among its tested encoders and identifies historical-press domain pretraining as future work; this arm tests that hypothesis using training issues only."
+    },
+    {
       "id": "guji-roberta-w2ner",
       "model": "hsc748NLP/GujiRoBERTa_jian_fan",
       "revision": "8e755704c4ae91eded4ebcabe17fecedb42d324f",
@@ -31,8 +39,8 @@
       "model": "whoisjones/otter-ce-mmbert",
       "revision": "aed019f74647c225e14bc6d0792afdd458dfdb2d",
       "license": null,
-      "role": "license-gated compact open-type recall challenger",
-      "evidence": "The 2026 preprint reports coverage of 100+ languages and average gains over GLiNER-X-base, but no historical, Traditional-Chinese, or OCR result; the checkpoint card has no license metadata."
+      "role": "license-gated research-only open-type challenger excluded from the executable tournament",
+      "evidence": "The 2026 preprint reports broad multilingual coverage and average gains over GLiNER-X-base, but no Chinese-specific, historical, Traditional-Chinese, OCR, or nested-entity result; the checkpoint card has no license metadata."
     },
     {
       "id": "gliner-x-large",

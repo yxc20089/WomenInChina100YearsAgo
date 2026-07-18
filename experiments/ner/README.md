@@ -24,18 +24,121 @@ evidence/offset validity, throughput, peak memory, and degradation as OCR CER
 rises.
 
 The production hypothesis is a cascade: gazetteers and rules; the winner of an
-identical-head MacBERT/GujiRoBERTa/SIKU supervised tournament; Otter CE and/or
+identical-head MacBERT/MacBERT-DAPT/GujiRoBERTa/SIKU supervised tournament;
 GLiNER-X only if a raw-recoverable recall-union gate passes; then NuExtract3
 only for disagreements, rare types, implicit relations, or difficult page
-crops. Every stage must preserve exact source offsets and may abstain. Entity
-linking and claim review remain separate gates.
+crops. Otter remains research-only until its checkpoint-weight license is
+explicit. Every stage must preserve exact source offsets and may abstain.
+Entity linking and claim review remain separate gates.
 
-Use W2NER as the primary overlap/discontinuous-capable supervised head, compare
-it to GlobalPointer on one frozen backbone, and retain a single-label BIO/CRF
-head only as a flat control. The policy permits nested spans and the same
-surface to carry distinct defensible types. Scores from different extractors
-are not comparable until calibrated, so artifacts retain every extractor's raw
-support instead of discarding disagreements.
+Use W2NER at official implementation commit
+`a34ff841891919001080edefb50e14fa9dc15e1c` as the primary
+overlap/discontinuous-capable supervised head, compare it to GlobalPointer on
+one frozen backbone, and retain a single-label BIO/CRF head only as a flat
+control. The policy permits nested spans and the same surface to carry distinct
+defensible types. The current evidence schema stores contiguous spans, so
+discontinuous scoring remains blocked on an explicit contract extension.
+Scores from different extractors are not comparable until calibrated, so
+artifacts retain every extractor's raw support instead of discarding
+disagreements.
+
+## Executable benchmark boundary
+
+`benchmark-spec.json` freezes the arms, eligibility rules, metrics, provenance
+requirements and stop/go gates. Its `benchmark_results` array is intentionally
+empty: there is no eligible historical gold set and therefore no model winner.
+
+The benchmark artifact is deliberately different from the production
+`NERArtifact`. A scientific test split can contain snippets drawn from many OCR
+runs, so `BenchmarkPredictionArtifact` records every source OCR run and, for
+every input including zero-mention inputs, the snippet ID, model-independent
+gold-region UUID, source OCR run/region UUID and exact input-text hash. The
+production artifact still represents one OCR run and remains the only artifact
+accepted by ingestion.
+
+Create an issue-level manifest only after historians assign the snippets to
+real issues. One issue may appear in exactly one split:
+
+```json
+{
+  "schema_version": "1.0",
+  "dataset_id": "ner-gold-v1",
+  "created_at": "2026-07-18T00:00:00Z",
+  "assigned_by": "historian-id",
+  "assignments": [
+    {"snippet_id": "snippet-001", "issue_id": "issue-001", "split": "train"}
+  ],
+  "notes": []
+}
+```
+
+Freeze the paired raw/corrected inputs:
+
+```bash
+uv run wic-ner-benchmark prepare \
+  --gold artifacts/gold/ner-v1.json \
+  --split-manifest artifacts/gold/ner-v1.issue-splits.json \
+  --dataset-id ner-benchmark-v1 \
+  --input-variant raw_ocr --input-variant corrected_text \
+  --output artifacts/ner-benchmark/dataset-v1.json
+```
+
+The command may prepare a small technical fixture but marks it ineligible until
+it has at least 500 snippets, 30 issues, all three issue-isolated splits and
+three publication decades. `run` refuses such a dataset unless the caller adds
+the conspicuous `--allow-ineligible-technical-run` flag. That flag never makes
+the output scientific evidence.
+
+Rules and both pinned GLiNER arms use the common executable adapter today:
+
+```bash
+uv run wic-ner-benchmark run \
+  --dataset artifacts/ner-benchmark/dataset-v1.json \
+  --split development --input-variant raw_ocr \
+  --adapter gliner --model knowledgator/gliner-x-large \
+  --revision 4a4437f439a78d67c87781b42e8c45373d2adcb0 \
+  --license Apache-2.0 --word-splitter-language zh-hant \
+  --code-revision 0000000000000000000000000000000000000000 \
+  --output artifacts/ner-benchmark/gliner-x.development.raw.json
+```
+
+Replace the zero code revision with the exact 40-character project commit. The
+adapter rejects moving model labels and abbreviated code revisions. W2NER,
+Otter and structured-generation arms are specified but hard-blocked on their
+listed training, license, prompt/schema, offset-resolution or hardware
+requirements; they are not silently approximated by another implementation.
+
+Score the separate prediction artifact with the existing scorer. Its CLI
+verifies the exact gold file SHA-256 and scores only the frozen split inputs,
+including inputs for which the model emitted no mention:
+
+```bash
+uv run wic-ner-score --gold artifacts/gold/ner-v1.json \
+  --predictions artifacts/ner-benchmark/gliner-x.development.raw.json \
+  --benchmark-dataset artifacts/ner-benchmark/dataset-v1.json \
+  --input-text raw_ocr \
+  --output artifacts/ner-benchmark/gliner-x.development.raw.score.json
+```
+
+Use Unicode characters/second and regions/second for throughput comparisons.
+Candidate mentions/second is reported only as an output-density diagnostic and
+must not favor a model merely for emitting more candidates.
+
+After scoring the same frozen input for two adapters, calculate the selection
+interval by resampling complete issues rather than individual snippets:
+
+```bash
+uv run wic-ner-benchmark-compare \
+  --baseline-score artifacts/ner-benchmark/macbert.test.raw.score.json \
+  --challenger-score artifacts/ner-benchmark/macbert-dapt.test.raw.score.json \
+  --bootstrap-samples 10000 --seed 1729 \
+  --output artifacts/ner-benchmark/macbert-dapt-vs-macbert.test.raw.json
+```
+
+The comparator refuses scores whose exact gold hash, benchmark dataset, split,
+input hash, ontology or confidence threshold differ. A positive interval still
+does not waive the absolute quality, cost, evidence-integrity or historian
+review gates.
 
 ## Pinned compatibility comparison
 
@@ -79,8 +182,8 @@ promoted.
 The artifacts and report are under `artifacts/ner-pilot/`. Their identical input
 SHA-256 is `a354383d42b824d6586fed9a916aec35f4c600083ae1d37ff4d6d3537f121571`.
 
-Score an artifact on both paired inputs after the adjudicated gold set is
-frozen:
+Legacy single-OCR-run artifacts can also be scored on both paired inputs after
+the adjudicated gold set is frozen:
 
 ```bash
 uv run wic-ner-score --gold artifacts/gold/ner-v1.json \

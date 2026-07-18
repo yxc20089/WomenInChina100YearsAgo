@@ -146,7 +146,7 @@ class NERGoldTests(unittest.TestCase):
         self.assertEqual(report["relaxed_overlap"]["true_positive"], 2)
         self.assertAlmostEqual(report["invalid_evidence_rate"], 1 / 3)
         self.assertEqual(report["by_layout"]["vertical"]["false_negative"], 1)
-        self.assertEqual(report["mentions_per_second"], 1.5)
+        self.assertEqual(report["candidate_mentions_per_second_diagnostic"], 1.5)
 
     def test_raw_score_separates_recoverability_from_end_to_end_recall(self):
         report = score_ner_artifact(gold_set(), predictions("raw_ocr"), "raw_ocr")

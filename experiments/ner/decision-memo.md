@@ -11,7 +11,18 @@ MacBERT is the provisional first arm because the closest directly relevant
 retyped *Shen Bao* comparison reports 58.26 F1 for MacBERT versus 56.83 for
 SIKU. This is a small difference and neither result measures OCR robustness.
 
-Use **Otter CE** and **GLiNER-X** as open-type recall challengers, and
+Add **MacBERT-DAPT-W2NER** as the principal domain challenger: continue the
+same MacBERT checkpoint on unlabeled project newspaper text from training
+issues only, then use the same W2NER head and tuning budget. This is an
+experiment design, not a released model or a claimed improvement. Pin the
+[official W2NER implementation](https://github.com/ljynlp/W2NER/tree/a34ff841891919001080edefb50e14fa9dc15e1c)
+at `a34ff841891919001080edefb50e14fa9dc15e1c`; its MIT-licensed code supports
+flat, nested and discontinuous NER, although the current project evidence
+contract represents contiguous spans and cannot yet score a discontinuous
+slice.
+
+Use **GLiNER-X** as the executable open-type recall challenger. Retain **Otter
+CE** as research-only until its checkpoint-weight license is explicit. Use
 **NuExtract3** only as a routed difficult/image-context stage. Use
 **Qwen3.6-27B** as the high-compute multimodal ceiling when 80 GB-class hardware
 is available; otherwise retain Qwen3.5-9B only as a cheaper control.
@@ -22,9 +33,10 @@ surface/offset validation and historian review remain mandatory.
 | Candidate | Target role | Direct evidence and gap | Approximate deployment envelope |
 |---|---|---|---|
 | `hfl/chinese-macbert-base@a986e004d2a7f2a1c2f5a3edef4e20604a974ed1` + W2NER | First supervised arm | A directly relevant [1872–1947 historical-newspaper study](https://aclanthology.org/2024.lrec-main.35/) reports 58.26 F1 on retyped *Shen Bao* versus 56.83 for SIKU; no OCR test | BERT-base; roughly 2–4 GB inference memory and 16–24 GB training VRAM, with snippet length bounded for W2NER's grid |
+| MacBERT-DAPT + W2NER | Proposed target-domain challenger | No released project checkpoint or score. Continue the pinned MacBERT only on training-issue newspaper text to test whether domain pretraining helps; freeze the DAPT corpus/checkpoint hashes | Additional pretraining plus the same W2NER training envelope; GPU estimate must be measured in an isolated pilot |
 | `hsc748NLP/GujiRoBERTa_jian_fan@8e755704c4ae91eded4ebcabe17fecedb42d324f` + W2NER | Historical-encoder supervised arm, license-gated | A controlled [EvaHan study](https://aclanthology.org/2025.alp-1.24/) reports W2NER 88.48 average F1 versus GlobalPointer 87.33 and CRF 86.33; the GujiRoBERTa-W2NER test result was 86.34, but this is clean ancient text | BERT-base class; roughly 2–4 GB inference memory and 16–24 GB training VRAM |
 | `SIKU-BERT/sikubert@fc656de2d6bde33919102dd3abe31c843f42226a` + W2NER | Historical-encoder supervised arm | Historical Traditional-Chinese pretraining; 56.83 F1 in the retyped *Shen Bao* comparison. The Guji project reports 90.68 on Traditional *Shiji*, while its mixed-script GujiBERT arm reports 93.76; none is an OCR result | BERT-base class; roughly 2–4 GB inference memory and 16–24 GB training VRAM |
-| `whoisjones/otter-ce-mmbert@aed019f74647c225e14bc6d0792afdd458dfdb2d` | Compact open-type challenger, license-gated | The [2026 preprint](https://arxiv.org/abs/2601.06347) reports 100+ languages and gains over GLiNER-X-base, but no historical, Traditional-Chinese, or OCR result | About 309M parameters/1.24 GB F32 weights; benchmark before estimating production memory |
+| `whoisjones/otter-ce-mmbert@aed019f74647c225e14bc6d0792afdd458dfdb2d` | Research-only, excluded pending weight-license clarity | The [2026 preprint](https://arxiv.org/abs/2601.06347) reports broad multilingual gains over GLiNER-X-base, but no Chinese-specific, historical, Traditional-Chinese, OCR or nested result; the checkpoint declares no license | About 309M parameters/1.24 GB F32 weights; do not execute on project data until rights are cleared |
 | `knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0` | Existing zero-shot/open-label recall challenger | [Official card](https://huggingface.co/knowledgator/gliner-x-large) reports `zh_pud` F1 0.6794, but no historical, Traditional-Chinese, or OCR benchmark | 864.6M parameters; roughly 6–10 GB CPU RAM or 4–6 GB GPU VRAM |
 | `numind/NuExtract3@2e9fca82ee641e6bb6e1f5d905241e994be27a07` | Routed difficult cases, image/context ablation, later relation extraction | [Official card](https://huggingface.co/numind/NuExtract3) supports text/images, JSON templates and verbatim strings; its extraction benchmark is not an auditable historical-Chinese result | About 9.3 GB BF16 weights; 24 GB GPU recommended |
 | `Qwen/Qwen3.6-27B@6a9e13bd6fc8f0983b9b99948120bc37f49c13e9` | Multimodal structured-output ceiling only | [Official card](https://huggingface.co/Qwen/Qwen3.6-27B) covers Chinese and vision but provides no target NER evidence | About 55.6 GB BF16 weights; 80 GB GPU minimum for the short-context BF16 arm |
@@ -44,9 +56,12 @@ permission with permission to publish scans, OCR, or annotations.
   30 per reported rare type.
 - Split 60/20/20 by issue/date, never random snippets. Freeze the gold JSON,
   split manifest, ontology, prompts and SHA-256 before test inference.
-- Train MacBERT, GujiRoBERTa and SIKU with the identical W2NER head and frozen
+- Train MacBERT, MacBERT-DAPT, GujiRoBERTa and SIKU with the identical W2NER head and frozen
   hyperparameter-search budget. Compare W2NER, GlobalPointer and flat CRF on
   one frozen encoder; do not attribute head gains to a different backbone.
+- Build the MacBERT-DAPT corpus only from training issues after splitting;
+  freeze its document list, bytes and SHA-256 so development/test language
+  cannot leak into continued pretraining.
 - Run paired corrected-text, raw-OCR and observed-confusion noise-augmentation
   arms. Image-assisted arms are separate
   ablations and must still resolve every output to a numbered OCR block and
@@ -69,9 +84,10 @@ permission with permission to publish scans, OCR, or annotations.
   point of the best if it provides at least 3× throughput or at most one-third
   the cost. Report the achieved absolute quality; do not hide it behind a
   relative win.
-- Open-type safety net: retain Otter or GLiNER-X only if it adds at least three
+- Open-type safety net: retain GLiNER-X only if it adds at least three
   raw-recoverable recall points to rules + the supervised winner while reducing
-  precision by no more than five points.
+  precision by no more than five points. Reconsider Otter only after checkpoint
+  rights are explicit, then subject it to the same gate.
 - NuExtract/Qwen routing: route at most 20% of snippets and retain a stage only
   if routed exact F1 rises by at least five points or overall F1 by at least two,
   with ambiguous/absent exact surfaces below 0.5%.
@@ -83,8 +99,8 @@ permission with permission to publish scans, OCR, or annotations.
 
 ```text
 raw OCR + immutable provenance
-  -> rules/gazetteers + winner of MacBERT/GujiRoBERTa/SIKU W2NER tournament
-  -> Otter and/or GLiNER-X only if the recall-union gate passes
+  -> rules/gazetteers + winner of MacBERT/MacBERT-DAPT/GujiRoBERTa/SIKU W2NER tournament
+  -> GLiNER-X only if the recall-union gate passes; Otter stays rights-blocked
   -> retain per-model evidence, calibration and disagreements
   -> NuExtract3 on low-confidence/disagreement/rare/image-context cases only
   -> exact schema/surface/offset validation

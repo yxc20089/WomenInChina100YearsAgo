@@ -133,6 +133,15 @@ This distinction supports two honest raw-input measures:
 5. Freeze a dataset version and hash before model scoring. Never revise gold in
    response to one model's errors without a documented, model-blind review.
 
+`wic-gold-packet` may be used to prepare candidate work. Its administrative
+packet contains selection strata, while its blinded reviewer view removes those
+signals and all model predictions. A packet target is an OCR-region pilot unit
+with adjacent regions supplied only as reading context. It is not a substitute
+for historian-reviewed article/coherent-region segmentation, and the builder
+must report it ineligible for the final benchmark while issue IDs or the frozen
+sample requirements are missing. The finalizer requires a newly assigned gold
+region UUID; it rejects reuse of the source model's OCR region UUID.
+
 Report agreement before adjudication, exact and relaxed span F1 by type, raw
 recoverability, OCR CER, invalid-evidence rate, throughput, peak memory, and
 scores by decade, layout, scan quality, and genre. Publish both micro totals and

@@ -48,6 +48,7 @@ wic-eval = "wic_history.evaluation:main"
 wic-rag-adapter = "wic_history.rag_adapters:main"
 wic-ner-compare = "wic_history.ner_compare:main"
 wic-ner-score = "wic_history.ner_gold:main"
+wic-gold-packet = "wic_history.gold_packet:main"
 wic-batch = "wic_history.ingestion_jobs:main"
 wic-worker = "wic_history.ingestion_worker:main"
 

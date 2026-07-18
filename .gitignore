@@ -9,6 +9,9 @@ __pycache__/
 artifacts/benchmark-pages/images/
 artifacts/lossless-pilot/images/
 artifacts/gold-pages/
+# Annotation packets contain derived archive text and reviewer work; keep them
+# local until data-rights and publication review explicitly approve release.
+artifacts/gold-packet*/
 # Per-job ingestion outputs are content-addressed in PostgreSQL and may contain
 # full-resolution page images or model artifacts.
 artifacts/ingestion-*/

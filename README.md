@@ -98,6 +98,37 @@ PYTHONPATH=src python -m wic_history.review_server
 
 Open `http://127.0.0.1:8765`. Reviews are stored atomically in `artifacts/benchmark-review/annotations.json`. The server binds to localhost by default and has no authentication; do not expose it on a public interface.
 
+After lossless pages have active OCR selections in PostgreSQL, build a blinded,
+content-addressed NER annotation packet:
+
+```bash
+uv run wic-gold-packet build --database-url "$DATABASE_URL" \
+  --dataset-id shenbao-ner-pilot-v1 --volume 219 --page 308 \
+  --max-units 50 --context-radius 2 \
+  --output artifacts/gold-packet-pilot/packet.json \
+  --reviewer-view artifacts/gold-packet-pilot/reviewer-view.json \
+  --template artifacts/gold-packet-pilot/annotations-template.json
+```
+
+The administrative packet records balanced sampling reasons; give reviewers
+only the blinded view plus their own copy of the annotation template. The
+builder verifies the registered lossless image hash and labels the result
+`annotation_candidate`. It reports explicit eligibility failures rather than
+calling a small pilot gold. After two independent passes and adjudication,
+validate and freeze NER gold schema 1.1 with:
+
+```bash
+uv run wic-gold-packet finalize \
+  --packet artifacts/gold-packet-pilot/packet.json \
+  --annotations artifacts/gold-packet-pilot/completed-annotations.json \
+  --output artifacts/gold/ner-v1.json
+```
+
+Finalization rejects incomplete units, duplicate reviewers, mismatched text
+offsets/surfaces, a changed packet hash, and reuse of a model OCR region UUID as
+the independent gold identity. See
+[docs/gold-annotation-packets.md](docs/gold-annotation-packets.md).
+
 ## Local evidence and retrieval stack
 
 Copy `.env.example` to an untracked `.env` and replace its development passwords, then start the selected databases:

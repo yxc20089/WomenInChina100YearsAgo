@@ -160,6 +160,13 @@ class NERGoldSet(StrictModel):
             raise ValueError(
                 "NER gold schema 1.1 requires explicit gold-to-source OCR region mappings"
             )
+        if self.schema_version == "1.1" and any(
+            snippet.gold_region_id == snippet.source_ocr_region_id
+            for snippet in self.snippets
+        ):
+            raise ValueError(
+                "NER gold schema 1.1 forbids reusing model OCR region UUIDs as gold identities"
+            )
         return self
 
 

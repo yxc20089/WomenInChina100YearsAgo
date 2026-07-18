@@ -60,6 +60,15 @@ minimum 500 units, issue/article identifiers for a 30-issue split, and coverage
 beyond the 1920s. It is suitable for testing the annotation instructions and
 measuring reviewer effort—not for choosing a model.
 
+After the bounded 1924 and 1926 ingestion pages were added, an unfiltered
+three-page packet produced stable ID
+`fae8be96fdd8e7ad95aa47ca451cd5f13692c5c676d5c671483023c0d8eacdba`.
+It contains 150 units across three volumes, including 9 women-theme, 27
+NER-disagreement, 25 low-confidence and 122 no-candidate-baseline selections
+(overlapping counts). It still correctly fails benchmark eligibility: all three
+pages are from the 1920s, issue/article IDs are absent, and it has fewer than
+500 units.
+
 ## Complete and finalize
 
 For every unit, each reviewer supplies a name, corrected text, exact spans,

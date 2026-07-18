@@ -162,8 +162,10 @@ EXPORT_SQL = """
     JOIN archive.page_derivative derivative
       ON derivative.derivative_id = input.derivative_id
      AND derivative.page_id = input.page_id
-    WHERE (%(volume_number)s IS NULL OR v.volume_number = %(volume_number)s)
-      AND (%(page_number)s IS NULL OR p.page_number = %(page_number)s)
+    WHERE (CAST(%(volume_number)s AS integer) IS NULL
+           OR v.volume_number = CAST(%(volume_number)s AS integer))
+      AND (CAST(%(page_number)s AS integer) IS NULL
+           OR p.page_number = CAST(%(page_number)s AS integer))
     ORDER BY v.volume_number, p.page_number, r.reading_order, r.region_id
 """
 

@@ -194,8 +194,8 @@ JOIN evidence.page_ocr_selection selection
  AND selection.superseded_at IS NULL
 JOIN archive.page_derivative derivative
   ON derivative.derivative_id = selection.derivative_id
-WHERE (%s IS NULL OR volume.volume_number = %s)
-  AND (%s IS NULL OR page.page_number = %s)
+WHERE (CAST(%s AS integer) IS NULL OR volume.volume_number = CAST(%s AS integer))
+  AND (CAST(%s AS integer) IS NULL OR page.page_number = CAST(%s AS integer))
 ORDER BY volume.publication_year, volume.volume_number, page.page_number,
          region.reading_order, region.region_id
 """
@@ -525,7 +525,7 @@ def build_packet_from_rows(
         units=len(units),
         pages=len(pages),
         volumes=len({page.source.volume_number for page in pages}),
-        decades=sorted(f"{(year // 10) * 10}s" for year in years),
+        decades=sorted({f"{(year // 10) * 10}s" for year in years}),
         known_issues=known_issues,
         by_reason=by_reason,
     )

@@ -71,3 +71,5 @@ class RAGExperimentTests(unittest.TestCase):
         self.assertIn("JOIN evidence.page_ocr_selection", EXPORT_SQL)
         self.assertIn("selection.superseded_at IS NULL", EXPORT_SQL)
         self.assertIn("JOIN evidence.ocr_run_input", EXPORT_SQL)
+        self.assertIn("CAST(%(volume_number)s AS integer)", EXPORT_SQL)
+        self.assertIn("CAST(%(page_number)s AS integer)", EXPORT_SQL)

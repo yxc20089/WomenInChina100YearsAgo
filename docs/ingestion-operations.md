@@ -181,6 +181,14 @@ regions; its reviewed-only graph contains zero nodes because no historical
 claim has yet been reviewed. Hybrid `士女` retrieval remained evidence-citing
 after the atomic alias change.
 
+The bounded evidence slice was subsequently expanded with two independent
+four-stage batches: volume 202/page 338 (1924) and volume 230/page 367 (1926).
+Both completed fresh render, OCR, embedding and first-50-region candidate NER
+without blocked/dead-letter jobs. Together with volume 219/page 308, the active
+projection now contains 2,498 regions and embeddings. A global RAG export
+contains three documents, 2,471 mapped text regions, 27 accounted empty regions
+and 16,834 characters. The reviewed-only graph remains empty by design.
+
 Fleet autoscaling, queue-depth backpressure and production metrics remain
 subsequent milestones. Do not describe the current code as an unattended
 full-corpus ingestion system.

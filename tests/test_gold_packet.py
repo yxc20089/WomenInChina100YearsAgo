@@ -8,6 +8,7 @@ from pathlib import Path
 from uuid import UUID
 
 from wic_history.gold_packet import (
+    ACTIVE_REGION_SQL,
     NERAnnotationPacket,
     PacketAnnotationSubmission,
     PacketUnitAdjudication,
@@ -114,11 +115,15 @@ def packet(max_units: int = 6) -> NERAnnotationPacket:
 
 
 class GoldPacketTests(unittest.TestCase):
+    def test_global_scope_casts_nullable_database_filters(self):
+        self.assertIn("CAST(%s AS integer)", ACTIVE_REGION_SQL)
+
     def test_balanced_packet_is_candidate_only_and_content_addressed(self):
         result = packet()
         self.assertEqual(result.status, "annotation_candidate")
         self.assertFalse(result.benchmark_eligible)
         self.assertEqual(result.coverage.units, 6)
+        self.assertEqual(result.coverage.decades, ["1920s"])
         self.assertIn(SamplingReason.WOMEN_THEME, result.units[0].selection_reasons)
         self.assertTrue(
             any(

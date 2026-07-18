@@ -252,7 +252,7 @@ corpus for the isolated RAG comparisons, and start the local researcher API:
 uv run wic-graph --database-url "$DATABASE_URL" --neo4j-uri "$NEO4J_URI" \
   --neo4j-user "$NEO4J_USER" --neo4j-password "$NEO4J_PASSWORD"
 uv run wic-rag-export --database-url "$DATABASE_URL" \
-  --output artifacts/rag-pilot --volume 219 --page 308
+  --output artifacts/rag-three-year
 uv run wic-api --host 127.0.0.1 --port 8766 \
   --database-url "$DATABASE_URL" --opensearch-url "$OPENSEARCH_URL" \
   --neo4j-uri "$NEO4J_URI" --neo4j-user "$NEO4J_USER" \
@@ -279,8 +279,8 @@ The same interface exposes a historian review queue and reviewed-only insight
 signals. A reviewer first accepts or rejects the exact NER span, then makes a
 separate entity-resolution decision: link to a reviewed candidate, create a new
 reviewed entity from the explicit NIL option, or keep it unresolved. Each action
-is transactionally audited and idempotent by review UUID. The current 276
-machine candidates are unreviewed screening/lossless pilot outputs; opening the
+is transactionally audited and idempotent by review UUID. The current 492
+machine candidates are unreviewed screening/lossless pilot/three-year outputs; opening the
 queue does not promote them. Dataset and run filters isolate exact experiment
 cohorts. Re-run `wic-graph` after genuine reviews before using the graph
 insight view. Insight cards are analytical leads and never become historical
@@ -291,9 +291,17 @@ summarizes the active OCR scope, applies a small versioned set of
 women-centered theme patterns, links every example to its registered scan
 derivative and region, and exposes NER candidate counts and pairwise exact
 agreement. Its labels and warnings make clear that these are triage signals,
-not frequency evidence or historical findings. With the current one-page
-lossless pilot, the panel is useful for prioritizing review but not corpus-level
-interpretation.
+not frequency evidence or historical findings. The current three-page scope
+(1924–1926) is useful for prioritizing review but remains far too small for
+frequency or corpus-level interpretation.
+
+The bounded three-year expansion contains active source-resolution pages 202/338
+(1924), 219/308 (1925), and 230/367 (1926): 2,498 OCR regions and matching
+BGE-M3 embeddings. The global RAG export contains three documents, 2,471 exact
+region citations, 27 accounted empty regions, and 16,834 characters. Exact
+`否認廣州今戒嚴` (1924), hybrid `士女` (1925), and hybrid `西裝` (1926) live
+queries all return the expected page with derivative/image hashes and polygons.
+These are retrieval plumbing checks over unreviewed OCR, not historical findings.
 
 Candidate claims have a second queue showing their subject, predicate, object,
 model revision, and every cited scan passage. Acceptance is rejected unless at

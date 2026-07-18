@@ -47,16 +47,16 @@
       "model": "hsc748NLP/GujiRoBERTa_jian_fan",
       "revision": "8e755704c4ae91eded4ebcabe17fecedb42d324f",
       "license": null,
-      "role": "license-gated historical-encoder supervised arm with an identical W2NER head",
-      "evidence": "An EvaHan controlled comparison reports W2NER average F1 88.48 versus GlobalPointer 87.33 and CRF 86.33; GujiRoBERTa-W2NER reached 86.34 on the public test. This is clean ancient text, and the checkpoint card declares no license."
+      "role": "license-gated secondary ancient-text mismatch control with an identical W2NER head",
+      "evidence": "The project corpus is late-Qing/Republican-era Traditional Chinese, not ancient Chinese, so Guji pretraining is a domain mismatch rather than a presumed advantage. An EvaHan model-selection comparison with one SikuBERT encoder reports W2NER average F1 88.48 versus GlobalPointer 87.33 and CRF 86.33, but the authors explicitly warn that augmented samples may leak across those random folds. GujiRoBERTa-W2NER reached 86.34 on the public test, where the baseline also used a different encoder. This is weak clean-ancient-text evidence, not a project head winner, and the checkpoint card declares no license."
     },
     {
       "id": "sikubert-w2ner",
       "model": "SIKU-BERT/sikubert",
       "revision": "fc656de2d6bde33919102dd3abe31c843f42226a",
       "license": "Apache-2.0",
-      "role": "historical-encoder supervised arm with an identical W2NER head",
-      "evidence": "Pretrained on Siku Quanshu; the retyped Shen Bao comparison reports F1 56.83, below MacBERT's 58.26. Historical pretraining remains relevant, but neither result measures OCR transfer."
+      "role": "target-period-evaluated encoder control despite ancient-book pretraining, with an identical W2NER head",
+      "evidence": "Pretrained on Siku Quanshu, which is not the project's late-Qing/Republican newspaper language. Retain it only because the directly relevant retyped Shen Bao comparison reports F1 56.83, below MacBERT's 58.26; neither result measures OCR transfer."
     },
     {
       "id": "otter-ce-mmbert",
@@ -72,7 +72,32 @@
       "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
       "license": "Apache-2.0",
       "role": "existing multilingual open-span recall challenger",
-      "evidence": "Official model card reports zh_pud F1 0.6794; no historical, Traditional-Chinese, or OCR benchmark. A local first-50-region compatibility run required a fixed zh-hant Stanza splitter and produced 67 noisy candidates versus 5 from multi-v2.1, with only 2 exact span/type agreements; this does not establish accuracy."
+      "evidence": "Official model card reports zh_pud F1 0.6794; no historical, Traditional-Chinese, or OCR benchmark. A local first-50-region compatibility run required a fixed zh-hant Stanza splitter and produced 67 noisy candidates versus 5 from multi-v2.1, with only 2 exact span/type agreements; this does not establish accuracy.",
+      "framework_revision": "2f10b62f801880560e0d35734c9c7ee44d0c37b3",
+      "required_splitter_conditions": [
+        "exact_upstream_stanza_behavior",
+        "pinned_zh_hant_stanza_splitter"
+      ],
+      "family_size_controls": [
+        {
+          "model": "knowledgator/gliner-x-small",
+          "revision": "d51a0984d11084a55f9df3899d9dbf7704f580f5",
+          "official_zh_pud_f1": 0.5792,
+          "role": "optional_low_compute_control"
+        },
+        {
+          "model": "knowledgator/gliner-x-base",
+          "revision": "a6c7a8fbfe2066c68d12c0480418504fde6d91d1",
+          "official_zh_pud_f1": 0.6152,
+          "role": "optional_efficiency_control"
+        },
+        {
+          "model": "knowledgator/gliner-x-large",
+          "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
+          "official_zh_pud_f1": 0.6794,
+          "role": "accuracy_first_family_candidate"
+        }
+      ]
     },
     {
       "id": "nuextract3",
@@ -80,7 +105,38 @@
       "revision": "2e9fca82ee641e6bb6e1f5d905241e994be27a07",
       "license": "Apache-2.0",
       "role": "schema-constrained difficult-case and relation challenger",
-      "evidence": "Multimodal schema extraction with verbatim strings; no disclosed historical-Chinese NER result."
+      "evidence": "Multimodal schema extraction with verbatim strings; no disclosed late-Qing/Republican-era Traditional-Chinese NER result."
+    },
+    {
+      "id": "qwen3.5-0.8b-structured-ner",
+      "model": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "license": "Apache-2.0",
+      "role": "low-cost Chinese-capable generative exact-span NER challenger served through a local OpenAI-compatible endpoint",
+      "evidence": "The official card describes an 873,438,784-parameter multilingual vision-language causal model with Chinese evaluation and a 262,144-token native context, but publishes no NER, late-Qing/Republican-era Traditional-Chinese, OCR-noise, or exact-offset result. Its modern Chinese competence makes it a worthwhile measured challenger for this non-ancient corpus, not an assumed winner. Benchmark output must be schema-constrained and rejected unless every returned surface and offset is verbatim evidence.",
+      "upstream_bf16_artifact": {
+        "filename": "model.safetensors",
+        "bytes": 1746942600,
+        "sha256": "04b1c301231dd422b8860db31311ab2721511346a32cb1e079c4c4e5f1fe4696"
+      },
+      "local_runtime_conditions": [
+        {
+          "id": "ollama-q8-canonical",
+          "runtime_version": "0.32.0",
+          "library_tag": "qwen3.5:0.8b",
+          "quantization": "Q8_0",
+          "manifest_digest": "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
+          "model_layer_sha256": "afb707b6b8fac6e475acc42bc8380fc0b8d2e0e4190be5a969fbf62fcc897db5"
+        },
+        {
+          "id": "lm-studio-unsloth-q8-secondary",
+          "runtime_version": "0.4.19-build-2",
+          "gguf_repository": "unsloth/Qwen3.5-0.8B-GGUF",
+          "gguf_revision": "6ab461498e2023f6e3c1baea90a8f0fe38ab64d0",
+          "gguf_filename": "Qwen3.5-0.8B-Q8_0.gguf",
+          "gguf_sha256": "0ad885ffd4bb022fc4f0d33a3308fa108ef8613159d3b3a67e23abca056b7a6c"
+        }
+      ]
     },
     {
       "id": "qwen3.6-27b",
@@ -96,7 +152,8 @@
       "revision": "443d26d654e0324125a96bebd8e796c14ff2efe6",
       "license": "Apache-2.0",
       "role": "existing technical-smoke baseline",
-      "evidence": "Produced noisy candidate spans on one lossy Shen Bao page and has not passed review."
+      "evidence": "Produced noisy candidate spans on one lossy Shen Bao page and has not passed review.",
+      "framework_revision": "2f10b62f801880560e0d35734c9c7ee44d0c37b3"
     }
   ],
   "annotation_acceleration_controls": [
@@ -124,7 +181,7 @@
     },
     {
       "model": "Qwen/Qwen3.5-9B",
-      "reason": "Retain only as a lower-cost control when 80 GB-class hardware is unavailable; NuExtract3's own generic structured-extraction comparison favors NuExtract3, and neither has target historical-Chinese NER evidence."
+      "reason": "Retain only as a lower-cost control when 80 GB-class hardware is unavailable; NuExtract3's own generic structured-extraction comparison favors NuExtract3, and neither has target late-Qing/Republican-era Traditional-Chinese NER evidence."
     },
     {
       "model": "TriG-NER",

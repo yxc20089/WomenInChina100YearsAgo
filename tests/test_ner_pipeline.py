@@ -68,6 +68,7 @@ class NERPipelineTests(unittest.TestCase):
                 "otter-ce-mmbert",
                 "gliner-x-large",
                 "nuextract3",
+                "qwen3.5-0.8b-structured-ner",
                 "qwen3.6-27b",
             }.issubset(candidates)
         )
@@ -111,6 +112,51 @@ class NERPipelineTests(unittest.TestCase):
                 "implementation_policy"
             ],
             "do_not_copy_unlicensed_code_clean_room_implementation_only",
+        )
+        self.assertEqual(
+            specification["training_augmentation_protocol"]["status"],
+            "exporter_implemented_eligible_training_run_pending",
+        )
+        head_selection = specification["supervised_head_selection"]
+        self.assertEqual(
+            head_selection["status"], "no_winner_controlled_comparison_required"
+        )
+        self.assertIsNone(head_selection["selection"])
+        self.assertEqual(
+            {item["id"] for item in head_selection["candidate_heads"]},
+            {"w2ner", "global_pointer", "bio_crf"},
+        )
+
+    def test_qwen_and_gliner_local_challengers_are_content_addressed(self):
+        root = Path(__file__).parents[1]
+        registry = json.loads(
+            (root / "experiments/ner/candidates.json").read_text(encoding="utf-8")
+        )
+        specification = json.loads(
+            (root / "experiments/ner/benchmark-spec.json").read_text(encoding="utf-8")
+        )
+        candidates = {item["id"]: item for item in registry["candidates"]}
+        arms = {item["id"]: item for item in specification["arms"]}
+
+        qwen = candidates["qwen3.5-0.8b-structured-ner"]
+        qwen_arm = arms["qwen3.5-0.8b-structured-ner"]
+        ollama = qwen["local_runtime_conditions"][0]
+        self.assertEqual(ollama["id"], "ollama-q8-canonical")
+        self.assertEqual(
+            qwen_arm["canonical_runtime"]["required_manifest_digest"],
+            ollama["manifest_digest"],
+        )
+        self.assertEqual(qwen_arm["decoding_contract"]["temperature"], 0)
+        self.assertFalse(qwen_arm["decoding_contract"]["thinking"])
+
+        gliner = candidates["gliner-x-large"]
+        controls = {item["model"]: item for item in gliner["family_size_controls"]}
+        self.assertEqual(
+            controls["knowledgator/gliner-x-large"]["revision"], gliner["revision"]
+        )
+        self.assertGreater(
+            controls["knowledgator/gliner-x-large"]["official_zh_pud_f1"],
+            controls["knowledgator/gliner-x-base"]["official_zh_pud_f1"],
         )
 
     def test_mmbert_registry_pins_the_passing_offset_qualification(self):

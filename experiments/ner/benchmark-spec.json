@@ -85,11 +85,20 @@
     "prompt_schema_revision_for_structured_generation"
   ],
   "training_augmentation_protocol": {
-    "status": "specified_clean_room_not_implemented",
+    "status": "exporter_implemented_eligible_training_run_pending",
     "design": "factorial_clean_vs_empirical_ocr_noise_with_identical_encoder_head_split_and_search_budget",
     "first_executable_arm": "training_only_length_preserving_character_substitutions_sampled_from_adjudicated_training_issue_ocr_confusions",
     "insertion_deletion_gate": "requires_deterministic_source_to_augmented_character_edit_maps",
     "leakage_policy": "derive_confusion_statistics_from_training_issues_only_after_issue_split",
+    "implementation": {
+      "module": "src/wic_history/ner_training.py",
+      "cli": "wic-ner-training-export",
+      "official_w2ner_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+      "tokenization_policy": "one_unicode_codepoint_per_token_omit_whitespace_with_exact_character_offset_map",
+      "native_loader_payload": "sentence_and_ner_only",
+      "provenance_manifest": "exact_gold_split_benchmark_source_record_view_and_training_text_hashes",
+      "current_blocker": "eligible_issue_split_training_gold_and_gpu_training_run"
+    },
     "external_evidence": {
       "paper": "https://arxiv.org/abs/2601.00488",
       "reported_result": "synthetic_ocr_noise_training_reached_77.9_entity_micro_f1_on_historical_german_vet_documents",
@@ -98,6 +107,32 @@
       "reference_code_license": null,
       "implementation_policy": "do_not_copy_unlicensed_code_clean_room_implementation_only"
     }
+  },
+  "supervised_head_selection": {
+    "status": "no_winner_controlled_comparison_required",
+    "frozen_backbone": {
+      "model": "hfl/chinese-macbert-base",
+      "revision": "a986e004d2a7f2a1c2f5a3edef4e20604a974ed1"
+    },
+    "candidate_heads": [
+      {
+        "id": "w2ner",
+        "implementation": "ljynlp/W2NER",
+        "revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
+        "status": "training_export_implemented_training_adapter_pending"
+      },
+      {
+        "id": "global_pointer",
+        "status": "exact_implementation_revision_and_training_adapter_pending"
+      },
+      {
+        "id": "bio_crf",
+        "status": "flat_control_exact_implementation_revision_and_training_adapter_pending"
+      }
+    ],
+    "control_policy": "identical_issue_splits_training_inputs_augmentation_seeds_search_budget_and_selection_metric",
+    "external_evidence_caveat": "EvaHan reports W2NER 88.48 versus GlobalPointer 87.33 and CRF 86.33 average model-selection F1 with one encoder, but explicitly warns augmented samples may leak across its random folds; its public-test comparison changes encoders",
+    "selection": null
   },
   "arms": [
     {
@@ -139,6 +174,12 @@
         "text"
       ],
       "selection_role": "open_type_recall_challenger",
+      "family_size_policy": "run_large_first_for_accuracy; benchmark pinned base only as an efficiency control if large qualifies or hardware requires it; keep small diagnostic-only",
+      "family_size_revisions": {
+        "small": "d51a0984d11084a55f9df3899d9dbf7704f580f5",
+        "base": "a6c7a8fbfe2066c68d12c0480418504fde6d91d1",
+        "large": "4a4437f439a78d67c87781b42e8c45373d2adcb0"
+      },
       "blockers": [
         "eligible_adjudicated_gold"
       ]
@@ -253,7 +294,7 @@
       "modalities": [
         "text"
       ],
-      "selection_role": "historical_encoder_supervised_arm",
+      "selection_role": "secondary_ancient_text_domain_mismatch_control",
       "requires_identical_head_and_search_budget": true,
       "head_implementation": "ljynlp/W2NER",
       "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
@@ -275,7 +316,7 @@
       "modalities": [
         "text"
       ],
-      "selection_role": "historical_encoder_supervised_arm",
+      "selection_role": "target_period_evaluated_control_despite_ancient_book_pretraining",
       "requires_identical_head_and_search_budget": true,
       "head_implementation": "ljynlp/W2NER",
       "head_implementation_revision": "a34ff841891919001080edefb50e14fa9dc15e1c",
@@ -323,6 +364,70 @@
         "image_crop_manifest",
         "eligible_adjudicated_gold",
         "gpu_inference_run"
+      ]
+    },
+    {
+      "id": "qwen3.5-0.8b-structured-ner",
+      "candidate_id": "qwen3.5-0.8b-structured-ner",
+      "adapter_family": "structured_generation",
+      "status": "local_endpoint_prompt_schema_and_offset_adapter_not_implemented",
+      "model": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "selection_role": "low_cost_chinese_capable_generative_ner_challenger",
+      "serving_contract": "OpenAI-compatible local endpoint supplied by Ollama or LM Studio; benchmark logic is backend-neutral",
+      "canonical_runtime": {
+        "backend": "Ollama",
+        "version": "0.32.0",
+        "model_tag": "qwen3.5:0.8b",
+        "quantization": "Q8_0",
+        "required_manifest_digest": "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
+        "verified_local_name": "project/qwen35-08b-q8-ner-v1",
+        "minimum_context": 8192
+      },
+      "secondary_runtime": {
+        "backend": "LM Studio",
+        "version": "0.4.19-build-2",
+        "artifact": "Qwen3.5-0.8B-Q8_0.gguf",
+        "artifact_sha256": "0ad885ffd4bb022fc4f0d33a3308fa108ef8613159d3b3a67e23abca056b7a6c",
+        "comparison_policy": "score_as_a_distinct_system_not_as_equivalent_to_ollama"
+      },
+      "decoding_contract": {
+        "thinking": false,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 42,
+        "stream": false,
+        "speculative_decoding_policy": "disable_where_exposed_otherwise_pin_runtime_and_record_state",
+        "schema_canary_repetitions": 3
+      },
+      "first_ablation": "text_only_non_thinking_schema_constrained_generation",
+      "image_ablation": "separately_scored_page_crop_plus_ocr_text_input",
+      "maximum_route_fraction": 0.2,
+      "required_output_contract": {
+        "shape": "entities_array_with_type_surface_start_end",
+        "offset_unit": "unicode_codepoints_half_open",
+        "surface_rule": "source_text_start_end_must_equal_surface",
+        "invalid_output_policy": "reject_unknown_type_out_of_range_nonverbatim_duplicate_or_ambiguous_surface"
+      },
+      "reproducibility": [
+        "hf_source_revision",
+        "local_quantized_artifact_sha256",
+        "ollama_or_lm_studio_version",
+        "served_model_configuration_hash",
+        "prompt_and_json_schema_sha256",
+        "temperature_top_p_seed_and_max_tokens"
+      ],
+      "blockers": [
+        "frozen_prompt_and_output_schema",
+        "backend_neutral_openai_compatible_adapter",
+        "verbatim_surface_and_exact_offset_validator",
+        "pinned_local_quantized_artifact_sha256",
+        "eligible_adjudicated_gold",
+        "local_inference_run"
       ]
     },
     {

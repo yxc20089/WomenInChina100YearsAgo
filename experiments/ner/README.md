@@ -1,4 +1,4 @@
-# Historical-Chinese NER benchmark
+# Late-Qing/Republican Traditional-Chinese NER benchmark
 
 The pinned candidate registry is `candidates.json`; the implementation-ready
 comparison, hardware estimates and frozen stop/go gates are in
@@ -23,24 +23,36 @@ sets. Report exact and relaxed span F1 by type, hallucinated-span rate,
 evidence/offset validity, throughput, peak memory, and degradation as OCR CER
 rises.
 
-The production hypothesis is a cascade: gazetteers and rules; the winner of an
-identical-head MacBERT/MacBERT-DAPT/mmBERT/Chinese-ModernBERT/GujiRoBERTa/SIKU
-supervised tournament; GLiNER-X only if a raw-recoverable recall-union gate
-passes; then NuExtract3 only for disagreements, rare types, implicit relations,
-or difficult page crops. Chinese ModernBERT cannot execute until its pinned
+The corpus is printed Traditional Chinese from roughly 100 years ago, not
+ancient/Classical Chinese. Treat its grammar and discourse as modern or
+transitional newspaper Chinese unless historians label a particular passage
+otherwise. The main modeling differences are character forms, period names and
+titles, typography/layout, punctuation and OCR corruption—not a blanket ancient
+language structure. Original characters remain immutable evidence; any
+Simplified or normalized form is an auxiliary search feature only.
+
+The production hypothesis is a cascade: gazetteers and rules; a frozen-backbone
+head comparison followed by a MacBERT/MacBERT-DAPT/mmBERT/qualified
+Chinese-ModernBERT supervised tournament, with SIKU retained as a directly
+target-period-evaluated control and GujiRoBERTa only as a license-gated ancient
+domain-mismatch control; GLiNER-X only if a raw-recoverable recall-union gate
+passes; then locally served Qwen3.5-0.8B or NuExtract3 only for disagreements,
+rare types, implicit relations, or difficult page crops. Chinese ModernBERT
+cannot execute until its pinned
 custom tokenizer passes the raw-offset gate with destructive preprocessing
 disabled. Otter remains research-only until its checkpoint-weight license is
 explicit. Every stage must preserve exact source offsets and may abstain.
 Entity linking and claim review remain separate gates.
 
 The 2026 frontier review found no model with target evidence strong enough to
-replace MacBERT-W2NER before scoring. It adds pinned mmBERT-W2NER only as a
+win before scoring. It adds pinned mmBERT only as a
 same-head challenger and requires a Chinese tokenizer/character-offset
 round-trip test. PP-UIE-0.5B is tracked separately for post-independent-review
 annotation suggestions; its mutable weight path and string-only demonstrated
 output keep it outside the executable tournament until exact bytes, rights,
 and offset recovery are frozen. Pinned GLiNER large v2.5 remains a low-priority
-control because its card provides no Chinese, historical, or OCR result.
+control because its card provides no Chinese or target OCR result and its
+whitespace-style splitter is unsafe for uninterrupted Chinese.
 
 A second independent frontier search adds
 `feynmanzhao/chinese-modernbert-large-wwm@b00f1ff1901161f68339890fe48e4dbb6ee76f4d`
@@ -59,6 +71,13 @@ The 2026 historical-German VET study reported 77.9 entity micro-F1 for its
 synthetic-noise arm, but that external score is not transferable to this
 archive. Its reference repository has no declared license, so the committed
 protocol requires a clean-room implementation rather than copied code.
+
+That exporter is now implemented and unit-tested. It creates one-character
+W2NER tokens while omitting whitespace that the official loader cannot map to
+subwords; the manifest retains an exact character-offset map. It derives only
+length-preserving confusions from adjudicated training-issue entities, augments
+corrected training records only, and preserves held-out raw/corrected views.
+Eligible gold and model training remain pending.
 
 ### Tokenizer offset qualification
 
@@ -102,12 +121,15 @@ This clears only the tokenizer gate; eligible gold, the trained W2NER head,
 and the model-quality tournament remain absent.
 
 Use W2NER at official implementation commit
-`a34ff841891919001080edefb50e14fa9dc15e1c` as the primary
-overlap/discontinuous-capable supervised head, compare it to GlobalPointer on
-one frozen backbone, and retain a single-label BIO/CRF head only as a flat
-control. The policy permits nested spans and the same surface to carry distinct
-defensible types. The current evidence schema stores contiguous spans, so
-discontinuous scoring remains blocked on an explicit contract extension.
+`a34ff841891919001080edefb50e14fa9dc15e1c` as the first implemented
+overlap/discontinuous-capable head candidate, not as a winner. Compare it to
+GlobalPointer and a single-label BIO/CRF control on one frozen MacBERT backbone
+with identical issue splits and search budgets. The EvaHan model-selection
+table favors W2NER by 1.15 F1 over GlobalPointer, but its authors explicitly
+warn that augmented samples may leak across those random folds; its public-test
+comparison changes encoders and cannot isolate the head. The current evidence
+schema stores contiguous spans, so discontinuous scoring remains blocked on an
+explicit contract extension.
 Scores from different extractors are not comparable until calibrated, so
 artifacts retain every extractor's raw support instead of discarding
 disagreements.
@@ -158,6 +180,50 @@ it has at least 500 snippets, 30 issues, all three issue-isolated splits and
 three publication decades. `run` refuses such a dataset unless the caller adds
 the conspicuous `--allow-ineligible-technical-run` flag. That flag never makes
 the output scientific evidence.
+
+Export the paired data into the pinned official W2NER loader format:
+
+```bash
+uv run wic-ner-training-export \
+  --gold artifacts/gold/ner-v1.json \
+  --split-manifest artifacts/gold/ner-v1.issue-splits.json \
+  --dataset-id ner-benchmark-v1 --export-id w2ner-training-v1 \
+  --project-code-revision 0000000000000000000000000000000000000000 \
+  --maximum-record-characters 256 --augmentation-probability 0.15 \
+  --augmented-copies 1 --seed 17 \
+  --output-directory artifacts/ner-benchmark/w2ner-training-v1
+```
+
+The output directory contains a self-validating `manifest.json` and native
+`sentence`/`ner` JSON views for each split and input variant, plus a distinct
+training corrected-text view containing empirical substitutions. Existing
+files are never overwritten. Small ineligible fixtures require the explicit
+`--allow-ineligible-technical-export` flag and cannot become scientific runs.
+
+## Local Qwen structured-NER arm
+
+Qwen3.5-0.8B is a benchmark challenger, not an exclusion. The canonical arm is
+Ollama 0.32.0 with the official `qwen3.5:0.8b` Q8 registry manifest
+`sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4`.
+Abort if Ollama's tags API reports different bytes, then copy the verified model
+to a frozen project-local name. LM Studio 0.4.19 build 2 with pinned
+`Qwen3.5-0.8B-Q8_0.gguf` SHA-256
+`0ad885ffd4bb022fc4f0d33a3308fa108ef8613159d3b3a67e23abca056b7a6c` is an
+optional, separately scored runtime. Both expose an OpenAI-compatible chat
+endpoint; the future adapter must not contain backend-specific extraction
+logic. Freeze the Hugging Face source revision, local artifact SHA-256, server
+version, model configuration, prompt/JSON-schema SHA-256 and all decoding
+controls. The first arm is text-only, non-thinking, temperature zero and fixed
+seed. Repeat a schema canary and report nondeterminism rather than assuming the
+same seed is equivalent across runtimes. Image input is a separate page-crop
+ablation.
+
+The response contract is an `entities` array of `type`, `surface`, `start` and
+exclusive `end`. A validator must reject unknown ontology values, ranges outside
+the Unicode source string, `source[start:end] != surface`, duplicate entities,
+and a surface without unique offsets when the model omits or contradicts them.
+This is how the project can benefit from Qwen's Chinese competence without
+letting a generative model rewrite historical evidence.
 
 Rules and both pinned GLiNER arms use the common executable adapter today:
 
@@ -212,6 +278,14 @@ does not waive the absolute quality, cost, evidence-integrity or historian
 review gates.
 
 ## Pinned compatibility comparison
+
+The official [GLiNER-X collection](https://huggingface.co/collections/knowledgator/gliner-x)
+has three pinned sizes. Its published `zh_pud` F1 is 0.5792 for small
+`d51a098…`, 0.6152 for base `a6c7a8f…`, and 0.6794 for large `4a4437f…`; the
+same table gives GLiNER multi-v2.1 0.6410. This is generic Chinese evidence, not
+Traditional-Chinese newspaper/OCR evidence. Use large for the accuracy-first
+arm, base only as an efficiency control after large qualifies or under a clear
+hardware constraint, and small only as a diagnostic control.
 
 GLiNER-X uses a Stanza word splitter. Automatic per-region language detection
 is unsafe for short noisy newspaper OCR: the technical run misclassified

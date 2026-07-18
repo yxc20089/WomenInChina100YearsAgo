@@ -34,6 +34,7 @@ class DatabaseContractTests(unittest.TestCase):
                 "006_ner_run_input.sql",
                 "007_ingestion_jobs.sql",
                 "008_batch_terminal_states.sql",
+                "009_job_replay_events.sql",
             ],
         )
 
@@ -78,6 +79,12 @@ class DatabaseContractTests(unittest.TestCase):
         )
         self.assertIn("'failed'", sql)
         self.assertIn("ingestion_job_dead_letter_idx", sql)
+
+    def test_dead_letter_replay_is_auditable(self):
+        sql = Path("db/migrations/009_job_replay_events.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("'reopened'", sql)
 
 
 if __name__ == "__main__":

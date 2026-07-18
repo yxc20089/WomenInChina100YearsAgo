@@ -68,6 +68,18 @@ class IngestionJobTests(unittest.TestCase):
             ]
         )
         self.assertEqual(cancelled.cancelled_by, "operator")
+        replay = build_parser().parse_args(
+            [
+                "replay",
+                "--job-id",
+                "00000000-0000-0000-0000-000000000001",
+                "--requested-by",
+                "operator",
+                "--reason",
+                "transient dependency fixed",
+            ]
+        )
+        self.assertEqual(replay.command, "replay")
 
     def test_bounded_ner_result_must_match_the_plan(self):
         result = {

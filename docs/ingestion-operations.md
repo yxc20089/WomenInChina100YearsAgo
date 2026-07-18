@@ -134,8 +134,22 @@ curl http://127.0.0.1:8766/api/ingestion/batches/BATCH_UUID/failures
 When a job exhausts its attempts, pending descendants that can no longer meet
 their dependencies are cancelled automatically. Independent branches continue;
 after all reachable work is terminal, the batch becomes `failed`. An operator
-can stop an active batch, including leased/running jobs, while retaining all
-completed artifacts:
+can replay one root failure after documenting the external fix:
+
+```bash
+uv run wic-batch --database-url "$DATABASE_URL" replay \
+  --job-id FAILED_JOB_UUID --requested-by operator-name \
+  --reason 'documented recovery reason'
+```
+
+Replay resets the root attempt budget and reopens only descendants whose
+cancellation reason was that failed dependency. It refuses non-failed jobs,
+non-failed batches and jobs cancelled by an operator. Every reopened job gets an
+append-only event containing the root job, operator and reason. Other failed
+parents continue to block their shared descendants.
+
+An operator can instead stop an active batch, including leased/running jobs,
+while retaining all completed artifacts:
 
 ```bash
 uv run wic-batch --database-url "$DATABASE_URL" cancel \
@@ -167,6 +181,6 @@ regions; its reviewed-only graph contains zero nodes because no historical
 claim has yet been reviewed. Hybrid `士女` retrieval remained evidence-citing
 after the atomic alias change.
 
-Dead-letter replay, fleet autoscaling, backpressure and production metrics are
+Fleet autoscaling, queue-depth backpressure and production metrics remain
 subsequent milestones. Do not describe the current code as an unattended
 full-corpus ingestion system.

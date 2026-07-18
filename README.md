@@ -142,11 +142,13 @@ explicit cost and capacity review. See
 contract and current limitations.
 
 Terminal failures cancel only dependency-blocked descendants; independent
-branches may finish before the batch becomes `failed`. Inspect or explicitly
-cancel a batch with:
+branches may finish before the batch becomes `failed`. Inspect, explicitly
+replay a dead-letter root, or cancel a batch with:
 
 ```bash
 uv run wic-batch --database-url "$DATABASE_URL" failures --batch-id BATCH_UUID
+uv run wic-batch --database-url "$DATABASE_URL" replay --job-id FAILED_JOB_UUID \
+  --requested-by operator-name --reason 'documented recovery reason'
 uv run wic-batch --database-url "$DATABASE_URL" cancel --batch-id BATCH_UUID \
   --cancelled-by operator-name --reason 'documented operational reason'
 ```

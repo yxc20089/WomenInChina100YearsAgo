@@ -5,17 +5,19 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 from PIL import Image
 
 from wic_history.evidence import NERArtifact, OCRPageArtifact
-from wic_history.ingestion_jobs import DEFAULT_CONFIGURATION
+from wic_history.ingestion_jobs import DEFAULT_CONFIGURATION, JobLease
 from wic_history.ingestion_worker import (
     PageJobContext,
     _ner_artifact_matches,
     _ocr_artifact_matches,
     _render_manifest_execution,
     resolve_workspace_path,
+    run_one,
     stage_output_dir,
 )
 from wic_history.render_samples import sha256_file
@@ -46,6 +48,51 @@ def context(stage: str, configuration: dict | None = None) -> PageJobContext:
 
 
 class IngestionWorkerTests(unittest.TestCase):
+    def test_worker_observes_operator_cancellation_during_execution(self):
+        lease = JobLease(
+            job_id="00000000-0000-0000-0000-000000000001",
+            batch_id="00000000-0000-0000-0000-000000000002",
+            stage="render_lossless",
+            scope_kind="page",
+            volume_number=219,
+            page_number=308,
+            input_fingerprint="a" * 64,
+            configuration=DEFAULT_CONFIGURATION["render_lossless"],
+            attempt_count=1,
+            max_attempts=3,
+            lease_owner="worker",
+            lease_expires_at="2026-07-18T00:00:00+00:00",
+        )
+
+        def cancelled_executor(*_args, **_kwargs):
+            raise RuntimeError("lease revoked")
+
+        with (
+            patch("wic_history.ingestion_worker.claim_job", return_value=lease),
+            patch("wic_history.ingestion_worker.start_job"),
+            patch(
+                "wic_history.ingestion_worker.load_job_context",
+                return_value=context("render_lossless"),
+            ),
+            patch(
+                "wic_history.ingestion_worker.fail_job",
+                side_effect=ValueError("lease absent"),
+            ),
+            patch(
+                "wic_history.ingestion_worker.load_job_status",
+                return_value="cancelled",
+            ),
+        ):
+            result = run_one(
+                "postgresql://example",
+                worker_id="worker",
+                workspace_root=Path.cwd(),
+                cache_dir=Path("/tmp/wic-source-cache"),
+                lease_seconds=30,
+                executor=cancelled_executor,
+            )
+        self.assertEqual(result.status, "cancelled")
+
     def test_artifact_paths_cannot_escape_workspace(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

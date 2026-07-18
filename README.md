@@ -138,6 +138,16 @@ explicit cost and capacity review. See
 [docs/ingestion-operations.md](docs/ingestion-operations.md) for the worker
 contract and current limitations.
 
+Terminal failures cancel only dependency-blocked descendants; independent
+branches may finish before the batch becomes `failed`. Inspect or explicitly
+cancel a batch with:
+
+```bash
+uv run wic-batch --database-url "$DATABASE_URL" failures --batch-id BATCH_UUID
+uv run wic-batch --database-url "$DATABASE_URL" cancel --batch-id BATCH_UUID \
+  --cancelled-by operator-name --reason 'documented operational reason'
+```
+
 Run one ready job, with automatic lease heartbeats and safe retry recording:
 
 ```bash

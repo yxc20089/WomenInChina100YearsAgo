@@ -118,8 +118,22 @@ class BatchStatus:
     status: str
     total_jobs: int
     ready_jobs: int
+    blocked_jobs: int
+    dead_letter_jobs: int
     by_status: dict[str, int]
     by_stage: dict[str, dict[str, int]]
+
+
+@dataclass(frozen=True, slots=True)
+class FailedJob:
+    job_id: str
+    stage: str
+    volume_number: int | None
+    page_number: int | None
+    attempt_count: int
+    max_attempts: int
+    error_details: dict[str, Any] | None
+    completed_at: str | None
 
 
 def canonical_sha256(value: Any) -> str:
@@ -407,6 +421,96 @@ def create_plan(
         )
 
 
+def _cancel_failed_descendants(
+    connection: Any,
+    failed_job_ids: Sequence[UUID],
+) -> int:
+    """Cancel pending descendants that can never satisfy a failed dependency."""
+    if not failed_job_ids:
+        return 0
+    rows = connection.execute(
+        """
+        WITH RECURSIVE descendants(job_id) AS (
+            SELECT dependency.job_id
+            FROM pipeline.ingestion_job_dependency dependency
+            WHERE dependency.depends_on_job_id = ANY(%s)
+            UNION
+            SELECT dependency.job_id
+            FROM pipeline.ingestion_job_dependency dependency
+            JOIN descendants parent
+              ON parent.job_id = dependency.depends_on_job_id
+        )
+        UPDATE pipeline.ingestion_job job
+        SET status = 'cancelled', completed_at = now(),
+            error_details = COALESCE(job.error_details, '{}'::jsonb)
+                || jsonb_build_object(
+                    'type', 'dependency_failed',
+                    'failed_parent_job_ids', %s::jsonb
+                )
+        WHERE job.job_id IN (SELECT job_id FROM descendants)
+          AND job.status = 'pending'
+        RETURNING job.job_id
+        """,
+        (
+            list(failed_job_ids),
+            json.dumps([str(job_id) for job_id in failed_job_ids]),
+        ),
+    ).fetchall()
+    if rows:
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO pipeline.ingestion_job_event (
+                    job_id, event_type, details
+                ) VALUES (%s, 'cancelled', %s::jsonb)
+                """,
+                [
+                    (
+                        row[0],
+                        json.dumps(
+                            {
+                                "reason": "dependency_failed",
+                                "failed_parent_job_ids": [
+                                    str(job_id) for job_id in failed_job_ids
+                                ],
+                            }
+                        ),
+                    )
+                    for row in rows
+                ],
+            )
+    return len(rows)
+
+
+def _refresh_batch_status(connection: Any, batch_id: UUID) -> None:
+    connection.execute(
+        """
+        UPDATE pipeline.ingestion_batch batch
+        SET status = CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM pipeline.ingestion_job job
+                    WHERE job.batch_id = batch.batch_id
+                      AND job.status = 'failed'
+                ) THEN 'failed'
+                WHEN EXISTS (
+                    SELECT 1 FROM pipeline.ingestion_job job
+                    WHERE job.batch_id = batch.batch_id
+                      AND job.status = 'cancelled'
+                ) THEN 'cancelled'
+                ELSE 'completed'
+            END,
+            completed_at = now()
+        WHERE batch.batch_id = %s AND batch.status = 'active'
+          AND NOT EXISTS (
+              SELECT 1 FROM pipeline.ingestion_job job
+              WHERE job.batch_id = batch.batch_id
+                AND job.status IN ('pending', 'leased', 'running')
+          )
+        """,
+        (batch_id,),
+    )
+
+
 def _requeue_expired(connection: Any) -> None:
     expired = connection.execute(
         """
@@ -422,7 +526,7 @@ def _requeue_expired(connection: Any) -> None:
                 || jsonb_build_object('last_error', 'lease_expired')
         WHERE status IN ('leased', 'running')
           AND lease_expires_at <= now()
-        RETURNING job_id
+        RETURNING job_id, batch_id, status
         """
     ).fetchall()
     if expired:
@@ -432,8 +536,12 @@ def _requeue_expired(connection: Any) -> None:
                 INSERT INTO pipeline.ingestion_job_event (job_id, event_type)
                 VALUES (%s, 'lease_expired')
                 """,
-                expired,
+                [(row[0],) for row in expired],
             )
+        failed_ids = [row[0] for row in expired if row[2] == "failed"]
+        _cancel_failed_descendants(connection, failed_ids)
+        for batch_id in {row[1] for row in expired}:
+            _refresh_batch_status(connection, batch_id)
 
 
 def claim_job(
@@ -654,19 +762,7 @@ def complete_job(
             """,
             (job_id, worker_id.strip(), json.dumps(result_data, ensure_ascii=False)),
         )
-        connection.execute(
-            """
-            UPDATE pipeline.ingestion_batch batch
-            SET status = 'completed', completed_at = now()
-            WHERE batch.batch_id = %s
-              AND NOT EXISTS (
-                  SELECT 1 FROM pipeline.ingestion_job job
-                  WHERE job.batch_id = batch.batch_id
-                    AND job.status <> 'completed'
-              )
-            """,
-            (row[4],),
-        )
+        _refresh_batch_status(connection, row[4])
         return JobTransition(str(row[0]), row[1], row[2], row[3])
 
 
@@ -754,7 +850,7 @@ def fail_job(
                 lease_owner = NULL, lease_expires_at = NULL
             WHERE job_id = %s AND status IN ('leased', 'running')
               AND lease_owner = %s AND lease_expires_at > now()
-            RETURNING job_id, status, attempt_count, max_attempts
+            RETURNING job_id, status, attempt_count, max_attempts, batch_id
             """,
             (
                 timedelta(seconds=retry_delay_seconds),
@@ -779,6 +875,9 @@ def fail_job(
                 json.dumps(details, ensure_ascii=False),
             ),
         )
+        if row[1] == "failed":
+            _cancel_failed_descendants(connection, [row[0]])
+        _refresh_batch_status(connection, row[4])
         return JobTransition(str(row[0]), row[1], row[2], row[3])
 
 
@@ -821,6 +920,22 @@ def batch_status(database_url: str, batch_id: UUID) -> BatchStatus:
             """,
             (batch_id,),
         ).fetchone()["count"]
+        blocked = connection.execute(
+            """
+            SELECT count(*) AS count
+            FROM pipeline.ingestion_job job
+            WHERE job.batch_id = %s AND job.status = 'pending'
+              AND EXISTS (
+                  SELECT 1
+                  FROM pipeline.ingestion_job_dependency dependency
+                  JOIN pipeline.ingestion_job parent
+                    ON parent.job_id = dependency.depends_on_job_id
+                  WHERE dependency.job_id = job.job_id
+                    AND parent.status <> 'completed'
+              )
+            """,
+            (batch_id,),
+        ).fetchone()["count"]
     by_status: dict[str, int] = {}
     by_stage: dict[str, dict[str, int]] = {}
     for row in rows:
@@ -832,9 +947,121 @@ def batch_status(database_url: str, batch_id: UUID) -> BatchStatus:
         batch["status"],
         sum(by_status.values()),
         ready,
+        blocked,
+        by_status.get("failed", 0),
         dict(sorted(by_status.items())),
         {stage: dict(sorted(counts.items())) for stage, counts in by_stage.items()},
     )
+
+
+def batch_failures(database_url: str, batch_id: UUID) -> list[FailedJob]:
+    psycopg, dict_row = _psycopg()
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        exists = connection.execute(
+            "SELECT 1 FROM pipeline.ingestion_batch WHERE batch_id = %s",
+            (batch_id,),
+        ).fetchone()
+        if exists is None:
+            raise ValueError("Ingestion batch does not exist")
+        rows = connection.execute(
+            """
+            SELECT job.job_id, job.stage, volume.volume_number,
+                   job.page_number, job.attempt_count, job.max_attempts,
+                   job.error_details, job.completed_at
+            FROM pipeline.ingestion_job job
+            LEFT JOIN archive.volume volume USING (volume_id)
+            WHERE job.batch_id = %s AND job.status = 'failed'
+            ORDER BY job.completed_at, job.created_at, job.job_id
+            """,
+            (batch_id,),
+        ).fetchall()
+    return [
+        FailedJob(
+            job_id=str(row["job_id"]),
+            stage=row["stage"],
+            volume_number=row["volume_number"],
+            page_number=row["page_number"],
+            attempt_count=row["attempt_count"],
+            max_attempts=row["max_attempts"],
+            error_details=row["error_details"],
+            completed_at=(
+                row["completed_at"].isoformat() if row["completed_at"] else None
+            ),
+        )
+        for row in rows
+    ]
+
+
+def cancel_batch(
+    database_url: str,
+    batch_id: UUID,
+    *,
+    cancelled_by: str,
+    reason: str,
+) -> BatchStatus:
+    """Explicitly cancel unfinished jobs while preserving completed artifacts."""
+    psycopg, _ = _psycopg()
+    if not cancelled_by.strip() or not reason.strip():
+        raise ValueError("cancelled_by and reason must not be blank")
+    with psycopg.connect(database_url) as connection:
+        batch = connection.execute(
+            """
+            SELECT status FROM pipeline.ingestion_batch
+            WHERE batch_id = %s FOR UPDATE
+            """,
+            (batch_id,),
+        ).fetchone()
+        if batch is None:
+            raise ValueError("Ingestion batch does not exist")
+        if batch[0] in {"completed", "failed"}:
+            raise ValueError(f"Cannot cancel terminal {batch[0]} batch")
+        if batch[0] == "active":
+            rows = connection.execute(
+                """
+                UPDATE pipeline.ingestion_job
+                SET status = 'cancelled', completed_at = now(),
+                    lease_owner = NULL, lease_expires_at = NULL,
+                    error_details = jsonb_build_object(
+                        'type', 'batch_cancelled', 'message', %s::text
+                    )
+                WHERE batch_id = %s
+                  AND status IN ('pending', 'leased', 'running')
+                RETURNING job_id
+                """,
+                (reason.strip(), batch_id),
+            ).fetchall()
+            if rows:
+                with connection.cursor() as cursor:
+                    cursor.executemany(
+                        """
+                        INSERT INTO pipeline.ingestion_job_event (
+                            job_id, event_type, worker_id, details
+                        ) VALUES (%s, 'cancelled', %s, %s::jsonb)
+                        """,
+                        [
+                            (
+                                row[0],
+                                cancelled_by.strip(),
+                                json.dumps(
+                                    {
+                                        "reason": "batch_cancelled",
+                                        "message": reason.strip(),
+                                    },
+                                    ensure_ascii=False,
+                                ),
+                            )
+                            for row in rows
+                        ],
+                    )
+            connection.execute(
+                """
+                UPDATE pipeline.ingestion_batch
+                SET status = 'cancelled', completed_at = now()
+                WHERE batch_id = %s
+                """,
+                (batch_id,),
+            )
+    return batch_status(database_url, batch_id)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -884,6 +1111,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = subparsers.add_parser("status")
     status.add_argument("--batch-id", type=UUID, required=True)
+
+    failures = subparsers.add_parser("failures")
+    failures.add_argument("--batch-id", type=UUID, required=True)
+
+    cancel = subparsers.add_parser("cancel")
+    cancel.add_argument("--batch-id", type=UUID, required=True)
+    cancel.add_argument("--cancelled-by", required=True)
+    cancel.add_argument("--reason", required=True)
     return parser
 
 
@@ -943,9 +1178,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             message=args.message,
             retry_delay_seconds=args.retry_delay_seconds,
         )
-    else:
+    elif args.command == "status":
         result = batch_status(args.database_url, args.batch_id)
-    print(json.dumps(asdict(result) if result is not None else None, ensure_ascii=False))
+    elif args.command == "failures":
+        result = batch_failures(args.database_url, args.batch_id)
+    else:
+        result = cancel_batch(
+            args.database_url,
+            args.batch_id,
+            cancelled_by=args.cancelled_by,
+            reason=args.reason,
+        )
+    payload = (
+        [asdict(item) for item in result]
+        if isinstance(result, list)
+        else asdict(result) if result is not None else None
+    )
+    print(json.dumps(payload, ensure_ascii=False))
     return 0
 
 

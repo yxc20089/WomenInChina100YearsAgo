@@ -141,6 +141,18 @@ def load_job_context(database_url: str, job_id: UUID | str) -> PageJobContext:
     )
 
 
+def load_job_status(database_url: str, job_id: UUID | str) -> str:
+    psycopg, _ = _psycopg()
+    with psycopg.connect(database_url) as connection:
+        row = connection.execute(
+            "SELECT status FROM pipeline.ingestion_job WHERE job_id = %s",
+            (job_id,),
+        ).fetchone()
+    if row is None:
+        raise ValueError("Ingestion job does not exist")
+    return row[0]
+
+
 def resolve_workspace_path(workspace_root: Path, value: str | Path) -> Path:
     """Resolve a repository artifact path and refuse workspace escape."""
     root = workspace_root.resolve()
@@ -925,14 +937,26 @@ def run_one(
             execution.artifact_uri,
         )
     except Exception as exc:
-        transition = fail_job(
-            database_url,
-            job_id,
-            worker_id,
-            error_type=type(exc).__name__,
-            message=str(exc),
-            retry_delay_seconds=retry_delay_seconds,
-        )
+        try:
+            transition = fail_job(
+                database_url,
+                job_id,
+                worker_id,
+                error_type=type(exc).__name__,
+                message=str(exc),
+                retry_delay_seconds=retry_delay_seconds,
+            )
+        except ValueError:
+            current_status = load_job_status(database_url, job_id)
+            if current_status == "cancelled":
+                return WorkerRunResult(
+                    lease.job_id,
+                    lease.stage,
+                    "cancelled",
+                    error_type=type(exc).__name__,
+                    message=str(exc),
+                )
+            raise
         return WorkerRunResult(
             lease.job_id,
             lease.stage,

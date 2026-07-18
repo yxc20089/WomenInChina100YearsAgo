@@ -20,7 +20,7 @@ from wic_history.insights import (
     GraphProjectionStatus,
     InsightReport,
 )
-from wic_history.ingestion_jobs import BatchStatus
+from wic_history.ingestion_jobs import BatchStatus, FailedJob
 
 
 class APITests(unittest.TestCase):
@@ -32,6 +32,8 @@ class APITests(unittest.TestCase):
             status="active",
             total_jobs=4,
             ready_jobs=1,
+            blocked_jobs=3,
+            dead_letter_jobs=0,
             by_status={"pending": 4},
             by_stage={"render_lossless": {"pending": 1}},
         )
@@ -40,7 +42,29 @@ class APITests(unittest.TestCase):
             response = TestClient(app).get(f"/api/ingestion/batches/{batch_id}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["ready_jobs"], 1)
+        self.assertEqual(response.json()["blocked_jobs"], 3)
         loader.assert_called_once()
+
+    def test_ingestion_failures_expose_dead_letter_details(self):
+        batch_id = "00000000-0000-0000-0000-000000000001"
+        failed = FailedJob(
+            job_id="00000000-0000-0000-0000-000000000002",
+            stage="ocr",
+            volume_number=219,
+            page_number=308,
+            attempt_count=3,
+            max_attempts=3,
+            error_details={"type": "RuntimeError", "message": "worker exited"},
+            completed_at="2026-07-18T00:00:00+00:00",
+        )
+        with patch("wic_history.api.batch_failures", return_value=[failed]):
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get(
+                f"/api/ingestion/batches/{batch_id}/failures"
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["attempt_count"], 3)
+        self.assertEqual(response.json()[0]["error_details"]["type"], "RuntimeError")
 
     def test_page_image_resolution_is_limited_to_registered_workspace_roots(self):
         with tempfile.TemporaryDirectory() as directory:

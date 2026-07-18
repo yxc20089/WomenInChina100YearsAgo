@@ -33,6 +33,28 @@ class IngestionJobTests(unittest.TestCase):
         self.assertEqual(args.stages, ",".join(PAGE_STAGES))
         self.assertEqual(args.max_pages, 1000)
 
+    def test_terminal_control_commands_require_explicit_scope(self):
+        failures = build_parser().parse_args(
+            [
+                "failures",
+                "--batch-id",
+                "00000000-0000-0000-0000-000000000001",
+            ]
+        )
+        self.assertEqual(failures.command, "failures")
+        cancelled = build_parser().parse_args(
+            [
+                "cancel",
+                "--batch-id",
+                "00000000-0000-0000-0000-000000000001",
+                "--cancelled-by",
+                "operator",
+                "--reason",
+                "cost guard",
+            ]
+        )
+        self.assertEqual(cancelled.cancelled_by, "operator")
+
     def test_bounded_ner_result_must_match_the_plan(self):
         result = {
             "ner_run_id": "00000000-0000-0000-0000-000000000001",

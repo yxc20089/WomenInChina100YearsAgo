@@ -95,6 +95,26 @@ curl http://127.0.0.1:8766/api/ingestion/batches/BATCH_UUID
 ```
 
 The CLI/API report totals by stage and status plus the currently ready count.
+They also report dependency-blocked and dead-letter counts. Inspect terminal
+errors without modifying state:
+
+```bash
+uv run wic-batch --database-url "$DATABASE_URL" failures --batch-id BATCH_UUID
+curl http://127.0.0.1:8766/api/ingestion/batches/BATCH_UUID/failures
+```
+
+When a job exhausts its attempts, pending descendants that can no longer meet
+their dependencies are cancelled automatically. Independent branches continue;
+after all reachable work is terminal, the batch becomes `failed`. An operator
+can stop an active batch, including leased/running jobs, while retaining all
+completed artifacts:
+
+```bash
+uv run wic-batch --database-url "$DATABASE_URL" cancel \
+  --batch-id BATCH_UUID --cancelled-by operator-name \
+  --reason 'documented operational reason'
+```
+
 Detailed lifecycle evidence is append-only in
 `pipeline.ingestion_job_event`; current state is in
 `pipeline.ingestion_job`, and immutable batch scope/configuration is in
@@ -112,8 +132,6 @@ worker separately performed a fresh source-cache render of page 309 to prove the
 non-adoption path: a 6186×8962 source raster was decoded without geometric
 transform and labeled `unreviewed_ingestion`, never gold.
 
-Failed parent jobs still require an operator decision before their blocked
-descendants and batch can reach a terminal state. Cancellation propagation,
-aggregate search/RAG/graph projection jobs, fleet autoscaling, backpressure,
-dead-letter operations and production metrics are subsequent milestones. Do
+Aggregate search/RAG/graph projection jobs, dead-letter replay, fleet
+autoscaling, backpressure and production metrics are subsequent milestones. Do
 not describe the current code as an unattended full-corpus ingestion system.

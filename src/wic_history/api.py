@@ -26,7 +26,7 @@ from .generation import (
     generate,
 )
 from .insights import InsightReport, build_insight_report
-from .ingestion_jobs import batch_status
+from .ingestion_jobs import batch_failures, batch_status
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
 from .review_workflow import (
     ClaimQueueResponse,
@@ -99,11 +99,25 @@ class IngestionBatchStatusView(BaseModel):
     model_config = ConfigDict(extra="forbid")
     batch_id: UUID
     name: str
-    status: Literal["active", "completed", "cancelled"]
+    status: Literal["active", "completed", "failed", "cancelled"]
     total_jobs: int
     ready_jobs: int
+    blocked_jobs: int
+    dead_letter_jobs: int
     by_status: dict[str, int]
     by_stage: dict[str, dict[str, int]]
+
+
+class IngestionFailureView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    job_id: UUID
+    stage: str
+    volume_number: int | None
+    page_number: int | None
+    attempt_count: int
+    max_attempts: int
+    error_details: dict[str, Any] | None
+    completed_at: str | None
 
 
 def scenario_context(
@@ -257,6 +271,23 @@ def create_app(
                 status_code=503, detail=f"Ingestion status unavailable: {exc}"
             ) from exc
         return IngestionBatchStatusView.model_validate(asdict(status))
+
+    @app.get(
+        "/api/ingestion/batches/{batch_id}/failures",
+        response_model=list[IngestionFailureView],
+    )
+    def ingestion_failures(batch_id: UUID) -> list[IngestionFailureView]:
+        try:
+            failures = batch_failures(require_database(), batch_id)
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Ingestion failures unavailable: {exc}"
+            ) from exc
+        return [IngestionFailureView.model_validate(asdict(item)) for item in failures]
 
     @app.post("/api/search", response_model=RetrievalResponse)
     def search(request: SearchRequest) -> RetrievalResponse:

@@ -33,6 +33,7 @@ class DatabaseContractTests(unittest.TestCase):
                 "005_ocr_run_selection.sql",
                 "006_ner_run_input.sql",
                 "007_ingestion_jobs.sql",
+                "008_batch_terminal_states.sql",
             ],
         )
 
@@ -70,6 +71,13 @@ class DatabaseContractTests(unittest.TestCase):
         self.assertIn("lease_expires_at", sql)
         self.assertIn("input_fingerprint", sql)
         self.assertIn("CREATE TABLE pipeline.ingestion_job_event", sql)
+
+    def test_ingestion_batches_have_terminal_failure_state(self):
+        sql = Path("db/migrations/008_batch_terminal_states.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("'failed'", sql)
+        self.assertIn("ingestion_job_dead_letter_idx", sql)
 
 
 if __name__ == "__main__":

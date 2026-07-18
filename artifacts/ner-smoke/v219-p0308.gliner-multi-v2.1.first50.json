@@ -1,0 +1,254 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "5f216a94-e29e-414d-952d-d2c3fa356102",
+  "source_ocr_run_id": "213e0078-59d5-4a56-8811-a59e40ed0800",
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "5b757dbe-9a08-436a-acd1-e8105110ac30",
+    "kind": "ner",
+    "engine": "rules+GLiNER",
+    "model_name": "urchade/gliner_multi-v2.1+historical-women-zh-rules",
+    "model_revision": "443d26d654e0324125a96bebd8e796c14ff2efe6+rules-v1",
+    "software_version": "gliner-0.2.27",
+    "configuration": {
+      "threshold": 0.45,
+      "batch_size": 8,
+      "labels": [
+        "person",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product"
+      ],
+      "rule_set": "historical-women-zh-v1",
+      "word_splitter_language": null,
+      "max_regions": 50
+    },
+    "started_at": "2026-07-18T06:59:30.434168Z",
+    "completed_at": "2026-07-18T06:59:31.193358Z"
+  },
+  "mentions": [
+    {
+      "mention_id": "ddca2830-80bc-44a2-95b2-ac2bfca1eb78",
+      "entity_type": "place",
+      "text": "楚陽",
+      "normalized_text": "楚陽",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "c8a4ffc4-632b-43f5-bc58-f1399ced7259",
+        "polygon": {
+          "points": [
+            {
+              "x": 540.0,
+              "y": 344.0
+            },
+            {
+              "x": 592.0,
+              "y": 344.0
+            },
+            {
+              "x": 592.0,
+              "y": 385.0
+            },
+            {
+              "x": 540.0,
+              "y": 385.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6000171899795532,
+      "run_id": "5b757dbe-9a08-436a-acd1-e8105110ac30",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "97ecd3bb-d7bf-4ac5-ae54-bf01d6e017ce",
+      "entity_type": "organization",
+      "text": "兴医",
+      "normalized_text": "兴医",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "602f3c00-8082-4ebe-afbf-682eab7845ab",
+        "polygon": {
+          "points": [
+            {
+              "x": 1045.0,
+              "y": 410.0
+            },
+            {
+              "x": 1075.0,
+              "y": 412.0
+            },
+            {
+              "x": 1072.0,
+              "y": 458.0
+            },
+            {
+              "x": 1042.0,
+              "y": 456.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.4944438636302948,
+      "run_id": "5b757dbe-9a08-436a-acd1-e8105110ac30",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "534e8f40-e00f-42b0-87bc-64f5f231a078",
+      "entity_type": "person",
+      "text": "謙別劉",
+      "normalized_text": "謙別劉",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "5853f268-61fc-4472-896c-1bb71220c342",
+        "polygon": {
+          "points": [
+            {
+              "x": 638.0,
+              "y": 447.0
+            },
+            {
+              "x": 1140.0,
+              "y": 447.0
+            },
+            {
+              "x": 1140.0,
+              "y": 600.0
+            },
+            {
+              "x": 638.0,
+              "y": 600.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.4507460296154022,
+      "run_id": "5b757dbe-9a08-436a-acd1-e8105110ac30",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d32436e5-1143-4a00-9e35-29855f0e9ce3",
+      "entity_type": "school",
+      "text": "崔中大",
+      "normalized_text": "崔中大",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "efcd7914-6ec0-42d5-b232-eed3ba05fcf8",
+        "polygon": {
+          "points": [
+            {
+              "x": 1620.0,
+              "y": 481.0
+            },
+            {
+              "x": 1722.0,
+              "y": 481.0
+            },
+            {
+              "x": 1722.0,
+              "y": 520.0
+            },
+            {
+              "x": 1620.0,
+              "y": 520.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.5673581957817078,
+      "run_id": "5b757dbe-9a08-436a-acd1-e8105110ac30",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "52625a7d-8a93-4da8-9c95-bb94233c01c3",
+      "entity_type": "person",
+      "text": "人開於",
+      "normalized_text": "人開於",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1724a973-19d0-4146-bc6d-ea12375d5267",
+        "polygon": {
+          "points": [
+            {
+              "x": 2296.0,
+              "y": 531.0
+            },
+            {
+              "x": 2326.0,
+              "y": 531.0
+            },
+            {
+              "x": 2326.0,
+              "y": 595.0
+            },
+            {
+              "x": 2296.0,
+              "y": 595.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.4998641312122345,
+      "run_id": "5b757dbe-9a08-436a-acd1-e8105110ac30",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    }
+  ],
+  "warnings": [
+    "All NER outputs are machine candidates and require benchmark validation or review before entity linking.",
+    "Technical compatibility subset: only the first 50 eligible OCR regions were processed.",
+    "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+    "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+  ]
+}

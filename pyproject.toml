@@ -22,7 +22,7 @@ data = [
   "psycopg[binary]>=3.2,<4",
   "SQLAlchemy>=2.0,<3",
 ]
-ner = ["gliner>=0.2.24,<0.3", "sentence-transformers>=5.0,<6"]
+ner = ["gliner[stanza]>=0.2.27,<0.3", "sentence-transformers>=5.0,<6"]
 ocr = ["paddleocr==3.7.0", "paddlepaddle==3.3.1"]
 test = ["httpx>=0.28,<1"]
 
@@ -44,6 +44,7 @@ wic-relations = "wic_history.relation_pipeline:main"
 wic-rag-export = "wic_history.rag_experiment:main"
 wic-eval = "wic_history.evaluation:main"
 wic-rag-adapter = "wic_history.rag_adapters:main"
+wic-ner-compare = "wic_history.ner_compare:main"
 
 
 [tool.setuptools.packages.find]

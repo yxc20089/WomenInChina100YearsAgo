@@ -1,0 +1,365 @@
+{
+  "agreement": {
+    "candidate_jaccard": 0.02857142857142857,
+    "exact_span_and_type": 2,
+    "same_span_any_type": 4
+  },
+  "common": [
+    {
+      "confidence": 0.6000171899795532,
+      "entity_type": "place",
+      "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "region_id": "c8a4ffc4-632b-43f5-bc58-f1399ced7259",
+      "text": "楚陽",
+      "text_end": 2,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.4507460296154022,
+      "entity_type": "person",
+      "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "region_id": "5853f268-61fc-4472-896c-1bb71220c342",
+      "text": "謙別劉",
+      "text_end": 3,
+      "text_start": 0
+    }
+  ],
+  "left": {
+    "by_entity_type": {
+      "organization": 1,
+      "person": 2,
+      "place": 1,
+      "school": 1
+    },
+    "configuration": {
+      "batch_size": 8,
+      "labels": [
+        "person",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product"
+      ],
+      "max_regions": 50,
+      "rule_set": "historical-women-zh-v1",
+      "threshold": 0.45,
+      "word_splitter_language": null
+    },
+    "duration_seconds": 0.75919,
+    "mean_confidence": 0.5224858820438385,
+    "mean_span_characters": 2.6,
+    "mentions": 5,
+    "model_mentions": 5,
+    "model_name": "urchade/gliner_multi-v2.1+historical-women-zh-rules",
+    "model_revision": "443d26d654e0324125a96bebd8e796c14ff2efe6+rules-v1",
+    "rule_mentions": 0
+  },
+  "left_only_high_confidence": [
+    {
+      "confidence": 0.5673581957817078,
+      "entity_type": "school",
+      "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "region_id": "efcd7914-6ec0-42d5-b232-eed3ba05fcf8",
+      "text": "崔中大",
+      "text_end": 3,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.4998641312122345,
+      "entity_type": "person",
+      "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "region_id": "1724a973-19d0-4146-bc6d-ea12375d5267",
+      "text": "人開於",
+      "text_end": 3,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.4944438636302948,
+      "entity_type": "organization",
+      "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "region_id": "602f3c00-8082-4ebe-afbf-682eab7845ab",
+      "text": "兴医",
+      "text_end": 2,
+      "text_start": 0
+    }
+  ],
+  "right": {
+    "by_entity_type": {
+      "date": 7,
+      "event": 14,
+      "occupation": 8,
+      "person": 15,
+      "place": 15,
+      "product": 3,
+      "publication": 3,
+      "school": 2
+    },
+    "configuration": {
+      "batch_size": 2,
+      "labels": [
+        "person",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product"
+      ],
+      "max_regions": 50,
+      "rule_set": "historical-women-zh-v1",
+      "threshold": 0.45,
+      "word_splitter_language": "zh-hant"
+    },
+    "duration_seconds": 2.57243,
+    "mean_confidence": 0.5538325474333408,
+    "mean_span_characters": 2.582089552238806,
+    "mentions": 67,
+    "model_mentions": 67,
+    "model_name": "knowledgator/gliner-x-large+historical-women-zh-rules",
+    "model_revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0+rules-v1",
+    "rule_mentions": 0
+  },
+  "right_only_high_confidence": [
+    {
+      "confidence": 0.7812900543212891,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "efcd7914-6ec0-42d5-b232-eed3ba05fcf8",
+      "text": "崔中大",
+      "text_end": 3,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.7223041653633118,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "2b722b56-a38a-4ac8-afe9-22ada5542177",
+      "text": "貞雲韓",
+      "text_end": 7,
+      "text_start": 4
+    },
+    {
+      "confidence": 0.7012211680412292,
+      "entity_type": "date",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "e5c1c17a-99b2-47fb-b9c0-2d3eed4cec6a",
+      "text": "三十月二十",
+      "text_end": 15,
+      "text_start": 10
+    },
+    {
+      "confidence": 0.695963978767395,
+      "entity_type": "event",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "23071deb-b777-4b23-9fd4-d91535ac4afd",
+      "text": "國十國民華中",
+      "text_end": 6,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.6727918386459351,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "4ec841ba-827f-4469-aa04-4ea86ca2d959",
+      "text": "登爾竇賽樂桃",
+      "text_end": 10,
+      "text_start": 4
+    },
+    {
+      "confidence": 0.6681773662567139,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "c59759c5-dfa3-4312-b72a-69178496deff",
+      "text": "竇賽樂",
+      "text_end": 8,
+      "text_start": 5
+    },
+    {
+      "confidence": 0.6656679511070251,
+      "entity_type": "occupation",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "4ec841ba-827f-4469-aa04-4ea86ca2d959",
+      "text": "士",
+      "text_end": 3,
+      "text_start": 2
+    },
+    {
+      "confidence": 0.6365838646888733,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "c59759c5-dfa3-4312-b72a-69178496deff",
+      "text": "登爾",
+      "text_end": 5,
+      "text_start": 3
+    },
+    {
+      "confidence": 0.6329595446586609,
+      "entity_type": "occupation",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "2b722b56-a38a-4ac8-afe9-22ada5542177",
+      "text": "主士",
+      "text_end": 3,
+      "text_start": 1
+    },
+    {
+      "confidence": 0.6225464344024658,
+      "entity_type": "date",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "96f6fc0d-ec31-4cfc-871f-742f1f2a5f00",
+      "text": "五十月",
+      "text_end": 10,
+      "text_start": 7
+    },
+    {
+      "confidence": 0.6077207922935486,
+      "entity_type": "product",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "39cb69c8-c5fe-4c8f-bf19-ad4cb27451a8",
+      "text": "茶",
+      "text_end": 1,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.6043952703475952,
+      "entity_type": "publication",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "e30fe77a-be1f-485c-9913-ccf9a36b6715",
+      "text": "五卷",
+      "text_end": 2,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.5989023447036743,
+      "entity_type": "place",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "1607d499-3da6-444b-a7fa-c2625fd32e4f",
+      "text": "影廬",
+      "text_end": 4,
+      "text_start": 2
+    },
+    {
+      "confidence": 0.5971058011054993,
+      "entity_type": "place",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "030ef793-d9dc-4be2-9af5-53a3888859f1",
+      "text": "水",
+      "text_end": 3,
+      "text_start": 2
+    },
+    {
+      "confidence": 0.5951468348503113,
+      "entity_type": "place",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "3cf99730-c6f8-493f-8698-d1bcc0546455",
+      "text": "路川四北",
+      "text_end": 8,
+      "text_start": 4
+    },
+    {
+      "confidence": 0.5917611122131348,
+      "entity_type": "date",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "0b22642c-8ebc-4ec6-8bd5-80757d574fb8",
+      "text": "十三月十二",
+      "text_end": 10,
+      "text_start": 5
+    },
+    {
+      "confidence": 0.5874433517456055,
+      "entity_type": "place",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "3cf99730-c6f8-493f-8698-d1bcc0546455",
+      "text": "南里德",
+      "text_end": 3,
+      "text_start": 0
+    },
+    {
+      "confidence": 0.5803573131561279,
+      "entity_type": "place",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "294fede6-87ee-4c9b-ac4e-f11a3a76c3fb",
+      "text": "大安",
+      "text_end": 4,
+      "text_start": 2
+    },
+    {
+      "confidence": 0.5800755023956299,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "a9c8dc40-1b90-4c01-9d12-78ee8c2d1295",
+      "text": "朱",
+      "text_end": 5,
+      "text_start": 4
+    },
+    {
+      "confidence": 0.5778713822364807,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "c59759c5-dfa3-4312-b72a-69178496deff",
+      "text": "明影",
+      "text_end": 12,
+      "text_start": 10
+    },
+    {
+      "confidence": 0.5740694999694824,
+      "entity_type": "school",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "71b58f34-5d93-4c76-ac77-78c90578eb92",
+      "text": "武大央",
+      "text_end": 4,
+      "text_start": 1
+    },
+    {
+      "confidence": 0.5670192837715149,
+      "entity_type": "person",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "9f263f6d-f991-45bc-8524-7b9af4f9e6c3",
+      "text": "電内里德",
+      "text_end": 10,
+      "text_start": 6
+    },
+    {
+      "confidence": 0.5664172768592834,
+      "entity_type": "event",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "b2dd16ca-8a69-47f9-91d1-deea9380aea5",
+      "text": "事故",
+      "text_end": 4,
+      "text_start": 2
+    },
+    {
+      "confidence": 0.5646345019340515,
+      "entity_type": "product",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "39cb69c8-c5fe-4c8f-bf19-ad4cb27451a8",
+      "text": "酒",
+      "text_end": 3,
+      "text_start": 2
+    },
+    {
+      "confidence": 0.5594701766967773,
+      "entity_type": "event",
+      "extractor": "gliner:knowledgator/gliner-x-large@4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "region_id": "4a2c615e-4e6e-4b49-bb22-ed76c073328b",
+      "text": "次三映",
+      "text_end": 21,
+      "text_start": 18
+    }
+  ],
+  "schema_version": "1.0",
+  "source_ocr_run_id": "213e0078-59d5-4a56-8811-a59e40ed0800",
+  "warnings": [
+    "This report measures candidate volume and agreement, not precision, recall, or historical correctness.",
+    "Only double-reviewed gold spans can select a production NER model or threshold."
+  ]
+}

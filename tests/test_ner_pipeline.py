@@ -3,10 +3,26 @@ from __future__ import annotations
 import unittest
 
 from wic_history.evidence import EntityType
-from wic_history.ner_pipeline import RulePredictor, SpanCandidate, merge_candidates
+from wic_history.ner_pipeline import RulePredictor, SpanCandidate, build_parser, merge_candidates
 
 
 class NERPipelineTests(unittest.TestCase):
+    def test_cli_accepts_fixed_corpus_language(self):
+        args = build_parser().parse_args(
+            [
+                "--ocr-artifact",
+                "ocr.json",
+                "--output",
+                "ner.json",
+                "--word-splitter-language",
+                "zh-hant",
+                "--max-regions",
+                "50",
+            ]
+        )
+        self.assertEqual(args.word_splitter_language, "zh-hant")
+        self.assertEqual(args.max_regions, 50)
+
     def test_rules_return_exact_offsets(self):
         text = "上海女子學校女學生讀申報"
         spans = RulePredictor().predict([text])[0]

@@ -8,7 +8,7 @@
       "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
       "license": "Apache-2.0",
       "role": "primary multilingual open-span challenger",
-      "evidence": "Official model card reports zh_pud F1 0.6794; no historical, Traditional-Chinese, or OCR benchmark."
+      "evidence": "Official model card reports zh_pud F1 0.6794; no historical, Traditional-Chinese, or OCR benchmark. A local first-50-region compatibility run required a fixed zh-hant Stanza splitter and produced 67 noisy candidates versus 5 from multi-v2.1, with only 2 exact span/type agreements; this does not establish accuracy."
     },
     {
       "id": "sikubert",

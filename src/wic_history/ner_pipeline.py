@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Protocol, Sequence
+from typing import Protocol, Sequence
 
 from .evidence import (
     EntityMentionCandidate,
@@ -112,8 +112,42 @@ class RulePredictor:
         return outputs
 
 
+class FixedStanzaLanguageSplitter:
+    """Use a declared corpus language instead of detecting each noisy OCR region."""
+
+    def __init__(self, language: str):
+        try:
+            import stanza
+        except ImportError as exc:  # pragma: no cover - optional challenger
+            raise RuntimeError("Install the NER extra: uv sync --extra ner") from exc
+        try:
+            self.pipeline = stanza.Pipeline(
+                language,
+                processors="tokenize",
+                verbose=False,
+                download_method=None,
+                tokenize_no_ssplit=True,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"Stanza tokenizer '{language}' is unavailable. Download it explicitly with "
+                f"python -c \"import stanza; stanza.download('{language}', processors='tokenize')\""
+            ) from exc
+
+    def __call__(self, text: str):
+        for sentence in self.pipeline(text).sentences:
+            for word in sentence.words:
+                yield word.text, word.start_char, word.end_char
+
+
 class GLiNERPredictor:
-    def __init__(self, model_name: str, revision: str, batch_size: int = 8):
+    def __init__(
+        self,
+        model_name: str,
+        revision: str,
+        batch_size: int = 8,
+        word_splitter_language: str | None = None,
+    ):
         try:
             from gliner import GLiNER
         except ImportError as exc:  # pragma: no cover - minimal installations
@@ -126,6 +160,11 @@ class GLiNERPredictor:
             revision=revision,
             map_location="cpu",
         )
+        if word_splitter_language:
+            words_splitter = getattr(self.model.data_processor, "words_splitter", None)
+            if words_splitter is None or not hasattr(words_splitter, "splitter"):
+                raise RuntimeError("This GLiNER model does not expose a replaceable word splitter")
+            words_splitter.splitter = FixedStanzaLanguageSplitter(word_splitter_language)
         self.model.eval()
 
     def predict(self, texts: list[str], threshold: float) -> list[list[SpanCandidate]]:
@@ -184,9 +223,13 @@ def create_ner_artifact(
     model_revision: str,
     threshold: float,
     batch_size: int,
+    word_splitter_language: str | None = None,
+    max_regions: int | None = None,
 ) -> NERArtifact:
     started_at = datetime.now(timezone.utc)
     eligible = [region for region in ocr.regions if len(region.raw_text.strip()) >= 2]
+    if max_regions is not None:
+        eligible = eligible[:max_regions]
     texts = [region.raw_text for region in eligible]
     predicted_sets = [predictor.predict(texts, threshold) for predictor in predictors]
     candidates = merge_candidates(*predicted_sets)
@@ -201,6 +244,8 @@ def create_ner_artifact(
             "batch_size": batch_size,
             "labels": list(MODEL_LABELS),
             "rule_set": "historical-women-zh-v1",
+            "word_splitter_language": word_splitter_language,
+            "max_regions": max_regions,
         },
         started_at=started_at,
         completed_at=datetime.now(timezone.utc),
@@ -232,6 +277,10 @@ def create_ner_artifact(
     warnings = [
         "All NER outputs are machine candidates and require benchmark validation or review before entity linking."
     ]
+    if max_regions is not None:
+        warnings.append(
+            f"Technical compatibility subset: only the first {max_regions} eligible OCR regions were processed."
+        )
     warnings.extend(ocr.warnings)
     return NERArtifact(
         source_ocr_run_id=ocr.run.run_id,
@@ -249,6 +298,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--revision", default=DEFAULT_MODEL_REVISION)
     parser.add_argument("--threshold", type=float, default=0.45)
     parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument(
+        "--word-splitter-language",
+        help="Force a pre-downloaded Stanza tokenizer language, e.g. zh-hant",
+    )
+    parser.add_argument("--max-regions", type=int, help="Bound a technical compatibility run")
     parser.add_argument("--rules-only", action="store_true")
     return parser
 
@@ -257,13 +311,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if not 0 <= args.threshold <= 1:
         raise SystemExit("--threshold must be between 0 and 1")
+    if args.max_regions is not None and args.max_regions < 1:
+        raise SystemExit("--max-regions must be positive")
     ocr = OCRPageArtifact.model_validate_json(args.ocr_artifact.read_text(encoding="utf-8"))
     predictors: list[BatchPredictor] = [RulePredictor()]
     if args.rules_only:
         model_name = "historical-women-zh-rules"
         model_revision = "1"
     else:
-        predictors.append(GLiNERPredictor(args.model, args.revision, args.batch_size))
+        predictors.append(
+            GLiNERPredictor(
+                args.model,
+                args.revision,
+                args.batch_size,
+                args.word_splitter_language,
+            )
+        )
         model_name = f"{args.model}+historical-women-zh-rules"
         model_revision = f"{args.revision}+rules-v1"
     artifact = create_ner_artifact(
@@ -273,6 +336,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         model_revision,
         args.threshold,
         args.batch_size,
+        args.word_splitter_language,
+        args.max_regions,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")

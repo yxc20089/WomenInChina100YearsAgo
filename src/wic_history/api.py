@@ -6,6 +6,7 @@ import argparse
 import os
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,7 +24,19 @@ from .generation import (
     TextGenerator,
     generate,
 )
+from .insights import InsightReport, build_insight_report
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
+from .review_workflow import (
+    EntityResolutionRequest,
+    MentionQueueResponse,
+    MentionReviewRequest,
+    ReviewConflictError,
+    ReviewNotFoundError,
+    ReviewResult,
+    list_mention_queue,
+    resolve_entity,
+    review_mention,
+)
 
 
 class SearchRequest(BaseModel):
@@ -71,6 +84,9 @@ def create_app(
     index: str = DEFAULT_ALIAS,
     embedder_factory: Callable[[], BGEEmbedder] = BGEEmbedder,
     generator_factory: Callable[[], TextGenerator | None] = OpenAICompatibleGenerator.from_environment,
+    neo4j_uri: str | None = None,
+    neo4j_user: str | None = None,
+    neo4j_password: str | None = None,
 ) -> Any:
     try:
         from fastapi import FastAPI, HTTPException
@@ -81,6 +97,9 @@ def create_app(
 
     search_url = opensearch_url or os.environ.get("OPENSEARCH_URL", "http://127.0.0.1:9200")
     db_url = database_url or os.environ.get("DATABASE_URL")
+    graph_uri = neo4j_uri or os.environ.get("NEO4J_URI")
+    graph_user = neo4j_user or os.environ.get("NEO4J_USER", "neo4j")
+    graph_password = neo4j_password or os.environ.get("NEO4J_PASSWORD")
     static_dir = Path(__file__).with_name("static")
     app = FastAPI(title="Women in China 100 Years Ago Research API", version="0.1.0")
     app.state.embedder = None
@@ -139,6 +158,18 @@ def create_app(
                 status_code=503, detail=f"Reviewed claim context unavailable: {exc}"
             ) from exc
 
+    def require_database() -> str:
+        if not db_url:
+            raise HTTPException(status_code=503, detail="DATABASE_URL is not configured")
+        return db_url
+
+    def review_error(exc: Exception) -> None:
+        if isinstance(exc, ReviewNotFoundError):
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        if isinstance(exc, ReviewConflictError):
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(status_code=503, detail=f"Review workflow unavailable: {exc}") from exc
+
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         try:
@@ -151,6 +182,7 @@ def create_app(
             "status": "ok" if search_ok else "degraded",
             "opensearch": search_ok,
             "database_configured": bool(db_url),
+            "neo4j_configured": bool(graph_uri and graph_password),
             "generation_configured": bool(os.environ.get("LLM_BASE_URL") and os.environ.get("LLM_MODEL")),
             "index": index,
         }
@@ -179,10 +211,68 @@ def create_app(
         except Exception as exc:
             raise HTTPException(status_code=503, detail=f"Generation unavailable: {exc}") from exc
 
+    @app.get("/api/review/mentions", response_model=MentionQueueResponse)
+    def mention_queue(
+        status: Literal["candidate", "reviewed", "rejected"] = "candidate",
+        limit: int = 25,
+        offset: int = 0,
+        model_name: str | None = None,
+    ) -> MentionQueueResponse:
+        if not 1 <= limit <= 100 or offset < 0:
+            raise HTTPException(status_code=422, detail="limit must be 1–100 and offset nonnegative")
+        try:
+            return list_mention_queue(
+                require_database(),
+                status,
+                limit=limit,
+                offset=offset,
+                model_name=model_name,
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            review_error(exc)
+
+    @app.post("/api/review/mentions/{mention_id}", response_model=ReviewResult)
+    def decide_mention(mention_id: UUID, request: MentionReviewRequest) -> ReviewResult:
+        try:
+            return review_mention(require_database(), mention_id, request)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            review_error(exc)
+
+    @app.post(
+        "/api/review/mentions/{mention_id}/entity-resolution",
+        response_model=ReviewResult,
+    )
+    def decide_entity(
+        mention_id: UUID, request: EntityResolutionRequest
+    ) -> ReviewResult:
+        try:
+            return resolve_entity(require_database(), mention_id, request)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            review_error(exc)
+
+    @app.get("/api/insights", response_model=InsightReport)
+    def insights() -> InsightReport:
+        try:
+            return build_insight_report(
+                require_database(),
+                neo4j_uri=graph_uri,
+                neo4j_user=graph_user,
+                neo4j_password=graph_password,
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"Insight analysis unavailable: {exc}") from exc
+
     @app.get("/api/page-image/{volume_number}/{page_number}")
     def page_image(volume_number: int, page_number: int) -> Any:
-        if not db_url:
-            raise HTTPException(status_code=503, detail="DATABASE_URL is not configured")
+        require_database()
         try:
             import psycopg
 
@@ -224,6 +314,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--opensearch-url", default=os.environ.get("OPENSEARCH_URL"))
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
     parser.add_argument("--index", default=DEFAULT_ALIAS)
+    parser.add_argument("--neo4j-uri", default=os.environ.get("NEO4J_URI"))
+    parser.add_argument("--neo4j-user", default=os.environ.get("NEO4J_USER", "neo4j"))
+    parser.add_argument("--neo4j-password", default=os.environ.get("NEO4J_PASSWORD"))
     return parser
 
 
@@ -234,7 +327,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("Install the API extra: uv sync --extra api") from exc
     uvicorn.run(
-        create_app(args.opensearch_url, args.database_url, args.index),
+        create_app(
+            args.opensearch_url,
+            args.database_url,
+            args.index,
+            neo4j_uri=args.neo4j_uri,
+            neo4j_user=args.neo4j_user,
+            neo4j_password=args.neo4j_password,
+        ),
         host=args.host,
         port=args.port,
         reload=False,

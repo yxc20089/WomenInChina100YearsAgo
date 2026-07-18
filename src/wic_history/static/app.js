@@ -10,7 +10,214 @@ const sceneButton = document.querySelector('#scene-button');
 const generationPanel = document.querySelector('#generation-panel');
 const generationLabel = document.querySelector('#generation-label');
 const generationOutput = document.querySelector('#generation-output');
+const reviewButton = document.querySelector('#review-button');
+const reviewPanel = document.querySelector('#review-panel');
+const reviewItems = document.querySelector('#review-items');
+const reviewSummary = document.querySelector('#review-summary');
+const reviewerInput = document.querySelector('#reviewer');
+const moreReview = document.querySelector('#more-review');
+const insightsButton = document.querySelector('#insights-button');
+const insightsPanel = document.querySelector('#insights-panel');
 let lastRequest = null;
+let reviewOffset = 0;
+const reviewLimit = 20;
+let reviewTotal = 0;
+
+reviewerInput.value = localStorage.getItem('wic-reviewer') || '';
+reviewerInput.addEventListener('change', () => {
+  localStorage.setItem('wic-reviewer', reviewerInput.value.trim());
+});
+
+function reviewer() {
+  const value = reviewerInput.value.trim();
+  if (!value) {
+    reviewerInput.focus();
+    throw new Error('Enter a reviewer name before making decisions.');
+  }
+  return value;
+}
+
+function appendHighlightedText(node, text, start, end) {
+  node.replaceChildren();
+  node.append(document.createTextNode(text.slice(0, start)));
+  const mark = document.createElement('mark');
+  mark.textContent = text.slice(start, end);
+  node.append(mark, document.createTextNode(text.slice(end)));
+}
+
+async function postReview(url, body) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({...body, review_id: crypto.randomUUID(), reviewer: reviewer()}),
+  });
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  return response.json();
+}
+
+function renderResolutionActions(container, item) {
+  container.replaceChildren();
+  container.hidden = false;
+  const nil = item.link_candidates.find(candidate => candidate.is_nil);
+  const existing = item.link_candidates.filter(candidate => !candidate.is_nil);
+  if (existing.length) {
+    const select = document.createElement('select');
+    existing.forEach(candidate => {
+      const option = document.createElement('option');
+      option.value = candidate.link_candidate_id;
+      option.textContent = `${candidate.proposed_canonical_name} · ${candidate.score.toFixed(3)}`;
+      select.append(option);
+    });
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.textContent = 'Link reviewed entity';
+    link.addEventListener('click', async () => {
+      try {
+        await postReview(`/api/review/mentions/${item.mention_id}/entity-resolution`, {
+          selected_link_candidate_id: select.value, action: 'link_existing',
+        });
+        container.textContent = 'Linked to reviewed entity.';
+      } catch (error) { container.textContent = error.message; }
+    });
+    container.append(select, link);
+  }
+  if (nil) {
+    const create = document.createElement('button');
+    create.type = 'button';
+    create.textContent = 'Create reviewed entity';
+    create.addEventListener('click', async () => {
+      const name = window.prompt('Canonical name for the new reviewed entity:', item.mention_text);
+      if (!name || !name.trim()) return;
+      if (!window.confirm(`Create a reviewed ${item.entity_type} entity named “${name.trim()}”?`)) return;
+      try {
+        const result = await postReview(`/api/review/mentions/${item.mention_id}/entity-resolution`, {
+          selected_link_candidate_id: nil.link_candidate_id,
+          action: 'create_new',
+          canonical_name: name.trim(),
+        });
+        container.textContent = `Created reviewed entity ${result.entity_id}.`;
+      } catch (error) { container.textContent = error.message; }
+    });
+    const keepNil = document.createElement('button');
+    keepNil.type = 'button';
+    keepNil.className = 'quiet';
+    keepNil.textContent = 'Keep unresolved / NIL';
+    keepNil.addEventListener('click', async () => {
+      try {
+        await postReview(`/api/review/mentions/${item.mention_id}/entity-resolution`, {
+          selected_link_candidate_id: nil.link_candidate_id, action: 'keep_nil',
+        });
+        container.textContent = 'Accepted span remains unresolved (NIL).';
+      } catch (error) { container.textContent = error.message; }
+    });
+    container.append(create, keepNil);
+  }
+  if (!item.link_candidates.length) {
+    container.textContent = 'No entity-link candidates exist for this model run yet.';
+  }
+}
+
+function renderMention(item) {
+  const fragment = document.querySelector('#mention-template').content.cloneNode(true);
+  const card = fragment.querySelector('.mention-card');
+  fragment.querySelector('.mention-meta').textContent = `${item.entity_type} · “${item.mention_text}” · ${(item.confidence || 0).toFixed(3)}`;
+  appendHighlightedText(fragment.querySelector('.mention-context'), item.region_text, item.text_start, item.text_end);
+  fragment.querySelector('.mention-provenance').textContent = `Volume ${item.volume_number} · ${item.publication_year} · page ${item.page_number} · ${item.model_name} @ ${item.model_revision}`;
+  fragment.querySelector('.mention-scan').href = `/api/page-image/${item.volume_number}/${item.page_number}`;
+  const statusNode = fragment.querySelector('.decision-status');
+  const resolution = fragment.querySelector('.resolution-actions');
+  const buttons = fragment.querySelectorAll('.accept-mention, .reject-mention, .defer-mention');
+  async function decide(decision) {
+    buttons.forEach(button => { button.disabled = true; });
+    try {
+      const result = await postReview(`/api/review/mentions/${item.mention_id}`, {decision});
+      statusNode.textContent = `Recorded: ${result.action} · ${result.review_id}`;
+      if (decision === 'accept') renderResolutionActions(resolution, item);
+      else card.classList.add('decided');
+    } catch (error) {
+      statusNode.textContent = error.message;
+      buttons.forEach(button => { button.disabled = false; });
+    }
+  }
+  fragment.querySelector('.accept-mention').addEventListener('click', () => decide('accept'));
+  fragment.querySelector('.reject-mention').addEventListener('click', () => decide('reject'));
+  fragment.querySelector('.defer-mention').addEventListener('click', () => decide('needs_review'));
+  reviewItems.append(fragment);
+}
+
+async function loadReview(reset = false) {
+  if (reset) {
+    reviewOffset = 0;
+    reviewItems.replaceChildren();
+  }
+  reviewSummary.textContent = 'Loading candidates…';
+  const response = await fetch(`/api/review/mentions?status=candidate&limit=${reviewLimit}&offset=${reviewOffset}`);
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  const data = await response.json();
+  reviewTotal = data.total;
+  data.items.forEach(renderMention);
+  reviewOffset += data.items.length;
+  reviewSummary.textContent = `${reviewOffset} of ${reviewTotal} candidate spans loaded`;
+  moreReview.hidden = reviewOffset >= reviewTotal;
+}
+
+reviewButton.addEventListener('click', async () => {
+  reviewPanel.hidden = false;
+  reviewPanel.scrollIntoView({behavior: 'smooth'});
+  try { await loadReview(true); } catch (error) { reviewSummary.textContent = error.message; }
+});
+document.querySelector('#close-review').addEventListener('click', () => {
+  reviewPanel.hidden = true;
+  document.querySelector('#search-form').scrollIntoView({behavior: 'smooth'});
+});
+document.querySelector('#refresh-review').addEventListener('click', () => loadReview(true));
+moreReview.addEventListener('click', () => loadReview(false));
+
+async function loadInsights() {
+  const counts = document.querySelector('#insight-counts');
+  const warningsNode = document.querySelector('#insight-warnings');
+  const itemsNode = document.querySelector('#insight-items');
+  counts.textContent = 'Loading reviewed graph…';
+  warningsNode.replaceChildren();
+  itemsNode.replaceChildren();
+  const response = await fetch('/api/insights');
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  const data = await response.json();
+  const values = data.evidence_counts;
+  counts.textContent = `${values.reviewed_entities} entities · ${values.reviewed_mentions} mentions · ${values.reviewed_claims} claims · ${values.reviewed_claim_evidence} evidence links`;
+  data.warnings.forEach(message => {
+    const warning = document.createElement('p');
+    warning.className = 'warning';
+    warning.textContent = message;
+    warningsNode.append(warning);
+  });
+  data.items.forEach(item => {
+    const card = document.createElement('article');
+    card.className = 'mention-card';
+    const label = document.createElement('p');
+    label.className = 'eyebrow';
+    label.textContent = item.kind.replaceAll('_', ' ');
+    const heading = document.createElement('h3');
+    heading.textContent = item.title;
+    const summary = document.createElement('p');
+    summary.textContent = item.summary;
+    const details = document.createElement('pre');
+    details.textContent = JSON.stringify({metrics: item.metrics, entity_ids: item.entity_ids, claim_ids: item.claim_ids, supporting_page_ids: item.supporting_page_ids}, null, 2);
+    card.append(label, heading, summary, details);
+    itemsNode.append(card);
+  });
+}
+
+insightsButton.addEventListener('click', async () => {
+  insightsPanel.hidden = false;
+  insightsPanel.scrollIntoView({behavior: 'smooth'});
+  try { await loadInsights(); } catch (error) {
+    document.querySelector('#insight-counts').textContent = error.message;
+  }
+});
+document.querySelector('#close-insights').addEventListener('click', () => {
+  insightsPanel.hidden = true;
+});
 
 function requestBody() {
   const body = {

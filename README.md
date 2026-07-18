@@ -97,7 +97,10 @@ uv run wic-graph --database-url "$DATABASE_URL" --neo4j-uri "$NEO4J_URI" \
   --neo4j-user "$NEO4J_USER" --neo4j-password "$NEO4J_PASSWORD"
 uv run wic-rag-export --database-url "$DATABASE_URL" \
   --output artifacts/rag-smoke --volume 219 --page 308
-uv run wic-api --host 127.0.0.1 --port 8766
+uv run wic-api --host 127.0.0.1 --port 8766 \
+  --database-url "$DATABASE_URL" --opensearch-url "$OPENSEARCH_URL" \
+  --neo4j-uri "$NEO4J_URI" --neo4j-user "$NEO4J_USER" \
+  --neo4j-password "$NEO4J_PASSWORD"
 ```
 
 Open `http://127.0.0.1:8766` for lexical, dense, or hybrid search. Scenario
@@ -106,6 +109,20 @@ smoke data it abstains explicitly. `LLM_BASE_URL` and `LLM_MODEL` optionally
 enable a local or hosted OpenAI-compatible chat endpoint. Research briefs must
 label OCR as unreviewed leads; reconstructed scenes hard-abstain until reviewed
 claims exist.
+
+The same interface exposes a historian review queue and reviewed-only insight
+signals. A reviewer first accepts or rejects the exact NER span, then makes a
+separate entity-resolution decision: link to a reviewed candidate, create a new
+reviewed entity from the explicit NIL option, or keep it unresolved. Each action
+is transactionally audited and idempotent by review UUID. The current 187
+machine candidates are unreviewed smoke outputs; opening the queue does not
+promote them. Re-run `wic-graph` after genuine reviews before using the graph
+insight view. Insight cards are analytical leads and never become historical
+claims automatically.
+
+The researcher API binds to localhost by default and currently has no
+authentication or authorization layer. Do not expose it outside a trusted local
+development environment.
 
 Run the scored citation-retrieval smoke comparison and validate the common RAG
 input with:

@@ -11,6 +11,10 @@
     <p class="eyebrow">申報 · 1872–1949</p>
     <h1>Women in China<br>100 Years Ago</h1>
     <p class="lede">Search the archive’s emerging evidence layer. Every result leads back to a scan region; machine readings remain visibly provisional.</p>
+    <div class="header-actions">
+      <button id="insights-button" class="quiet" type="button">Reviewed insights</button>
+      <button id="review-button" class="quiet" type="button">Review machine candidates →</button>
+    </div>
   </header>
 
   <main>
@@ -55,6 +59,37 @@
       <p>This bundle separates retrieved OCR from reviewed claims and carries mandatory model instructions.</p>
       <pre id="context-json"></pre>
     </section>
+    <section id="review-panel" class="review-panel" hidden>
+      <div class="review-heading">
+        <div>
+          <p class="eyebrow">Human review gate</p>
+          <h2>NER candidate queue</h2>
+        </div>
+        <button id="close-review" class="quiet" type="button">Back to search</button>
+      </div>
+      <p>Accepting a span does not create an entity. Entity resolution is a separate, explicit decision recorded with your reviewer name.</p>
+      <label class="reviewer-label">Reviewer
+        <input id="reviewer" autocomplete="name" placeholder="Your name or researcher ID">
+      </label>
+      <div class="review-toolbar">
+        <span id="review-summary">Not loaded</span>
+        <button id="refresh-review" class="quiet" type="button">Refresh</button>
+      </div>
+      <div id="review-items"></div>
+      <button id="more-review" type="button" hidden>Load more</button>
+    </section>
+    <section id="insights-panel" class="review-panel" hidden>
+      <div class="review-heading">
+        <div>
+          <p class="eyebrow">Reviewed graph analysis</p>
+          <h2>Research leads, not facts</h2>
+        </div>
+        <button id="close-insights" class="quiet" type="button">Close</button>
+      </div>
+      <div id="insight-counts" class="insight-counts"></div>
+      <div id="insight-warnings"></div>
+      <div id="insight-items"></div>
+    </section>
   </main>
 
   <template id="result-template">
@@ -70,6 +105,21 @@
         </details>
         <a class="scan-link" target="_blank" rel="noopener">Open page scan ↗</a>
       </div>
+    </article>
+  </template>
+  <template id="mention-template">
+    <article class="mention-card">
+      <div class="mention-meta"></div>
+      <p class="mention-context"></p>
+      <p class="mention-provenance"></p>
+      <div class="mention-actions">
+        <button class="accept-mention" type="button">Accept span</button>
+        <button class="reject-mention danger" type="button">Reject</button>
+        <button class="defer-mention quiet" type="button">Needs review</button>
+        <a class="mention-scan" target="_blank" rel="noopener">Open scan ↗</a>
+      </div>
+      <div class="resolution-actions" hidden></div>
+      <p class="decision-status" aria-live="polite"></p>
     </article>
   </template>
   <script src="/static/app.js"></script>

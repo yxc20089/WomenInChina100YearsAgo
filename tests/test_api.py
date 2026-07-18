@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 
 from wic_history.api import build_parser, create_app, scenario_context
 from wic_history.evidence import RetrievalMode, RetrievalResponse
+from wic_history.review_workflow import MentionQueueResponse
+from wic_history.insights import EvidenceCounts, InsightReport
 
 
 class APITests(unittest.TestCase):
@@ -54,6 +56,43 @@ class APITests(unittest.TestCase):
             json={"query": "女學生", "mode": "lexical", "year_start": 1930, "year_end": 1920},
         )
         self.assertEqual(response.status_code, 422)
+
+    def test_review_queue_is_exposed_without_mutation(self):
+        queue = MentionQueueResponse(
+            status="candidate", total=0, offset=0, limit=25, items=[]
+        )
+        with patch("wic_history.api.list_mention_queue", return_value=queue) as loader:
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get("/api/review/mentions")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["items"], [])
+        loader.assert_called_once()
+
+    def test_entity_creation_request_requires_name(self):
+        app = create_app(database_url="postgresql://example")
+        response = TestClient(app).post(
+            "/api/review/mentions/00000000-0000-0000-0000-000000000001/entity-resolution",
+            json={
+                "selected_link_candidate_id": "00000000-0000-0000-0000-000000000002",
+                "action": "create_new",
+                "reviewer": "historian-a",
+            },
+        )
+        self.assertEqual(response.status_code, 422)
+
+    def test_reviewed_insight_report_is_exposed(self):
+        report = InsightReport(
+            generated_at="2026-07-18T00:00:00Z",
+            evidence_counts=EvidenceCounts(),
+            items=[],
+            warnings=["no reviewed data"],
+        )
+        with patch("wic_history.api.build_insight_report", return_value=report) as builder:
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get("/api/insights")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["evidence_counts"]["reviewed_entities"], 0)
+        builder.assert_called_once()
 
 
 if __name__ == "__main__":

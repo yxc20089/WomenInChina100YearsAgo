@@ -23,7 +23,10 @@ class DatabaseContractTests(unittest.TestCase):
 
     def test_migrations_are_ordered(self):
         files = migration_files(Path("db/migrations"))
-        self.assertEqual([path.name for path in files], ["001_evidence_schema.sql"])
+        self.assertEqual(
+            [path.name for path in files],
+            ["001_evidence_schema.sql", "002_review_workflow_indexes.sql"],
+        )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,204 @@
+"""Reviewed-only analytical signals from PostgreSQL and the Neo4j projection."""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from enum import StrEnum
+from typing import Any
+from uuid import UUID
+
+from pydantic import Field
+
+from .evidence import StrictModel
+
+
+class InsightKind(StrEnum):
+    NETWORK_BRIDGE = "network_bridge"
+    LONGITUDINAL_PRESENCE = "longitudinal_presence"
+    MULTI_SOURCE_CLAIM = "multi_source_claim"
+
+
+class EvidenceCounts(StrictModel):
+    reviewed_entities: int = 0
+    reviewed_mentions: int = 0
+    reviewed_claims: int = 0
+    reviewed_claim_evidence: int = 0
+
+
+class InsightItem(StrictModel):
+    kind: InsightKind
+    title: str
+    summary: str
+    entity_ids: list[UUID] = Field(default_factory=list)
+    claim_ids: list[UUID] = Field(default_factory=list)
+    supporting_page_ids: list[UUID] = Field(default_factory=list)
+    metrics: dict[str, Any] = Field(default_factory=dict)
+    epistemic_label: str = "analytical_signal_not_historical_claim"
+
+
+class InsightReport(StrictModel):
+    generated_at: datetime
+    evidence_counts: EvidenceCounts
+    items: list[InsightItem]
+    warnings: list[str] = Field(default_factory=list)
+
+
+EVIDENCE_COUNTS_SQL = """
+    SELECT
+      (SELECT count(*) FROM evidence.entity WHERE entity_status = 'reviewed') AS reviewed_entities,
+      (SELECT count(*) FROM evidence.entity_mention WHERE mention_status = 'reviewed') AS reviewed_mentions,
+      (SELECT count(*) FROM evidence.claim WHERE claim_status = 'reviewed') AS reviewed_claims,
+      (SELECT count(*) FROM evidence.claim_evidence ce
+         JOIN evidence.claim c USING (claim_id)
+        WHERE c.claim_status = 'reviewed') AS reviewed_claim_evidence
+"""
+
+GRAPH_HUBS_CYPHER = """
+    MATCH (entity:WICProjection:WICEntity)
+    OPTIONAL MATCH (entity)-[relationship:RELATED_TO]-(other:WICEntity)
+    WITH entity, count(DISTINCT other) AS degree,
+         [value IN collect(DISTINCT relationship.predicate) WHERE value IS NOT NULL] AS predicates
+    WHERE degree >= 2
+    RETURN entity.entity_id AS entity_id,
+           entity.canonical_name AS canonical_name,
+           entity.entity_type AS entity_type,
+           degree, predicates
+    ORDER BY degree DESC, canonical_name
+    LIMIT 20
+"""
+
+ENTITY_TIMELINES_CYPHER = """
+    MATCH (entity:WICProjection:WICEntity)-[:MENTIONED_AS]->
+          (:WICProjection:WICRegion)-[:ON_PAGE]->(page:WICProjection:WICPage)
+    WITH entity, count(*) AS mention_count,
+         collect(DISTINCT page.publication_year) AS years,
+         collect(DISTINCT page.page_id) AS page_ids
+    WHERE size(years) >= 2
+    RETURN entity.entity_id AS entity_id,
+           entity.canonical_name AS canonical_name,
+           entity.entity_type AS entity_type,
+           mention_count, years, page_ids
+    ORDER BY size(years) DESC, mention_count DESC, canonical_name
+    LIMIT 20
+"""
+
+MULTI_SOURCE_CLAIMS_CYPHER = """
+    MATCH (claim:WICProjection:WICClaim)-[:EVIDENCED_BY]->
+          (:WICProjection:WICRegion)-[:ON_PAGE]->(page:WICProjection:WICPage)
+    WITH claim, count(DISTINCT page) AS page_count,
+         collect(DISTINCT page.page_id) AS page_ids,
+         collect(DISTINCT page.publication_year) AS years
+    WHERE page_count >= 2
+    RETURN claim.claim_id AS claim_id, claim.predicate AS predicate,
+           claim.subject_entity_id AS subject_entity_id,
+           page_count, page_ids, years
+    ORDER BY page_count DESC, claim_id
+    LIMIT 20
+"""
+
+
+def _uuid_values(values: list[str] | None) -> list[UUID]:
+    return [UUID(value) for value in (values or [])]
+
+
+def graph_rows_to_items(
+    hubs: list[dict[str, Any]],
+    timelines: list[dict[str, Any]],
+    claims: list[dict[str, Any]],
+) -> list[InsightItem]:
+    items = []
+    for row in hubs:
+        items.append(
+            InsightItem(
+                kind=InsightKind.NETWORK_BRIDGE,
+                title=f"Potential network bridge: {row['canonical_name']}",
+                summary=(
+                    f"This reviewed entity connects to {row['degree']} other reviewed entities "
+                    "in the derived claim graph. Inspect the cited claims before interpretation."
+                ),
+                entity_ids=[UUID(row["entity_id"])],
+                metrics={"degree": row["degree"], "predicates": row["predicates"]},
+            )
+        )
+    for row in timelines:
+        years = sorted(value for value in row["years"] if value is not None)
+        items.append(
+            InsightItem(
+                kind=InsightKind.LONGITUDINAL_PRESENCE,
+                title=f"Repeated presence across years: {row['canonical_name']}",
+                summary=(
+                    f"This reviewed entity has {row['mention_count']} reviewed mentions across "
+                    f"{len(years)} publication years. This is a lead for longitudinal research."
+                ),
+                entity_ids=[UUID(row["entity_id"])],
+                supporting_page_ids=_uuid_values(row["page_ids"]),
+                metrics={"mention_count": row["mention_count"], "years": years},
+            )
+        )
+    for row in claims:
+        items.append(
+            InsightItem(
+                kind=InsightKind.MULTI_SOURCE_CLAIM,
+                title=f"Reviewed claim supported on {row['page_count']} pages",
+                summary=(
+                    f"The reviewed predicate “{row['predicate']}” has evidence on multiple pages. "
+                    "Compare those passages for corroboration or disagreement."
+                ),
+                entity_ids=[UUID(row["subject_entity_id"])],
+                claim_ids=[UUID(row["claim_id"])],
+                supporting_page_ids=_uuid_values(row["page_ids"]),
+                metrics={"page_count": row["page_count"], "years": row["years"]},
+            )
+        )
+    return items
+
+
+def build_insight_report(
+    database_url: str,
+    *,
+    neo4j_uri: str | None = None,
+    neo4j_user: str = "neo4j",
+    neo4j_password: str | None = None,
+) -> InsightReport:
+    try:
+        import psycopg
+        from psycopg.rows import dict_row
+    except ImportError as exc:  # pragma: no cover - minimal installations
+        raise RuntimeError("Install the data extra: uv sync --extra data") from exc
+    with psycopg.connect(database_url, row_factory=dict_row) as database:
+        counts = EvidenceCounts.model_validate(database.execute(EVIDENCE_COUNTS_SQL).fetchone())
+
+    warnings = [
+        "Insights are analytical signals over reviewed data, not new historical facts."
+    ]
+    items: list[InsightItem] = []
+    if not neo4j_uri or not neo4j_password:
+        warnings.append("Neo4j insight queries are unavailable because graph credentials are not configured.")
+    else:
+        try:
+            from neo4j import GraphDatabase
+
+            driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+            try:
+                driver.verify_connectivity()
+                with driver.session() as session:
+                    hubs = session.run(GRAPH_HUBS_CYPHER).data()
+                    timelines = session.run(ENTITY_TIMELINES_CYPHER).data()
+                    claims = session.run(MULTI_SOURCE_CLAIMS_CYPHER).data()
+                items = graph_rows_to_items(hubs, timelines, claims)
+            finally:
+                driver.close()
+        except Exception as exc:
+            warnings.append(f"Neo4j insight queries failed: {type(exc).__name__}: {exc}")
+    if counts.reviewed_entities == 0 and counts.reviewed_claims == 0:
+        warnings.append(
+            "No reviewed entities or claims exist yet; the insight report correctly contains no signals."
+        )
+    elif not items:
+        warnings.append("Reviewed data exists, but no current graph pattern passes the insight thresholds.")
+    return InsightReport(
+        generated_at=datetime.now(timezone.utc),
+        evidence_counts=counts,
+        items=items,
+        warnings=warnings,
+    )

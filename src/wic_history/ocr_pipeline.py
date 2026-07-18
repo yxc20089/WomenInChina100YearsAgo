@@ -408,17 +408,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     predictor = IsolatedPaddleOCRPredictor(args.language) if isolate_tiles else (
         PaddleOCRPredictor(args.language) if reuse_model else lambda image: []
     )
-    page_detector = (
-        lambda image, tile_size, overlap: run_batched_isolated_detection(
+
+    def batched_detector(
+        image: Image.Image, tile_size: int, overlap: int
+    ) -> tuple[list[DetectedLine], list[Tile]]:
+        return run_batched_isolated_detection(
             image,
             language=args.language,
             tile_size=tile_size,
             overlap=overlap,
             worker_batch_size=args.worker_batch_size,
         )
-        if batch_isolate
-        else None
-    )
+
+    page_detector = batched_detector if batch_isolate else None
     artifact = create_ocr_artifact(
         image_path=args.image,
         source_uri=args.source_uri,

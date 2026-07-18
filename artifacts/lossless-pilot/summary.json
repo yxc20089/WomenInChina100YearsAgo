@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-18T07:59:03.318108+00:00",
+  "selected_pages": 1,
+  "status_counts": {
+    "rendered": 1
+  },
+  "rendered_bytes": 1569830,
+  "gold_pages": 0,
+  "non_gold_pilot_pages": 1,
+  "note": "Only records with selection.gold_status=include are historian-selected gold. Pilot records must never be used as quality ground truth."
+}

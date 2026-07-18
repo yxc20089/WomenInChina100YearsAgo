@@ -56,6 +56,22 @@ Source volumes are cached under `/tmp/wic-source-cache` by default. Generated sc
 The default 120-DPI JPEG is only for visual screening. Gold OCR pages must later be rendered losslessly at source resolution.
 DjVu screening requires DjVuLibre (`brew install djvulibre` on macOS); the executable-reported version is recorded in render metadata.
 
+After historians mark complete screening records as `gold_status=include`,
+render only those pages from the verified source cache or read-only S3 source:
+
+```bash
+uv run wic-gold-render --offline
+# Omit --offline to download a selected volume that is absent from the cache.
+```
+
+`wic-gold-render` refuses incomplete/anonymous selections, composited or rotated
+PDF pages that cannot be extracted without an explicit transform decision, and
+source cache mismatches. It directly decodes a single full-page source raster
+or native DjVu page, writes PNG without geometric resampling, and records source
+object, output-file, and decoded-pixel hashes. An explicitly non-gold plumbing
+check is available as `--pilot-sample-id`; its output can never be counted as
+gold by the manifest summary.
+
 Start the local visual review UI:
 
 ```bash

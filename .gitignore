@@ -7,3 +7,5 @@ __pycache__/
 
 # Screening derivatives are reproducible and may be hundreds of megabytes.
 artifacts/benchmark-pages/images/
+artifacts/lossless-pilot/images/
+artifacts/gold-pages/

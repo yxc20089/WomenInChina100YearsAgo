@@ -33,3 +33,16 @@ genre/layout/quality/decade strata.
 Do not use the committed lossy screening JPEG or its one-page smoke OCR as gold.
 The first real comparison starts only after lossless render hashes and
 adjudicated page regions are frozen.
+
+The selected-page renderer is ready:
+
+```bash
+uv run wic-gold-render --offline
+```
+
+It reads `artifacts/benchmark-review/annotations.json`, requires complete named
+screening decisions, and emits `artifacts/gold-pages/lossless_manifest.jsonl`.
+For the non-gold page-308 pipeline pilot, it directly decoded the embedded
+6176×8960 JBIG2 raster, performed no geometric transform, and verified identical
+decoded-pixel hashes across PNG writing. The committed pilot manifest is
+provenance evidence only, not a benchmark judgment.

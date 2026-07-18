@@ -102,6 +102,39 @@ class OCRPipelineTests(unittest.TestCase):
             self.assertEqual(resolved_hash, source_sha256)
             self.assertEqual(tier, "non_gold_lossless_pilot")
 
+    def test_scheduled_ingestion_manifest_stays_unreviewed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            image_path = root / "page.png"
+            Image.new("L", (20, 30), "white").save(image_path)
+            manifest_path = root / "manifest.jsonl"
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "status": "rendered",
+                        "render_path": str(image_path),
+                        "render_sha256": sha256_file(image_path),
+                        "source_object_sha256": "c" * 64,
+                        "source_uri": "s3://bucket/volume.pdf",
+                        "volume_number": 219,
+                        "publication_year": 1925,
+                        "page_number": 308,
+                        "selection": {"gold_status": "unreviewed_ingestion"},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            _, tier = resolve_render_provenance(
+                image_path,
+                manifest_path,
+                source_uri="s3://bucket/volume.pdf",
+                page_number=308,
+                volume_number=219,
+                publication_year=1925,
+            )
+            self.assertEqual(tier, "unreviewed_input")
+
 
 if __name__ == "__main__":
     unittest.main()

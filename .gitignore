@@ -9,3 +9,6 @@ __pycache__/
 artifacts/benchmark-pages/images/
 artifacts/lossless-pilot/images/
 artifacts/gold-pages/
+# Per-job ingestion outputs are content-addressed in PostgreSQL and may contain
+# full-resolution page images or model artifacts.
+artifacts/ingestion-*/

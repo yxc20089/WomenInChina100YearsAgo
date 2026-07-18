@@ -49,6 +49,10 @@ class IngestionJobTests(unittest.TestCase):
             validate_stage_result("ocr", {}, {"regions": 10})
         with self.assertRaisesRegex(ValueError, "render_sha256"):
             validate_stage_result("render_lossless", {}, {})
+        with self.assertRaisesRegex(ValueError, "source_object_sha256"):
+            validate_stage_result(
+                "render_lossless", {}, {"render_sha256": "a" * 64}
+            )
 
 
 if __name__ == "__main__":

@@ -112,6 +112,32 @@ def pilot_candidates(
     return selected
 
 
+def ingestion_candidate(
+    *,
+    source_uri: str,
+    source_key: str,
+    volume_number: int,
+    publication_year: int,
+    page_number: int,
+    job_id: str,
+) -> dict[str, Any]:
+    """Build an explicitly unreviewed selection for a scheduled ingestion job."""
+    return {
+        "sample_id": f"ingestion-{job_id}",
+        "source_uri": source_uri,
+        "source_key": source_key,
+        "volume_number": str(volume_number),
+        "publication_year": str(publication_year),
+        "page_number": str(page_number),
+        "selection": {
+            "gold_status": "unreviewed_ingestion",
+            "reviewer": None,
+            "job_id": job_id,
+            "note": "Scheduled source-resolution input; not historian-selected gold.",
+        },
+    }
+
+
 def _pixel_sha256(image: Image.Image) -> str:
     digest = hashlib.sha256()
     digest.update(image.mode.encode("ascii"))
@@ -433,9 +459,14 @@ def write_lossless_results(
             for result in results
             if result["status"] == "rendered"
         ),
+        "unreviewed_ingestion_pages": sum(
+            result["selection"].get("gold_status") == "unreviewed_ingestion"
+            for result in results
+            if result["status"] == "rendered"
+        ),
         "note": (
             "Only records with selection.gold_status=include are historian-selected gold. "
-            "Pilot records must never be used as quality ground truth."
+            "Pilot and ingestion records must never be used as quality ground truth."
         ),
     }
     summary_path = output_dir / "summary.json"

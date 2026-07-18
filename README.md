@@ -138,6 +138,19 @@ explicit cost and capacity review. See
 [docs/ingestion-operations.md](docs/ingestion-operations.md) for the worker
 contract and current limitations.
 
+Run one ready job, with automatic lease heartbeats and safe retry recording:
+
+```bash
+uv run wic-worker --database-url "$DATABASE_URL" \
+  --worker "$(hostname)-worker-1" --batch-id BATCH_UUID
+```
+
+Use `--offline` only when the size-verified source object is already in the
+local source cache. A worker first validates and adopts an exact existing
+artifact when possible; otherwise it invokes the pinned renderer, OCR,
+embedding, or NER stage. Per-job outputs under `artifacts/ingestion-*` are
+generated data and excluded from Git.
+
 OCR ingestion retains every byte-distinct page image in
 `archive.page_derivative` and chooses the preferred derivative monotonically by
 reviewed evidence tier, then resolution. Screening images are never overwritten

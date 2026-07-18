@@ -398,17 +398,20 @@ def resolve_render_provenance(
     volume_number: int | None,
     publication_year: int | None,
     supplied_source_sha256: str | None = None,
+    artifact_root: Path | None = None,
 ) -> tuple[str, str]:
     rows = [
         json.loads(line)
         for line in manifest_path.read_text(encoding="utf-8").splitlines()
         if line
     ]
-    matches = [
-        row
-        for row in rows
-        if Path(row.get("render_path", "")).resolve() == image_path.resolve()
-    ]
+    def resolve_record_path(row: dict[str, Any]) -> Path:
+        value = Path(row.get("render_path", ""))
+        if not value.is_absolute() and artifact_root is not None:
+            value = artifact_root / value
+        return value.resolve()
+
+    matches = [row for row in rows if resolve_record_path(row) == image_path.resolve()]
     if len(matches) != 1:
         raise ValueError("render manifest must contain exactly one record for the OCR image")
     record = matches[0]
@@ -436,9 +439,12 @@ def resolve_render_provenance(
     evidence_tiers = {
         "include": "historian_selected_gold",
         "non_gold_pilot": "non_gold_lossless_pilot",
+        "unreviewed_ingestion": "unreviewed_input",
     }
     if selection_status not in evidence_tiers:
-        raise ValueError("render manifest does not contain an eligible gold or pilot selection")
+        raise ValueError(
+            "render manifest does not contain an eligible gold, pilot, or ingestion selection"
+        )
     return source_sha256, evidence_tiers[selection_status]
 
 

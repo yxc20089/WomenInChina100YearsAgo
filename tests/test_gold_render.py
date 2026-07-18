@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw
 
 from wic_history.gold_render import (
     extract_pdf_page,
+    ingestion_candidate,
     pilot_candidates,
     selected_candidates,
     write_lossless_results,
@@ -75,6 +76,20 @@ class GoldRenderTests(unittest.TestCase):
         selected = pilot_candidates([candidate()], ["v001-p0001"])
         self.assertEqual(selected[0]["selection"]["gold_status"], "non_gold_pilot")
 
+    def test_ingestion_candidate_is_explicitly_unreviewed(self):
+        selected = ingestion_candidate(
+            source_uri="s3://bucket/volume-1.pdf",
+            source_key="prefix/volume-1.pdf",
+            volume_number=1,
+            publication_year=1872,
+            page_number=1,
+            job_id="00000000-0000-0000-0000-000000000001",
+        )
+        self.assertEqual(
+            selected["selection"]["gold_status"], "unreviewed_ingestion"
+        )
+        self.assertIsNone(selected["selection"]["reviewer"])
+
     def test_extracts_full_page_embedded_pixels_without_resampling(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -122,6 +137,7 @@ class GoldRenderTests(unittest.TestCase):
             )
             self.assertEqual(summary["gold_pages"], 0)
             self.assertEqual(summary["non_gold_pilot_pages"], 1)
+            self.assertEqual(summary["unreviewed_ingestion_pages"], 0)
 
 
 if __name__ == "__main__":

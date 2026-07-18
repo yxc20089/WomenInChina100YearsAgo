@@ -32,11 +32,16 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "language": "ch",
         "tile_size": 1200,
         "overlap": 120,
+        "worker_batch_size": 5,
+        "worker_mode": "platform_default",
+        "output_root": "artifacts/ingestion-ocr",
     },
     "embedding": {
         "model": "BAAI/bge-m3",
         "revision": "5617a9f61b028005a4858fdac845db406aefb181",
         "dimension": 1024,
+        "batch_size": 16,
+        "output_root": "artifacts/ingestion-embedding",
     },
     "ner": {
         "adapter": "rules+gliner",
@@ -45,6 +50,14 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "ontology_version": "women-history-zh-v1",
         "input_variant": "raw_ocr",
         "max_regions": None,
+        "threshold": 0.45,
+        "batch_size": 2,
+        "word_splitter_language": "zh-hant",
+        "flat_ner": False,
+        "multi_label": True,
+        "dataset_id": None,
+        "split_id": None,
+        "output_root": "artifacts/ingestion-ner",
         "status": "candidate_only",
     },
 }
@@ -678,6 +691,12 @@ def validate_stage_result(
         if not re.fullmatch(r"[0-9a-f]{64}", str(result.get("render_sha256", ""))):
             raise ValueError(
                 "Stage result requires lowercase SHA-256 field render_sha256"
+            )
+        if not re.fullmatch(
+            r"[0-9a-f]{64}", str(result.get("source_object_sha256", ""))
+        ):
+            raise ValueError(
+                "Stage result requires lowercase SHA-256 field source_object_sha256"
             )
     elif stage == "ocr":
         _required_uuid(result, "ocr_run_id")

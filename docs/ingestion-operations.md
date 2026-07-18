@@ -1,7 +1,7 @@
 # Ingestion orchestration operations
 
-Status: durable scheduler and verified single-page DAG; stage executors are the
-next implementation milestone.
+Status: durable scheduler plus executable/render-resumable page workers;
+aggregate projection stages and production fleet controls remain pending.
 
 ## Contract
 
@@ -53,6 +53,22 @@ uv run wic-batch --database-url "$DATABASE_URL" heartbeat \
   --worker WORKER_ID --job-id JOB_UUID --lease-seconds 900
 ```
 
+For normal operation, `wic-worker` performs that lifecycle and executes one
+ready stage:
+
+```bash
+uv run wic-worker --database-url "$DATABASE_URL" \
+  --worker "$(hostname)-worker-1" --batch-id BATCH_UUID
+```
+
+Run several processes with stage filters to separate CPU/GPU pools. The worker
+maintains its lease in a background heartbeat, validates exact existing output
+before adopting it, resumes a job-local artifact left by a crash, invokes the
+pinned stage when no reusable output exists, persists OCR/NER results to
+PostgreSQL, and only then completes the job. `--offline` forbids S3 download and
+therefore requires the size-verified source in `/tmp/wic-source-cache` (or the
+configured cache directory).
+
 `claim` uses `FOR UPDATE ... SKIP LOCKED`, so several workers can safely poll in
 parallel. Expired leases return to `pending` while attempts remain; the final
 expired or reported attempt becomes `failed`. A failure records its type and
@@ -90,13 +106,14 @@ The semantic pilot for volume 219, page 308 completed four jobs using the
 source-resolution render, 1,099-region PP-OCRv6 run, 1,099 BGE-M3 embeddings,
 and a 50-region GLiNER-X run with 82 unreviewed candidates. An attempted
 completion claiming 25 bounded regions was rejected; the exact planned value of
-50 then succeeded. Reusing these verified artifacts tested orchestration without
-spending another model run.
+50 then succeeded. A second DAG completed through `wic-worker`; all four stages
+adopted the exact verified artifacts without spending another model run. The
+worker separately performed a fresh source-cache render of page 309 to prove the
+non-adoption path: a 6186×8962 source raster was decoded without geometric
+transform and labeled `unreviewed_ingestion`, never gold.
 
-The scheduler currently coordinates jobs but does not yet invoke the rendering,
-OCR, embedding or NER commands itself. Failed parent jobs also require an
-operator decision before their blocked descendants and batch can reach a
-terminal state. Automatic stage dispatch, cancellation propagation, resumable
-object caching, aggregate search/RAG/graph projection jobs and operational
-metrics are subsequent milestones. Do not describe the current code as an
-unattended full-corpus ingestion system.
+Failed parent jobs still require an operator decision before their blocked
+descendants and batch can reach a terminal state. Cancellation propagation,
+aggregate search/RAG/graph projection jobs, fleet autoscaling, backpressure,
+dead-letter operations and production metrics are subsequent milestones. Do
+not describe the current code as an unattended full-corpus ingestion system.

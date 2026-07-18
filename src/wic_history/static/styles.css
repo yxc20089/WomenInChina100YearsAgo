@@ -51,6 +51,17 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace,
 .context-panel { margin-top: 34px; background: #25241f; color: #f4eedf; padding: 24px; }
 .generation-panel { margin-top: 34px; padding: 24px; border: 1px solid var(--red); background: #faf7ee; }
 .generation-panel #generation-output { white-space: pre-wrap; line-height: 1.65; }
+.chat-panel { margin-top: 34px; padding: 24px; border: 1px solid var(--ink); background: #faf7ee; }
+.chat-panel h2 { margin: 4px 0; }
+#chat-transcript { display: grid; gap: 14px; margin: 24px 0; }
+.chat-turn { max-width: 86%; padding: 16px 18px; border: 1px solid var(--line); background: var(--paper); }
+.chat-turn.user { justify-self: end; background: #e7dfcb; }
+.chat-turn.assistant { justify-self: start; }
+.chat-turn .eyebrow { margin: 0 0 8px; font-size: .7rem; }
+.chat-content { white-space: pre-wrap; line-height: 1.55; }
+.chat-citations { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: .82rem; }
+.chat-warning { color: var(--muted); margin: 10px 0 0; font-size: .78rem; }
+#chat-form { margin-top: 18px; padding: 16px; }
 .review-panel { margin-top: 52px; padding-top: 28px; border-top: 2px solid var(--ink); }
 .review-heading, .review-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .review-heading h2 { margin: 4px 0; font-size: 2.2rem; }

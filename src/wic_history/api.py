@@ -19,6 +19,7 @@ from .evidence import (
     ScenarioEvidenceItem,
 )
 from .generation import (
+    ChatTurn,
     GenerationResponse,
     GenerationTask,
     OpenAICompatibleGenerator,
@@ -77,6 +78,10 @@ class SearchRequest(BaseModel):
 
 class GenerationRequest(SearchRequest):
     task: GenerationTask = GenerationTask.RESEARCH_BRIEF
+
+
+class ChatRequest(SearchRequest):
+    history: list[ChatTurn] = Field(default_factory=list, max_length=12)
 
 
 class PageDerivativeView(BaseModel):
@@ -235,6 +240,28 @@ def create_app(
             raise HTTPException(status_code=503, detail="DATABASE_URL is not configured")
         return db_url
 
+    def run_generation(
+        bundle: ScenarioContextBundle,
+        task: GenerationTask,
+        history: Sequence[ChatTurn] = (),
+    ) -> GenerationResponse:
+        if not bundle.retrieved_context or (
+            task == GenerationTask.RECONSTRUCTED_SCENE and not bundle.evidence_items
+        ):
+            return generate(bundle, task, None, history)
+        if not app.state.generator_loaded:
+            try:
+                app.state.generator = generator_factory()
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=503, detail=f"Generation configuration invalid: {exc}"
+                ) from exc
+            app.state.generator_loaded = True
+        try:
+            return generate(bundle, task, app.state.generator, history)
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"Generation unavailable: {exc}") from exc
+
     def review_error(exc: Exception) -> None:
         if isinstance(exc, ReviewNotFoundError):
             raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -304,18 +331,12 @@ def create_app(
     @app.post("/api/generate", response_model=GenerationResponse)
     def generate_output(request: GenerationRequest) -> GenerationResponse:
         bundle = build_context(run_search(request))
-        if request.task == GenerationTask.RECONSTRUCTED_SCENE and not bundle.evidence_items:
-            return generate(bundle, request.task, None)
-        if not app.state.generator_loaded:
-            try:
-                app.state.generator = generator_factory()
-            except Exception as exc:
-                raise HTTPException(status_code=503, detail=f"Generation configuration invalid: {exc}") from exc
-            app.state.generator_loaded = True
-        try:
-            return generate(bundle, request.task, app.state.generator)
-        except Exception as exc:
-            raise HTTPException(status_code=503, detail=f"Generation unavailable: {exc}") from exc
+        return run_generation(bundle, request.task)
+
+    @app.post("/api/chat", response_model=GenerationResponse)
+    def chat(request: ChatRequest) -> GenerationResponse:
+        bundle = build_context(run_search(request))
+        return run_generation(bundle, GenerationTask.CHAT_ANSWER, request.history)
 
     @app.get("/api/review/mentions", response_model=MentionQueueResponse)
     def mention_queue(

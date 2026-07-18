@@ -41,6 +41,7 @@
     <section class="status-panel" aria-live="polite">
       <span id="status">Ready</span>
       <div class="model-actions">
+        <button id="chat-button" class="quiet" type="button" disabled>Discuss evidence</button>
         <button id="brief-button" class="quiet" type="button" disabled>Draft research brief</button>
         <button id="scene-button" class="quiet" type="button" disabled>Reconstruct scene</button>
         <button id="context-button" class="quiet" type="button" disabled>Inspect context</button>
@@ -51,6 +52,24 @@
     <section id="generation-panel" class="generation-panel" hidden>
       <p id="generation-label" class="eyebrow"></p>
       <div id="generation-output"></div>
+    </section>
+    <section id="chat-panel" class="chat-panel" hidden>
+      <div class="context-heading">
+        <div>
+          <p class="eyebrow">Evidence-bounded conversation</p>
+          <h2>Research chat</h2>
+        </div>
+        <button id="clear-chat" class="quiet" type="button">Clear conversation</button>
+      </div>
+      <p>Each question runs a fresh archive search. Earlier turns provide continuity but never count as historical evidence.</p>
+      <div id="chat-transcript" aria-live="polite"></div>
+      <form id="chat-form">
+        <label for="chat-question">Follow-up question</label>
+        <div class="query-row">
+          <input id="chat-question" maxlength="1000" placeholder="Ask about the retrieved evidence…" required>
+          <button id="chat-send" type="submit">Ask</button>
+        </div>
+      </form>
     </section>
     <section id="context-panel" class="context-panel" hidden>
       <div class="context-heading">

@@ -7,6 +7,12 @@ const contextPanel = document.querySelector('#context-panel');
 const contextJson = document.querySelector('#context-json');
 const briefButton = document.querySelector('#brief-button');
 const sceneButton = document.querySelector('#scene-button');
+const chatButton = document.querySelector('#chat-button');
+const chatPanel = document.querySelector('#chat-panel');
+const chatForm = document.querySelector('#chat-form');
+const chatQuestion = document.querySelector('#chat-question');
+const chatSend = document.querySelector('#chat-send');
+const chatTranscript = document.querySelector('#chat-transcript');
 const generationPanel = document.querySelector('#generation-panel');
 const generationLabel = document.querySelector('#generation-label');
 const generationOutput = document.querySelector('#generation-output');
@@ -30,6 +36,7 @@ let reviewTotal = 0;
 let claimOffset = 0;
 const claimLimit = 20;
 let claimTotal = 0;
+let chatHistory = [];
 
 reviewerInput.value = localStorage.getItem('wic-reviewer') || '';
 reviewerInput.addEventListener('change', () => {
@@ -444,6 +451,7 @@ function render(data) {
   });
   status.textContent = `${data.hits.length} cited region${data.hits.length === 1 ? '' : 's'} · ${data.mode}`;
   contextButton.disabled = false;
+  chatButton.disabled = false;
   briefButton.disabled = false;
   sceneButton.disabled = false;
 }
@@ -453,6 +461,7 @@ form.addEventListener('submit', async event => {
   lastRequest = requestBody();
   status.textContent = lastRequest.mode === 'lexical' ? 'Searching…' : 'Loading multilingual retrieval model…';
   contextButton.disabled = true;
+  chatButton.disabled = true;
   contextPanel.hidden = true;
   try {
     const response = await fetch('/api/search', {
@@ -494,6 +503,87 @@ async function generate(task, button) {
 
 briefButton.addEventListener('click', () => generate('research_brief', briefButton));
 sceneButton.addEventListener('click', () => generate('reconstructed_scene', sceneButton));
+
+function appendChatTurn(role, content, citations = [], messages = []) {
+  const turn = document.createElement('article');
+  turn.className = `chat-turn ${role}`;
+  const label = document.createElement('p');
+  label.className = 'eyebrow';
+  label.textContent = role === 'user' ? 'Researcher' : 'Assistant';
+  const output = document.createElement('div');
+  output.className = 'chat-content';
+  output.textContent = content;
+  turn.append(label, output);
+  if (citations.length) {
+    const citationList = document.createElement('div');
+    citationList.className = 'chat-citations';
+    citations.forEach(source => {
+      const link = document.createElement('a');
+      link.className = 'scan-link';
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.href = pageImageUrl(source.volume_number, source.page_number, source.derivative_id);
+      link.textContent = `Volume ${source.volume_number} · ${source.publication_year} · page ${source.page_number} ↗`;
+      citationList.append(link);
+    });
+    turn.append(citationList);
+  }
+  messages.forEach(message => {
+    const warning = document.createElement('p');
+    warning.className = 'chat-warning';
+    warning.textContent = message;
+    turn.append(warning);
+  });
+  chatTranscript.append(turn);
+  turn.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+
+chatButton.addEventListener('click', () => {
+  chatPanel.hidden = false;
+  if (!chatQuestion.value && lastRequest) chatQuestion.value = lastRequest.query;
+  chatPanel.scrollIntoView({behavior: 'smooth'});
+  chatQuestion.focus();
+});
+
+document.querySelector('#clear-chat').addEventListener('click', () => {
+  chatHistory = [];
+  chatTranscript.replaceChildren();
+  chatQuestion.value = '';
+  chatQuestion.focus();
+});
+
+chatForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!lastRequest) return;
+  const question = chatQuestion.value.trim();
+  if (!question) return;
+  const priorHistory = chatHistory.slice(-12);
+  appendChatTurn('user', question);
+  chatQuestion.value = '';
+  chatSend.disabled = true;
+  chatSend.textContent = 'Searching evidence…';
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({...requestBody(), query: question, history: priorHistory}),
+    });
+    if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+    const data = await response.json();
+    appendChatTurn('assistant', data.output, data.citations, data.warnings);
+    chatHistory.push(
+      {role: 'user', content: question},
+      {role: 'assistant', content: data.output},
+    );
+    chatHistory = chatHistory.slice(-12);
+  } catch (error) {
+    appendChatTurn('assistant', `Chat unavailable: ${error.message}`);
+  } finally {
+    chatSend.disabled = false;
+    chatSend.textContent = 'Ask';
+    chatQuestion.focus();
+  }
+});
 
 contextButton.addEventListener('click', async () => {
   if (!lastRequest) return;

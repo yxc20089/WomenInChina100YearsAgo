@@ -235,6 +235,15 @@ enable a local or hosted OpenAI-compatible chat endpoint. Research briefs must
 label OCR as unreviewed leads; reconstructed scenes hard-abstain until reviewed
 claims exist.
 
+After a search, `Discuss evidence` opens a browser-held multi-turn research
+conversation. Every follow-up performs fresh retrieval under the selected mode
+and year filters. At most 12 prior user/assistant turns are passed inside an
+untrusted context envelope—not as system instructions and never as evidence.
+Archive citations are accepted only when their region UUID occurs in the
+current retrieval or a reviewed claim. Conversations are not persisted by the
+server. Without an LLM configuration the endpoint returns an explicit
+`unavailable` response while preserving the retrieved evidence bundle.
+
 The same interface exposes a historian review queue and reviewed-only insight
 signals. A reviewer first accepts or rejects the exact NER span, then makes a
 separate entity-resolution decision: link to a reviewed candidate, create a new

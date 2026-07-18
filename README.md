@@ -34,7 +34,8 @@ Run tests without AWS access:
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-For the fully locked development environment, use `uv sync --all-extras` and `uv run` instead of setting `PYTHONPATH`.
+For the fully locked development environment, use `uv sync --all-extras` and
+`uv run --extra test pytest -q` instead of setting `PYTHONPATH`.
 
 Create the deterministic visual-screening page plan after the audit:
 
@@ -117,6 +118,25 @@ uv run wic-ingest --database-url "$DATABASE_URL" ner \
   artifacts/ner-pilot/v219-p0308.lossless.gliner-multi-v2.1.first50.json \
   artifacts/ner-pilot/v219-p0308.lossless.gliner-x.first50.json
 ```
+
+Create an idempotent, dependency-gated ingestion plan before processing pages:
+
+```bash
+uv run wic-batch --database-url "$DATABASE_URL" plan \
+  --name 'volume 219 page 308 semantic pilot' --created-by researcher \
+  --volume 219 --page 308 \
+  --configuration '{"ner":{"max_regions":50}}'
+uv run wic-batch --database-url "$DATABASE_URL" status --batch-id BATCH_UUID
+```
+
+The page DAG is `render_lossless -> OCR -> {embedding, NER}`. PostgreSQL records
+immutable plan/input fingerprints, dependencies, bounded stage configuration,
+leases, retries, artifact checksums, typed completion metadata, and an
+append-only event history. Planning is guarded at 1,000 pages by default; the
+current manifest has 340,511 known pages, so `--allow-large-plan` must follow an
+explicit cost and capacity review. See
+[docs/ingestion-operations.md](docs/ingestion-operations.md) for the worker
+contract and current limitations.
 
 OCR ingestion retains every byte-distinct page image in
 `archive.page_derivative` and chooses the preferred derivative monotonically by

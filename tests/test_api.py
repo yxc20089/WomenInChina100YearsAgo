@@ -20,9 +20,28 @@ from wic_history.insights import (
     GraphProjectionStatus,
     InsightReport,
 )
+from wic_history.ingestion_jobs import BatchStatus
 
 
 class APITests(unittest.TestCase):
+    def test_ingestion_batch_progress_is_read_only(self):
+        batch_id = "00000000-0000-0000-0000-000000000001"
+        status = BatchStatus(
+            batch_id=batch_id,
+            name="pilot",
+            status="active",
+            total_jobs=4,
+            ready_jobs=1,
+            by_status={"pending": 4},
+            by_stage={"render_lossless": {"pending": 1}},
+        )
+        with patch("wic_history.api.batch_status", return_value=status) as loader:
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get(f"/api/ingestion/batches/{batch_id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["ready_jobs"], 1)
+        loader.assert_called_once()
+
     def test_page_image_resolution_is_limited_to_registered_workspace_roots(self):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)

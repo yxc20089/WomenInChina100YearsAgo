@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence
 from uuid import UUID
@@ -25,6 +26,7 @@ from .generation import (
     generate,
 )
 from .insights import InsightReport, build_insight_report
+from .ingestion_jobs import batch_status
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
 from .review_workflow import (
     ClaimQueueResponse,
@@ -91,6 +93,17 @@ class PageDerivativeResponse(BaseModel):
     volume_number: int
     page_number: int
     items: list[PageDerivativeView]
+
+
+class IngestionBatchStatusView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    batch_id: UUID
+    name: str
+    status: Literal["active", "completed", "cancelled"]
+    total_jobs: int
+    ready_jobs: int
+    by_status: dict[str, int]
+    by_stage: dict[str, dict[str, int]]
 
 
 def scenario_context(
@@ -227,6 +240,23 @@ def create_app(
             "generation_configured": bool(os.environ.get("LLM_BASE_URL") and os.environ.get("LLM_MODEL")),
             "index": index,
         }
+
+    @app.get(
+        "/api/ingestion/batches/{batch_id}",
+        response_model=IngestionBatchStatusView,
+    )
+    def ingestion_batch(batch_id: UUID) -> IngestionBatchStatusView:
+        try:
+            status = batch_status(require_database(), batch_id)
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Ingestion status unavailable: {exc}"
+            ) from exc
+        return IngestionBatchStatusView.model_validate(asdict(status))
 
     @app.post("/api/search", response_model=RetrievalResponse)
     def search(request: SearchRequest) -> RetrievalResponse:

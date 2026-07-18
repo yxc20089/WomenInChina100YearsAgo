@@ -32,6 +32,7 @@ class DatabaseContractTests(unittest.TestCase):
                 "004_page_derivatives.sql",
                 "005_ocr_run_selection.sql",
                 "006_ner_run_input.sql",
+                "007_ingestion_jobs.sql",
             ],
         )
 
@@ -59,6 +60,16 @@ class DatabaseContractTests(unittest.TestCase):
         self.assertIn("source_ocr_run_id", sql)
         self.assertIn("input_sha256", sql)
         self.assertIn("ontology_version", sql)
+
+    def test_ingestion_jobs_are_leased_and_dependency_gated(self):
+        sql = Path("db/migrations/007_ingestion_jobs.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("CREATE TABLE pipeline.ingestion_job", sql)
+        self.assertIn("CREATE TABLE pipeline.ingestion_job_dependency", sql)
+        self.assertIn("lease_expires_at", sql)
+        self.assertIn("input_fingerprint", sql)
+        self.assertIn("CREATE TABLE pipeline.ingestion_job_event", sql)
 
 
 if __name__ == "__main__":

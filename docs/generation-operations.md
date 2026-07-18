@@ -15,6 +15,8 @@ export LLM_MODEL=local-model-name
 export LLM_MODEL_REVISION=immutable-weight-or-deployment-id
 export LLM_MAX_OUTPUT_TOKENS=2048
 export LLM_SEED=17
+export LLM_INPUT_COST_PER_MILLION_TOKENS_USD=0  # set only from the provider contract
+export LLM_OUTPUT_COST_PER_MILLION_TOKENS_USD=0 # zero is appropriate only for a free local model
 ```
 
 `LLM_MODEL_REVISION` may be an immutable weights hash, release, or deployment
@@ -36,6 +38,10 @@ the archive/data-use agreement and provider retention/training policy permit
 those bytes to leave the workstation. HTTP redirects are never followed, so a
 provider cannot redirect the archive context or bearer token to another URL.
 The API key is neither returned nor included in configuration hashes.
+Token prices are optional nonnegative USD values and become part of the
+configuration hash. Cost is calculated only from provider-reported prompt and
+completion token counts; the system never guesses token usage from character
+length. Missing usage remains explicit in responses and benchmark reports.
 
 Restart `wic-api` after configuration changes. `/api/health` reports
 `generation_configured=false` and a sanitized configuration error when the
@@ -58,8 +64,8 @@ A reconstructed scene has stricter rules:
 
 Responses expose status, model/revision, provider, configuration hash, prompt
 hash, exact context hash, raw-output hash, resolved scan citations, validation
-errors and warnings. The browser renders these fields with `textContent`; model
-output is never interpreted as HTML.
+errors, token usage, estimated cost and warnings. The browser renders these
+fields with `textContent`; model output is never interpreted as HTML.
 
 Statuses are:
 
@@ -73,3 +79,8 @@ Statuses are:
 Passing this gate proves citation structure, not historical truth or model
 quality. Historians must still assess the cited evidence and the boundary
 between evidence, plausible reconstruction and speculation.
+
+The selection protocol and executable commands are documented in
+[`experiments/generation/README.md`](../experiments/generation/README.md).
+Do not infer a model winner from transport success, citation acceptance, token
+cost, or an unpaired mean score.

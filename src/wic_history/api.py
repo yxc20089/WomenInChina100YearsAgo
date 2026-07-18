@@ -25,6 +25,7 @@ from .generation import (
     OpenAICompatibleGenerator,
     TextGenerator,
     generate,
+    has_direct_evidence,
 )
 from .exploration import ExplorationReport, build_exploration_report
 from .insights import InsightReport, build_insight_report
@@ -279,7 +280,8 @@ def create_app(
         history: Sequence[ChatTurn] = (),
     ) -> GenerationResponse:
         if not bundle.retrieved_context or (
-            task == GenerationTask.RECONSTRUCTED_SCENE and not bundle.evidence_items
+            task == GenerationTask.RECONSTRUCTED_SCENE
+            and not has_direct_evidence(bundle)
         ):
             return generate(bundle, task, None, history)
         if not app.state.generator_loaded:

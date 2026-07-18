@@ -103,6 +103,16 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(result.status, GenerationStatus.ABSTAINED)
         self.assertIsNone(result.model)
 
+    def test_plausible_or_speculative_items_cannot_unlock_direct_scene_evidence(self):
+        data = self._context(reviewed=True).model_dump(mode="json")
+        data["evidence_items"][0]["epistemic_label"] = "plausible_inference"
+        plausible_only = ScenarioContextBundle.model_validate(data)
+        result = generate(
+            plausible_only, GenerationTask.RECONSTRUCTED_SCENE, FakeGenerator()
+        )
+        self.assertEqual(result.status, GenerationStatus.ABSTAINED)
+        self.assertEqual(result.citations, [])
+
     def test_research_brief_uses_generator_and_carries_citation(self):
         generator = FakeGenerator()
         result = generate(self._context(), GenerationTask.RESEARCH_BRIEF, generator)
@@ -250,14 +260,18 @@ class GenerationTests(unittest.TestCase):
                 OpenAICompatibleGenerator.from_environment()
 
     def test_openai_compatible_adapter_calls_controlled_local_endpoint(self):
-        captured = {}
+        captured = []
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 length = int(self.headers["Content-Length"])
-                captured["path"] = self.path
-                captured["authorization"] = self.headers.get("Authorization")
-                captured["payload"] = json.loads(self.rfile.read(length))
+                captured.append(
+                    {
+                        "path": self.path,
+                        "authorization": self.headers.get("Authorization"),
+                        "payload": json.loads(self.rfile.read(length)),
+                    }
+                )
                 body = json.dumps(
                     {
                         "choices": [
@@ -267,9 +281,15 @@ class GenerationTests(unittest.TestCase):
                                         "Cited result "
                                         "[region:00000000-0000-0000-0000-000000000001]."
                                     )
-                                }
+                                },
+                                "finish_reason": "stop",
                             }
-                        ]
+                        ],
+                        "usage": {
+                            "prompt_tokens": 100,
+                            "completion_tokens": 20,
+                            "total_tokens": 120,
+                        },
                     }
                 ).encode()
                 self.send_response(200)
@@ -292,9 +312,20 @@ class GenerationTests(unittest.TestCase):
                 model_revision="weights-sha256-abc123",
                 max_output_tokens=321,
                 seed=17,
+                input_cost_per_million_tokens_usd=1,
+                output_cost_per_million_tokens_usd=2,
             )
             result = generate(
                 self._context(), GenerationTask.RESEARCH_BRIEF, generator
+            )
+            unpriced_result = generate(
+                self._context(),
+                GenerationTask.RESEARCH_BRIEF,
+                OpenAICompatibleGenerator(
+                    f"http://127.0.0.1:{server.server_port}/v1",
+                    "local-model",
+                    model_revision="weights-sha256-abc123",
+                ),
             )
         finally:
             server.shutdown()
@@ -304,10 +335,19 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(result.provider, "openai_compatible")
         self.assertEqual(result.model_revision, "weights-sha256-abc123")
         self.assertEqual(len(result.generation_configuration_sha256), 64)
-        self.assertEqual(captured["path"], "/v1/chat/completions")
-        self.assertEqual(captured["authorization"], "Bearer test-secret")
-        self.assertEqual(captured["payload"]["max_tokens"], 321)
-        self.assertEqual(captured["payload"]["seed"], 17)
+        self.assertEqual(result.finish_reason, "stop")
+        self.assertEqual(result.total_tokens, 120)
+        self.assertAlmostEqual(result.estimated_cost_usd, 0.00014)
+        self.assertIsNone(unpriced_result.estimated_cost_usd)
+        self.assertTrue(
+            any("token prices" in warning for warning in unpriced_result.warnings)
+        )
+        self.assertEqual(len(captured), 2)
+        self.assertEqual(captured[0]["path"], "/v1/chat/completions")
+        self.assertEqual(captured[0]["authorization"], "Bearer test-secret")
+        self.assertEqual(captured[0]["payload"]["max_tokens"], 321)
+        self.assertEqual(captured[0]["payload"]["seed"], 17)
+        self.assertIsNone(captured[1]["authorization"])
 
     def test_provider_does_not_follow_redirects_with_context_or_bearer_token(self):
         captured = {"redirect_target_requests": 0}

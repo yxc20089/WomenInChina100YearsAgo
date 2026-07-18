@@ -282,6 +282,11 @@ endpoint. Remote endpoints additionally require HTTPS and explicit
 unreviewed leads; reconstructed scenes hard-abstain until reviewed claims
 exist. See [`docs/generation-operations.md`](docs/generation-operations.md) for
 the provider, privacy, provenance and output-validation contract.
+The frozen generation-quality protocol, executable runner, objective scorer,
+model-blind two-review/adjudication workflow, and paired-bootstrap comparator
+are under [`experiments/generation/`](experiments/generation/). It contains no
+scores or winner because no approved model or historian-authored generation
+set exists yet.
 
 After a search, `Discuss evidence` opens a browser-held multi-turn research
 conversation. Every follow-up performs fresh retrieval under the selected mode
@@ -352,7 +357,8 @@ historian-authored/adjudicated questions. Pinned NER candidates and the paired
 corrected-text/raw-OCR protocol are under `experiments/ner/`; isolated
 GraphRAG/LightRAG requirements and the fair-comparison protocol are under
 `experiments/rag/`; retrieval judgments and metrics are under
-`experiments/retrieval/`.
+`experiments/retrieval/`; grounded assistant/scene evaluation is under
+`experiments/generation/`.
 
 Gold transcription/NER policy is in
 [`docs/annotation-guidelines.md`](docs/annotation-guidelines.md). Once two

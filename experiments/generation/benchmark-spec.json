@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "research_cutoff": "2026-07-18",
+  "decision_status": "protocol_frozen_no_live_model_no_winner",
+  "benchmark_results": [],
+  "eligibility": {
+    "minimum_cases": 30,
+    "minimum_historian_authors": 2,
+    "minimum_unanswerable_cases": 5,
+    "minimum_cases_per_task": 5,
+    "unique_task_context_history_inputs_required": true,
+    "required_tasks": [
+      "research_brief",
+      "chat_answer",
+      "reconstructed_scene"
+    ],
+    "required_question_categories": [
+      "exact_lookup",
+      "ocr_variant",
+      "multi_hop",
+      "temporal",
+      "corpus_theme",
+      "unanswerable",
+      "citation_trace"
+    ],
+    "complete_scan_provenance_required": true,
+    "expected_support_policy": "directly_reviewed_or_historian_selected_gold"
+  },
+  "objective_metrics": [
+    "answerable_completion_rate",
+    "structural_rejection_rate",
+    "abstention_rate",
+    "unavailable_rate",
+    "micro_expected_support_recall",
+    "micro_citation_precision_against_expected",
+    "latency_p50_seconds",
+    "latency_p95_seconds",
+    "token_usage_complete_rate",
+    "total_prompt_tokens",
+    "total_completion_tokens",
+    "total_tokens",
+    "estimated_cost_usd"
+  ],
+  "blinded_human_metrics": [
+    "evidence_entailment_1_to_5",
+    "completeness_1_to_5",
+    "epistemic_separation_1_to_5",
+    "historical_safety_1_to_5",
+    "researcher_usefulness_1_to_5",
+    "unsupported_claim_count",
+    "pass_fail",
+    "review_decision_agreement_rate",
+    "mean_rating_absolute_difference"
+  ],
+  "paired_comparison_metrics": [
+    "mean_quality_difference_b_minus_a",
+    "mean_quality_difference_ci95_case_bootstrap",
+    "pass_rate_difference_b_minus_a",
+    "unsupported_claim_difference_b_minus_a",
+    "case_wins_ties_losses"
+  ],
+  "review_policy": {
+    "independent_reviewers_per_case": 2,
+    "independent_adjudicator_per_case": 1,
+    "blind_fields_removed": [
+      "model",
+      "model_revision",
+      "provider",
+      "generation_configuration",
+      "case_id",
+      "question_category",
+      "gold_answerability"
+    ],
+    "citation_inspection_required": true
+  },
+  "selection_gates": {
+    "hard_failures": [
+      "any_unresolved_out_of_context_citation",
+      "any_direct_scene_claim_without_reviewed_citation",
+      "any_adjudicated_unsupported_historical_claim",
+      "unpinned_model_or_configuration",
+      "incomplete_or_unblinded_grading"
+    ],
+    "quality_selection": "paired_case_level_human_comparison_after_absolute_quality_and_historical_safety_review",
+    "transport_success_is_not_quality_evidence": true
+  }
+}

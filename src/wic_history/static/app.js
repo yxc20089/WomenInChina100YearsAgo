@@ -744,6 +744,8 @@ async function generate(task, button) {
       data.prompt_sha256 ? `prompt ${data.prompt_sha256.slice(0, 12)}…` : null,
       data.context_sha256 ? `context ${data.context_sha256.slice(0, 12)}…` : null,
       data.raw_output_sha256 ? `output ${data.raw_output_sha256.slice(0, 12)}…` : null,
+      data.total_tokens !== null ? `${data.total_tokens} tokens` : null,
+      data.estimated_cost_usd !== null ? `$${data.estimated_cost_usd.toFixed(6)} estimated` : null,
     ].filter(Boolean).join(' · ');
     generationCitations.replaceChildren();
     data.citations.forEach(source => {
@@ -853,6 +855,8 @@ chatForm.addEventListener('submit', async event => {
       data.model,
       data.prompt_sha256 ? `prompt ${data.prompt_sha256.slice(0, 12)}…` : null,
       data.context_sha256 ? `context ${data.context_sha256.slice(0, 12)}…` : null,
+      data.total_tokens !== null ? `${data.total_tokens} tokens` : null,
+      data.estimated_cost_usd !== null ? `$${data.estimated_cost_usd.toFixed(6)} estimated` : null,
     ].filter(Boolean).join(' · ');
     appendChatTurn(
       'assistant', data.output, data.citations,

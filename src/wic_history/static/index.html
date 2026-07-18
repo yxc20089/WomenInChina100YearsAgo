@@ -12,6 +12,7 @@
     <h1>Women in China<br>100 Years Ago</h1>
     <p class="lede">Search the archive’s emerging evidence layer. Every result leads back to a scan region; machine readings remain visibly provisional.</p>
     <div class="header-actions">
+      <button id="exploration-button" class="quiet" type="button">Explore machine leads</button>
       <button id="insights-button" class="quiet" type="button">Reviewed insights</button>
       <button id="review-button" class="quiet" type="button">Review machine candidates →</button>
     </div>
@@ -102,6 +103,24 @@
       <div id="insight-counts" class="insight-counts"></div>
       <div id="insight-warnings"></div>
       <div id="insight-items"></div>
+    </section>
+    <section id="exploration-panel" class="review-panel" hidden>
+      <div class="review-heading">
+        <div>
+          <p class="eyebrow">Machine observations · unreviewed</p>
+          <h2>Exploratory research leads</h2>
+        </div>
+        <button id="close-exploration" class="quiet" type="button">Close</button>
+      </div>
+      <p>Theme matches and model disagreements help prioritize reading and review. They are not historical findings.</p>
+      <div id="exploration-counts" class="insight-counts"></div>
+      <div id="exploration-warnings"></div>
+      <div id="exploration-themes"></div>
+      <div class="exploration-diagnostics">
+        <h3>NER candidate diagnostics</h3>
+        <div id="exploration-ner-runs"></div>
+        <div id="exploration-ner-agreements"></div>
+      </div>
     </section>
   </main>
 

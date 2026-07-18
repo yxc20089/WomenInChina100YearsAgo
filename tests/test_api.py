@@ -14,6 +14,7 @@ from wic_history.api import (
     scenario_context,
 )
 from wic_history.evidence import RetrievalMode, RetrievalResponse
+from wic_history.exploration import ExplorationCounts, ExplorationReport
 from wic_history.review_workflow import ClaimQueueResponse, MentionQueueResponse
 from wic_history.insights import (
     EvidenceCounts,
@@ -74,6 +75,12 @@ class APITests(unittest.TestCase):
             allowed.write_bytes(b"image")
             outside = workspace / "private.png"
             outside.write_bytes(b"private")
+            ingested = workspace / "artifacts/ingestion-pages/jobs/job/images/page.png"
+            ingested.parent.mkdir(parents=True)
+            ingested.write_bytes(b"image")
+            non_image = workspace / "artifacts/rag/context.json"
+            non_image.parent.mkdir(parents=True)
+            non_image.write_text("{}", encoding="utf-8")
 
             self.assertEqual(
                 resolve_local_page_image(
@@ -81,8 +88,16 @@ class APITests(unittest.TestCase):
                 ),
                 allowed.resolve(),
             )
+            self.assertEqual(
+                resolve_local_page_image(
+                    "artifacts/ingestion-pages/jobs/job/images/page.png", workspace
+                ),
+                ingested.resolve(),
+            )
             with self.assertRaises(ValueError):
                 resolve_local_page_image(str(outside), workspace)
+            with self.assertRaises(ValueError):
+                resolve_local_page_image("artifacts/rag/context.json", workspace)
 
     def test_cli_accepts_documented_bind_arguments(self):
         args = build_parser().parse_args(["--host", "127.0.0.1", "--port", "9000"])
@@ -189,6 +204,28 @@ class APITests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["evidence_counts"]["reviewed_entities"], 0)
         builder.assert_called_once()
+
+    def test_machine_exploration_report_is_separate_from_reviewed_insights(self):
+        report = ExplorationReport(
+            generated_at="2026-07-18T00:00:00Z",
+            counts=ExplorationCounts(active_pages=1, active_regions=1099),
+            themes=[],
+            ner_runs=[],
+            ner_agreements=[],
+            warnings=["machine observations only"],
+        )
+        with patch(
+            "wic_history.api.build_exploration_report", return_value=report
+        ) as builder:
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get(
+                "/api/exploration", params={"examples_per_theme": 5}
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["counts"]["active_regions"], 1099)
+        builder.assert_called_once_with(
+            "postgresql://example", examples_per_theme=5
+        )
 
     def test_claim_review_queue_is_exposed_without_mutation(self):
         queue = ClaimQueueResponse(

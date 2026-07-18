@@ -18,6 +18,8 @@ const reviewerInput = document.querySelector('#reviewer');
 const moreReview = document.querySelector('#more-review');
 const insightsButton = document.querySelector('#insights-button');
 const insightsPanel = document.querySelector('#insights-panel');
+const explorationButton = document.querySelector('#exploration-button');
+const explorationPanel = document.querySelector('#exploration-panel');
 const claimReviewItems = document.querySelector('#claim-review-items');
 const claimReviewSummary = document.querySelector('#claim-review-summary');
 const moreClaims = document.querySelector('#more-claims');
@@ -315,6 +317,94 @@ insightsButton.addEventListener('click', async () => {
 });
 document.querySelector('#close-insights').addEventListener('click', () => {
   insightsPanel.hidden = true;
+});
+
+function shortModelName(value) {
+  return value.split('/').at(-1).replace('+historical-women-zh-rules', '+rules');
+}
+
+async function loadExploration() {
+  const countsNode = document.querySelector('#exploration-counts');
+  const warningsNode = document.querySelector('#exploration-warnings');
+  const themesNode = document.querySelector('#exploration-themes');
+  const runsNode = document.querySelector('#exploration-ner-runs');
+  const agreementsNode = document.querySelector('#exploration-ner-agreements');
+  countsNode.textContent = 'Loading active OCR and candidate diagnostics…';
+  warningsNode.replaceChildren();
+  themesNode.replaceChildren();
+  runsNode.replaceChildren();
+  agreementsNode.replaceChildren();
+  const response = await fetch('/api/exploration');
+  if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+  const data = await response.json();
+  const counts = data.counts;
+  const meanConfidence = counts.mean_ocr_confidence == null ? 'n/a' : counts.mean_ocr_confidence.toFixed(3);
+  countsNode.textContent = `${counts.active_pages} active page(s) · ${counts.active_regions} OCR regions · ${counts.text_characters} characters · mean OCR confidence ${meanConfidence} · ${counts.low_confidence_regions} below 0.5 · ${counts.candidate_mentions} NER candidates`;
+  data.warnings.forEach(message => {
+    const warning = document.createElement('p');
+    warning.className = 'warning';
+    warning.textContent = message;
+    warningsNode.append(warning);
+  });
+  data.themes.forEach(theme => {
+    const card = document.createElement('article');
+    card.className = `exploration-card${theme.matched_regions ? '' : ' no-matches'}`;
+    const title = document.createElement('h3');
+    title.textContent = theme.title;
+    const meta = document.createElement('p');
+    meta.className = 'mention-provenance';
+    meta.textContent = theme.matched_regions
+      ? `${theme.matched_regions} region(s) on ${theme.matched_pages} page(s) · ${theme.year_start}${theme.year_end !== theme.year_start ? `–${theme.year_end}` : ''}`
+      : 'No matches in the current active OCR scope';
+    const prompt = document.createElement('p');
+    prompt.textContent = theme.research_prompt;
+    card.append(title, meta, prompt);
+    theme.examples.forEach(example => {
+      const evidence = document.createElement('div');
+      evidence.className = 'exploration-evidence';
+      const quote = document.createElement('blockquote');
+      quote.textContent = example.text;
+      const details = document.createElement('span');
+      details.className = 'mention-provenance';
+      const confidence = example.confidence == null ? 'n/a' : example.confidence.toFixed(3);
+      details.textContent = `Volume ${example.source.volume_number} · ${example.source.publication_year} · page ${example.source.page_number} · OCR ${confidence}`;
+      const scan = document.createElement('a');
+      scan.className = 'scan-link';
+      scan.target = '_blank';
+      scan.rel = 'noopener';
+      scan.href = pageImageUrl(
+        example.source.volume_number, example.source.page_number, example.source.derivative_id
+      );
+      scan.textContent = 'Open cited scan ↗';
+      evidence.append(quote, details, scan);
+      card.append(evidence);
+    });
+    themesNode.append(card);
+  });
+  data.ner_runs.forEach(run => {
+    const item = document.createElement('p');
+    item.className = 'diagnostic-row';
+    const confidence = run.mean_confidence == null ? 'n/a' : run.mean_confidence.toFixed(3);
+    item.textContent = `${shortModelName(run.model_name)} · ${run.candidate_mentions} candidates across ${run.cited_regions} regions · mean uncalibrated score ${confidence} · input ${run.input_regions ?? 'n/a'} regions`;
+    runsNode.append(item);
+  });
+  data.ner_agreements.forEach(signal => {
+    const item = document.createElement('p');
+    item.className = 'diagnostic-row';
+    item.textContent = `${shortModelName(signal.left_model)} ↔ ${shortModelName(signal.right_model)} · ${signal.exact_agreements} exact agreements · candidate Jaccard ${signal.candidate_jaccard.toFixed(4)}`;
+    agreementsNode.append(item);
+  });
+}
+
+explorationButton.addEventListener('click', async () => {
+  explorationPanel.hidden = false;
+  explorationPanel.scrollIntoView({behavior: 'smooth'});
+  try { await loadExploration(); } catch (error) {
+    document.querySelector('#exploration-counts').textContent = error.message;
+  }
+});
+document.querySelector('#close-exploration').addEventListener('click', () => {
+  explorationPanel.hidden = true;
 });
 
 function requestBody() {

@@ -25,6 +25,7 @@ from .generation import (
     TextGenerator,
     generate,
 )
+from .exploration import ExplorationReport, build_exploration_report
 from .insights import InsightReport, build_insight_report
 from .ingestion_jobs import batch_failures, batch_status
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
@@ -47,9 +48,7 @@ from .review_workflow import (
 
 
 PAGE_IMAGE_ROOTS = (
-    Path("artifacts/benchmark-pages/images"),
-    Path("artifacts/lossless-pilot/images"),
-    Path("artifacts/gold-pages/images"),
+    Path("artifacts"),
 )
 
 
@@ -57,7 +56,12 @@ def resolve_local_page_image(image_uri: str, workspace_root: Path) -> Path:
     candidate = Path(image_uri)
     path = (candidate if candidate.is_absolute() else workspace_root / candidate).resolve()
     allowed_roots = [(workspace_root / root).resolve() for root in PAGE_IMAGE_ROOTS]
-    if not any(path.is_relative_to(root) for root in allowed_roots) or not path.is_file():
+    allowed_suffixes = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp"}
+    if (
+        not any(path.is_relative_to(root) for root in allowed_roots)
+        or path.suffix.lower() not in allowed_suffixes
+        or not path.is_file()
+    ):
         raise ValueError("local page derivative is outside the controlled image roots")
     return path
 
@@ -408,6 +412,23 @@ def create_app(
             raise
         except Exception as exc:
             raise HTTPException(status_code=503, detail=f"Insight analysis unavailable: {exc}") from exc
+
+    @app.get("/api/exploration", response_model=ExplorationReport)
+    def exploration(examples_per_theme: int = 3) -> ExplorationReport:
+        if not 1 <= examples_per_theme <= 10:
+            raise HTTPException(
+                status_code=422, detail="examples_per_theme must be between 1 and 10"
+            )
+        try:
+            return build_exploration_report(
+                require_database(), examples_per_theme=examples_per_theme
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Exploratory analysis unavailable: {exc}"
+            ) from exc
 
     @app.get("/api/page-image/{volume_number}/{page_number}")
     def page_image(

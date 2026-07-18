@@ -246,6 +246,15 @@ cohorts. Re-run `wic-graph` after genuine reviews before using the graph
 insight view. Insight cards are analytical leads and never become historical
 claims automatically.
 
+`Explore machine leads` is a deliberately separate pre-review workspace. It
+summarizes the active OCR scope, applies a small versioned set of
+women-centered theme patterns, links every example to its registered scan
+derivative and region, and exposes NER candidate counts and pairwise exact
+agreement. Its labels and warnings make clear that these are triage signals,
+not frequency evidence or historical findings. With the current one-page
+lossless pilot, the panel is useful for prioritizing review but not corpus-level
+interpretation.
+
 Candidate claims have a second queue showing their subject, predicate, object,
 model revision, and every cited scan passage. Acceptance is rejected unless at
 least one evidence passage is attached and all referenced entities are already

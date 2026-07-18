@@ -65,6 +65,14 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace,
 .danger { background: transparent; color: var(--red); }
 .mention-scan { color: var(--red); margin-left: auto; }
 .insight-counts { margin: 20px 0; padding: 16px; border: 1px solid var(--line); font-size: 1.1rem; }
+.exploration-card { margin: 18px 0; padding: 20px; border: 1px solid var(--line); background: #faf7ee; }
+.exploration-card h3 { margin: 0 0 5px; font-size: 1.45rem; }
+.exploration-card.no-matches { opacity: .6; }
+.exploration-evidence { display: grid; gap: 7px; margin-top: 16px; padding-left: 16px; border-left: 3px solid var(--red); }
+.exploration-evidence blockquote { font-size: 1.15rem; }
+.exploration-evidence .scan-link { justify-self: start; }
+.exploration-diagnostics { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+.diagnostic-row { padding: 9px 0; border-bottom: 1px dotted var(--line); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
 .claim-review-section { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--line); }
 .claim-statement { font-size: 1.3rem; font-weight: bold; }
 .claim-provenance, .projection-state { color: var(--muted); font-size: .85rem; }

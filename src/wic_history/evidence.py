@@ -163,9 +163,16 @@ class EntityMentionCandidate(StrictModel):
 
 
 class NERArtifact(StrictModel):
-    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    schema_version: Literal["1.0", "1.1"] = SCHEMA_VERSION
     artifact_id: UUID = Field(default_factory=uuid4)
     source_ocr_run_id: UUID
+    input_variant: Literal["raw_ocr", "corrected_text", "multimodal_transcript"] | None = None
+    input_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    dataset_id: str | None = Field(default=None, min_length=1, max_length=300)
+    split_id: str | None = Field(default=None, min_length=1, max_length=100)
+    ontology_version: str | None = Field(default=None, min_length=1, max_length=100)
+    adapter_id: str | None = Field(default=None, min_length=1, max_length=200)
+    prompt_schema_revision: str | None = Field(default=None, min_length=1, max_length=200)
     run: ProcessingRun
     mentions: list[EntityMentionCandidate]
     warnings: list[str] = Field(default_factory=list)
@@ -178,6 +185,20 @@ class NERArtifact(StrictModel):
             raise ValueError("all mentions must reference the artifact processing run")
         if any(mention.source.region_id is None for mention in self.mentions):
             raise ValueError("all mentions must reference an OCR region")
+        if self.schema_version == "1.1" and any(
+            value is None
+            for value in (
+                self.input_variant,
+                self.input_sha256,
+                self.dataset_id,
+                self.split_id,
+                self.ontology_version,
+                self.adapter_id,
+            )
+        ):
+            raise ValueError(
+                "NER artifact schema 1.1 requires input identity, dataset/split, ontology and adapter"
+            )
         return self
 
 

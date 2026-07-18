@@ -44,6 +44,13 @@ def _summary(artifact: NERArtifact) -> dict[str, Any]:
         for mention in artifact.mentions
     )
     return {
+        "artifact_schema_version": artifact.schema_version,
+        "input_variant": artifact.input_variant,
+        "input_sha256": artifact.input_sha256,
+        "dataset_id": artifact.dataset_id,
+        "split_id": artifact.split_id,
+        "ontology_version": artifact.ontology_version,
+        "adapter_id": artifact.adapter_id,
         "model_name": artifact.run.model_name,
         "model_revision": artifact.run.model_revision,
         "configuration": artifact.run.configuration,
@@ -68,6 +75,15 @@ def _summary(artifact: NERArtifact) -> dict[str, Any]:
 def compare_artifacts(left: NERArtifact, right: NERArtifact) -> dict[str, Any]:
     if left.source_ocr_run_id != right.source_ocr_run_id:
         raise ValueError("NER comparisons require the same source OCR run")
+    identity_fields = (
+        "input_variant",
+        "input_sha256",
+        "dataset_id",
+        "split_id",
+        "ontology_version",
+    )
+    if any(getattr(left, field) != getattr(right, field) for field in identity_fields):
+        raise ValueError("NER comparisons require byte-identical input and benchmark identity")
     left_by_key = {mention_key(mention): mention for mention in left.mentions}
     right_by_key = {mention_key(mention): mention for mention in right.mentions}
     left_keys = set(left_by_key)

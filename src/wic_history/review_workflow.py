@@ -54,6 +54,12 @@ class MentionQueueItem(StrictModel):
     page_number: int
     model_name: str
     model_revision: str
+    input_variant: str | None = None
+    input_sha256: str | None = None
+    dataset_id: str | None = None
+    split_id: str | None = None
+    ontology_version: str | None = None
+    adapter_id: str | None = None
     extractor: str | None = None
     link_candidates: list[LinkCandidateView] = Field(default_factory=list)
 
@@ -173,7 +179,10 @@ MENTION_QUEUE_SQL = """
            derivative.evidence_tier,
            v.volume_number,
            v.publication_year, p.page_number,
-           pr.model_name, pr.model_revision
+           pr.model_name, pr.model_revision,
+           ner_input.input_variant, ner_input.input_sha256,
+           ner_input.dataset_id, ner_input.split_id,
+           ner_input.ontology_version, ner_input.adapter_id
     FROM evidence.entity_mention m
     JOIN evidence.ocr_region r USING (region_id)
     LEFT JOIN evidence.ocr_run_input input
@@ -181,12 +190,19 @@ MENTION_QUEUE_SQL = """
     LEFT JOIN archive.page_derivative derivative
       ON derivative.derivative_id = input.derivative_id
      AND derivative.page_id = input.page_id
-    JOIN archive.page p USING (page_id)
-    JOIN archive.volume v USING (volume_id)
-    JOIN archive.source_object s USING (source_object_id)
+    JOIN archive.page p ON p.page_id = r.page_id
+    JOIN archive.volume v ON v.volume_id = p.volume_id
+    JOIN archive.source_object s ON s.source_object_id = v.source_object_id
     JOIN evidence.processing_run pr ON pr.run_id = m.run_id
+    LEFT JOIN evidence.ner_run_input ner_input ON ner_input.run_id = m.run_id
     WHERE m.mention_status = %(status)s
       AND (%(model_name)s::text IS NULL OR pr.model_name = %(model_name)s::text)
+      AND (%(dataset_id)s::text IS NULL OR ner_input.dataset_id = %(dataset_id)s::text)
+      AND (%(ner_run_id)s::uuid IS NULL OR m.run_id = %(ner_run_id)s::uuid)
+      AND (
+          %(source_ocr_run_id)s::uuid IS NULL
+          OR ner_input.source_ocr_run_id = %(source_ocr_run_id)s::uuid
+      )
     ORDER BY m.created_at, m.confidence DESC NULLS LAST, m.mention_id
     LIMIT %(limit)s OFFSET %(offset)s
 """
@@ -246,11 +262,17 @@ def list_mention_queue(
     limit: int = 25,
     offset: int = 0,
     model_name: str | None = None,
+    dataset_id: str | None = None,
+    ner_run_id: UUID | None = None,
+    source_ocr_run_id: UUID | None = None,
 ) -> MentionQueueResponse:
     psycopg, dict_row = _clients()
     parameters = {
         "status": status,
         "model_name": model_name,
+        "dataset_id": dataset_id,
+        "ner_run_id": ner_run_id,
+        "source_ocr_run_id": source_ocr_run_id,
         "limit": limit,
         "offset": offset,
     }
@@ -260,8 +282,15 @@ def list_mention_queue(
             SELECT count(*)
             FROM evidence.entity_mention m
             JOIN evidence.processing_run pr ON pr.run_id = m.run_id
+            LEFT JOIN evidence.ner_run_input ner_input ON ner_input.run_id = m.run_id
             WHERE m.mention_status = %(status)s
               AND (%(model_name)s::text IS NULL OR pr.model_name = %(model_name)s::text)
+              AND (%(dataset_id)s::text IS NULL OR ner_input.dataset_id = %(dataset_id)s::text)
+              AND (%(ner_run_id)s::uuid IS NULL OR m.run_id = %(ner_run_id)s::uuid)
+              AND (
+                  %(source_ocr_run_id)s::uuid IS NULL
+                  OR ner_input.source_ocr_run_id = %(source_ocr_run_id)s::uuid
+              )
             """,
             parameters,
         ).fetchone()["count"]
@@ -355,9 +384,10 @@ def list_claim_queue(
                 LEFT JOIN archive.page_derivative derivative
                   ON derivative.derivative_id = input.derivative_id
                  AND derivative.page_id = input.page_id
-                JOIN archive.page p USING (page_id)
-                JOIN archive.volume v USING (volume_id)
-                JOIN archive.source_object s USING (source_object_id)
+                JOIN archive.page p ON p.page_id = r.page_id
+                JOIN archive.volume v ON v.volume_id = p.volume_id
+                JOIN archive.source_object s
+                  ON s.source_object_id = v.source_object_id
                 WHERE ce.claim_id = ANY(%s)
                 ORDER BY ce.claim_id, v.volume_number, p.page_number,
                          r.reading_order, ce.region_id

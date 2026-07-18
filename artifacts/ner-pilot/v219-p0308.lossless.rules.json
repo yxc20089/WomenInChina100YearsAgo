@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.1",
+  "artifact_id": "ab212b44-a4b0-45b1-8a4e-f1ac67fbe119",
+  "source_ocr_run_id": "cc2310a1-c174-4598-8360-1742da5d0262",
+  "input_variant": "raw_ocr",
+  "input_sha256": "dd3751d64052ecaf22e205c0c48c14567ada07dc36f5c9c30139b5e908c3af69",
+  "dataset_id": "lossless-pilot-v219-p0308",
+  "split_id": "technical_pilot",
+  "ontology_version": "women-history-zh-v1",
+  "adapter_id": "rules",
+  "prompt_schema_revision": null,
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "f3da45bb-b15b-4418-a2ef-ffe2f8163ce1",
+    "kind": "ner",
+    "engine": "RulePredictor",
+    "model_name": "historical-women-zh-rules",
+    "model_revision": "1",
+    "software_version": "gliner-0.2.27",
+    "configuration": {
+      "threshold": 0.45,
+      "batch_size": 8,
+      "labels": [
+        "person",
+        "person alias",
+        "kinship term",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product",
+        "advertisement"
+      ],
+      "rule_set": "historical-women-zh-v1",
+      "word_splitter_language": null,
+      "max_regions": null,
+      "flat_ner": false,
+      "multi_label": true,
+      "ontology_version": "women-history-zh-v1",
+      "input_variant": "raw_ocr",
+      "input_sha256": "dd3751d64052ecaf22e205c0c48c14567ada07dc36f5c9c30139b5e908c3af69",
+      "input_region_count": 849,
+      "input_character_count": 5216,
+      "device": "cpu",
+      "dtype": "float32"
+    },
+    "started_at": "2026-07-18T08:30:36.649290Z",
+    "completed_at": "2026-07-18T08:30:36.651569Z"
+  },
+  "mentions": [],
+  "warnings": [
+    "All NER outputs are machine candidates and require benchmark validation or review before entity linking.",
+    "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+    "Input is a source-resolution lossless pipeline pilot, not historian-selected gold."
+  ]
+}

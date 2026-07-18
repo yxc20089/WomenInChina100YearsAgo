@@ -84,6 +84,9 @@ def _validate_annotation_text(
 
 class GoldSnippet(StrictModel):
     snippet_id: str = Field(min_length=1, max_length=300)
+    gold_region_id: UUID | None = None
+    source_ocr_run_id: UUID | None = None
+    source_ocr_region_id: UUID | None = None
     source: SourcePointer
     raw_ocr_text: str
     page_genre: Literal[
@@ -104,6 +107,13 @@ class GoldSnippet(StrictModel):
     def validate_reviews(self) -> "GoldSnippet":
         if self.source.region_id is None:
             raise ValueError("gold snippets require an OCR region UUID")
+        if (
+            self.source_ocr_region_id is not None
+            and self.source.region_id != self.source_ocr_region_id
+        ):
+            raise ValueError(
+                "source pointer region_id must equal the explicit source OCR region mapping"
+            )
         reviewers = [review.reviewer for review in self.reviews]
         if len(set(reviewers)) != len(reviewers):
             raise ValueError("gold snippets require distinct independent reviewers")
@@ -124,7 +134,7 @@ class GoldSnippet(StrictModel):
 
 
 class NERGoldSet(StrictModel):
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.0", "1.1"] = "1.0"
     dataset_id: str = Field(min_length=1, max_length=300)
     created_at: datetime
     ontology_version: str = Field(min_length=1, max_length=100)
@@ -133,12 +143,32 @@ class NERGoldSet(StrictModel):
     @model_validator(mode="after")
     def validate_unique_sources(self) -> "NERGoldSet":
         snippet_ids = [snippet.snippet_id for snippet in self.snippets]
-        region_ids = [snippet.source.region_id for snippet in self.snippets]
+        region_ids = [_source_ocr_region_id(snippet) for snippet in self.snippets]
+        gold_region_ids = [_gold_region_id(snippet) for snippet in self.snippets]
         if len(set(snippet_ids)) != len(snippet_ids):
             raise ValueError("snippet IDs must be unique")
         if len(set(region_ids)) != len(region_ids):
-            raise ValueError("each gold snippet must target a distinct OCR region")
+            raise ValueError("each gold snippet must target a distinct source OCR region")
+        if len(set(gold_region_ids)) != len(gold_region_ids):
+            raise ValueError("each gold snippet must have a distinct model-independent region ID")
+        if self.schema_version == "1.1" and any(
+            snippet.gold_region_id is None
+            or snippet.source_ocr_run_id is None
+            or snippet.source_ocr_region_id is None
+            for snippet in self.snippets
+        ):
+            raise ValueError(
+                "NER gold schema 1.1 requires explicit gold-to-source OCR region mappings"
+            )
         return self
+
+
+def _source_ocr_region_id(snippet: GoldSnippet) -> UUID:
+    return snippet.source_ocr_region_id or snippet.source.region_id
+
+
+def _gold_region_id(snippet: GoldSnippet) -> UUID:
+    return snippet.gold_region_id or _source_ocr_region_id(snippet)
 
 
 SpanKey = tuple[UUID, int, int, str]
@@ -247,13 +277,21 @@ def score_ner_artifact(
     *,
     confidence_threshold: float = 0.0,
 ) -> dict[str, Any]:
+    expected_variant = "corrected_text" if input_text == "corrected" else "raw_ocr"
+    if (
+        predictions.input_variant is not None
+        and predictions.input_variant != expected_variant
+    ):
+        raise ValueError(
+            "prediction input_variant disagrees with the requested scoring text"
+        )
     snippets_by_region = {
-        snippet.source.region_id: snippet for snippet in gold.snippets
+        _source_ocr_region_id(snippet): snippet for snippet in gold.snippets
     }
     expected: set[SpanKey] = set()
     total_adjudicated = 0
     for snippet in gold.snippets:
-        region_id = snippet.source.region_id
+        region_id = _gold_region_id(snippet)
         total_adjudicated += len(snippet.adjudication.entities)
         for entity in snippet.adjudication.entities:
             if input_text == "corrected":
@@ -288,8 +326,6 @@ def score_ner_artifact(
     for mention in thresholded_mentions:
         pointer = mention.source
         prediction_count_by_type[mention.entity_type.value] += 1
-        if pointer.region_id is not None:
-            prediction_count_by_region[pointer.region_id] += 1
         snippet = snippets_by_region.get(pointer.region_id)
         reason = None
         if snippet is None:
@@ -315,8 +351,10 @@ def score_ner_artifact(
                 }
             )
             continue
+        gold_region_id = _gold_region_id(snippet)
+        prediction_count_by_region[gold_region_id] += 1
         key = (
-            pointer.region_id,
+            gold_region_id,
             pointer.text_start,
             pointer.text_end,
             mention.entity_type.value,
@@ -356,9 +394,11 @@ def score_ner_artifact(
         if predictions.run.completed_at
         else None
     )
+    input_region_count = predictions.run.configuration.get("input_region_count")
+    input_character_count = predictions.run.configuration.get("input_character_count")
     by_scan_quality = _stratified_exact_metrics(
         {
-            snippet.source.region_id: snippet.scan_quality
+            _gold_region_id(snippet): snippet.scan_quality
             for snippet in gold.snippets
         },
         expected,
@@ -366,14 +406,14 @@ def score_ner_artifact(
         prediction_count_by_region,
     )
     by_layout = _stratified_exact_metrics(
-        {snippet.source.region_id: snippet.layout for snippet in gold.snippets},
+        {_gold_region_id(snippet): snippet.layout for snippet in gold.snippets},
         expected,
         predicted_keys,
         prediction_count_by_region,
     )
     by_page_genre = _stratified_exact_metrics(
         {
-            snippet.source.region_id: snippet.page_genre
+            _gold_region_id(snippet): snippet.page_genre
             for snippet in gold.snippets
         },
         expected,
@@ -382,7 +422,7 @@ def score_ner_artifact(
     )
     by_decade = _stratified_exact_metrics(
         {
-            snippet.source.region_id: (
+            _gold_region_id(snippet): (
                 f"{(snippet.source.publication_year // 10) * 10}s"
                 if snippet.source.publication_year is not None
                 else "unknown"
@@ -400,12 +440,32 @@ def score_ner_artifact(
         "input_text": input_text,
         "model_name": predictions.run.model_name,
         "model_revision": predictions.run.model_revision,
+        "prediction_artifact_schema_version": predictions.schema_version,
+        "input_sha256": predictions.input_sha256,
+        "dataset_split": predictions.split_id,
         "model_duration_seconds": duration_seconds,
         "mentions_per_second": (
             len(predictions.mentions) / duration_seconds
             if duration_seconds and duration_seconds > 0
             else None
         ),
+        "regions_per_second": (
+            input_region_count / duration_seconds
+            if input_region_count is not None and duration_seconds and duration_seconds > 0
+            else None
+        ),
+        "unicode_characters_per_second": (
+            input_character_count / duration_seconds
+            if input_character_count is not None and duration_seconds and duration_seconds > 0
+            else None
+        ),
+        "latency_p50_seconds": predictions.run.configuration.get(
+            "latency_p50_seconds"
+        ),
+        "latency_p95_seconds": predictions.run.configuration.get(
+            "latency_p95_seconds"
+        ),
+        "cold_start_seconds": predictions.run.configuration.get("cold_start_seconds"),
         "peak_memory_bytes": predictions.run.configuration.get("peak_memory_bytes"),
         "confidence_threshold": confidence_threshold,
         "snippets": len(gold.snippets),

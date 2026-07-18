@@ -97,6 +97,29 @@ class APITests(unittest.TestCase):
         self.assertEqual(response.json()["items"], [])
         loader.assert_called_once()
 
+    def test_review_queue_accepts_exact_ner_cohort_filters(self):
+        queue = MentionQueueResponse(
+            status="candidate", total=0, offset=0, limit=25, items=[]
+        )
+        ner_run_id = "00000000-0000-0000-0000-000000000001"
+        ocr_run_id = "00000000-0000-0000-0000-000000000002"
+        with patch("wic_history.api.list_mention_queue", return_value=queue) as loader:
+            app = create_app(database_url="postgresql://example")
+            response = TestClient(app).get(
+                "/api/review/mentions",
+                params={
+                    "dataset_id": "gold-v1",
+                    "ner_run_id": ner_run_id,
+                    "source_ocr_run_id": ocr_run_id,
+                },
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(loader.call_args.kwargs["dataset_id"], "gold-v1")
+        self.assertEqual(str(loader.call_args.kwargs["ner_run_id"]), ner_run_id)
+        self.assertEqual(
+            str(loader.call_args.kwargs["source_ocr_run_id"]), ocr_run_id
+        )
+
     def test_entity_creation_request_requires_name(self):
         app = create_app(database_url="postgresql://example")
         response = TestClient(app).post(

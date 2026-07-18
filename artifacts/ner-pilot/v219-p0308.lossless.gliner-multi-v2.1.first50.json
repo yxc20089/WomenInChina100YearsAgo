@@ -1,0 +1,427 @@
+{
+  "schema_version": "1.1",
+  "artifact_id": "eefb745b-7339-4f20-b60c-92a8c2a537e0",
+  "source_ocr_run_id": "cc2310a1-c174-4598-8360-1742da5d0262",
+  "input_variant": "raw_ocr",
+  "input_sha256": "a354383d42b824d6586fed9a916aec35f4c600083ae1d37ff4d6d3537f121571",
+  "dataset_id": "lossless-pilot-v219-p0308",
+  "split_id": "technical_pilot",
+  "ontology_version": "women-history-zh-v1",
+  "adapter_id": "rules+gliner",
+  "prompt_schema_revision": null,
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+    "kind": "ner",
+    "engine": "rules+GLiNER",
+    "model_name": "urchade/gliner_multi-v2.1+historical-women-zh-rules",
+    "model_revision": "443d26d654e0324125a96bebd8e796c14ff2efe6+rules-v1",
+    "software_version": "gliner-0.2.27",
+    "configuration": {
+      "threshold": 0.45,
+      "batch_size": 8,
+      "labels": [
+        "person",
+        "person alias",
+        "kinship term",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product",
+        "advertisement"
+      ],
+      "rule_set": "historical-women-zh-v1",
+      "word_splitter_language": null,
+      "max_regions": 50,
+      "flat_ner": false,
+      "multi_label": true,
+      "ontology_version": "women-history-zh-v1",
+      "input_variant": "raw_ocr",
+      "input_sha256": "a354383d42b824d6586fed9a916aec35f4c600083ae1d37ff4d6d3537f121571",
+      "input_region_count": 50,
+      "input_character_count": 259,
+      "device": "cpu",
+      "dtype": "float32"
+    },
+    "started_at": "2026-07-18T08:31:17.690273Z",
+    "completed_at": "2026-07-18T08:31:18.613152Z"
+  },
+  "mentions": [
+    {
+      "mention_id": "10ee899f-1710-4994-8e63-0eade8e63b16",
+      "entity_type": "publication",
+      "text": "二期",
+      "normalized_text": "二期",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "f1397b10-5539-4ed0-b9d3-bbdb2a0e6089",
+        "polygon": {
+          "points": [
+            {
+              "x": 2160.0,
+              "y": 455.0
+            },
+            {
+              "x": 3360.0,
+              "y": 448.0
+            },
+            {
+              "x": 3360.0,
+              "y": 590.0
+            },
+            {
+              "x": 2160.0,
+              "y": 597.0
+            }
+          ]
+        },
+        "text_start": 7,
+        "text_end": 9
+      },
+      "confidence": 0.48814091086387634,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.48814091086387634
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "b29afb2b-0cee-442d-b089-1a9c0474160c",
+      "entity_type": "person",
+      "text": "yun",
+      "normalized_text": "yun",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "822af163-c8b7-4e14-a0d1-fa1bc57e5951",
+        "polygon": {
+          "points": [
+            {
+              "x": 4320.0,
+              "y": 621.0
+            },
+            {
+              "x": 4494.0,
+              "y": 621.0
+            },
+            {
+              "x": 4494.0,
+              "y": 1016.0
+            },
+            {
+              "x": 4320.0,
+              "y": 1016.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6988719701766968,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.6988719701766968
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "472fa663-b73e-487b-8d43-75ae3d69b648",
+      "entity_type": "school",
+      "text": "院大央中",
+      "normalized_text": "院大央中",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "bf647c46-896d-47cd-a516-a49e0fcb09c0",
+        "polygon": {
+          "points": [
+            {
+              "x": 3240.0,
+              "y": 634.0
+            },
+            {
+              "x": 4440.0,
+              "y": 625.0
+            },
+            {
+              "x": 4440.0,
+              "y": 1025.0
+            },
+            {
+              "x": 3240.0,
+              "y": 1034.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.5984898805618286,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.5984898805618286
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "2f7a6dab-91bd-4f8a-80d2-4b1f7d1d485b",
+      "entity_type": "person",
+      "text": "代安",
+      "normalized_text": "代安",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b8b21859-f1f3-4a78-8bb5-ccd8d00fe02d",
+        "polygon": {
+          "points": [
+            {
+              "x": 1790.0,
+              "y": 1027.0
+            },
+            {
+              "x": 1862.0,
+              "y": 1029.0
+            },
+            {
+              "x": 1859.0,
+              "y": 1135.0
+            },
+            {
+              "x": 1787.0,
+              "y": 1133.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.7107541561126709,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.7107541561126709
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "fe4ba38a-4079-4409-a8df-df9c9f450f64",
+      "entity_type": "person",
+      "text": "明劉",
+      "normalized_text": "明劉",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "448589e6-f945-4b87-b559-a2edf7db3ffa",
+        "polygon": {
+          "points": [
+            {
+              "x": 2160.0,
+              "y": 1080.0
+            },
+            {
+              "x": 3030.0,
+              "y": 1080.0
+            },
+            {
+              "x": 3023.0,
+              "y": 1668.0
+            },
+            {
+              "x": 2160.0,
+              "y": 1656.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6810119152069092,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.6810119152069092
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "a7573c69-bc96-46c2-b3fe-769afa4dbe65",
+      "entity_type": "person",
+      "text": "士女",
+      "normalized_text": "士女",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "6a813268-60c2-4cfa-80ae-982f33d5f189",
+        "polygon": {
+          "points": [
+            {
+              "x": 4759.0,
+              "y": 1080.0
+            },
+            {
+              "x": 4958.0,
+              "y": 1080.0
+            },
+            {
+              "x": 4958.0,
+              "y": 1182.0
+            },
+            {
+              "x": 4759.0,
+              "y": 1182.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.7288860082626343,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.7288860082626343
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6e73980a-227f-4b7e-a375-9677f0491866",
+      "entity_type": "person",
+      "text": "登爾",
+      "normalized_text": "登爾",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": null,
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1645627e-548c-4d39-b428-92a26dc3dafa",
+        "polygon": {
+          "points": [
+            {
+              "x": 4939.0,
+              "y": 1080.0
+            },
+            {
+              "x": 5149.0,
+              "y": 1080.0
+            },
+            {
+              "x": 5152.0,
+              "y": 1177.0
+            },
+            {
+              "x": 4941.0,
+              "y": 1181.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.693422257900238,
+      "run_id": "82ac9a4c-cbaa-432c-95f3-30de6de81c74",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "extractor_support": [
+          {
+            "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+            "raw_score": 0.693422257900238
+          }
+        ],
+        "confidence_semantics": "maximum uncalibrated candidate score",
+        "candidate_only": true
+      }
+    }
+  ],
+  "warnings": [
+    "All NER outputs are machine candidates and require benchmark validation or review before entity linking.",
+    "Technical compatibility subset: only the first 50 eligible OCR regions were processed.",
+    "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+    "Input is a source-resolution lossless pipeline pilot, not historian-selected gold."
+  ]
+}

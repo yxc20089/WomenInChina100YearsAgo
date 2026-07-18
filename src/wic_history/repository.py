@@ -696,6 +696,63 @@ def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResu
     region_ids = [mention.source.region_id for mention in artifact.mentions]
     with psycopg.connect(database_url) as connection:
         _verify_run(connection, artifact, Jsonb)
+        source_run = connection.execute(
+            """
+            SELECT kind, status FROM evidence.processing_run WHERE run_id = %s
+            """,
+            (artifact.source_ocr_run_id,),
+        ).fetchone()
+        if source_run != ("ocr", "completed"):
+            raise ValueError("NER source must be a completed registered OCR run")
+        connection.execute(
+            """
+            INSERT INTO evidence.ner_run_input (
+                run_id, source_ocr_run_id, artifact_id, artifact_uri,
+                artifact_schema_version, input_variant, input_sha256,
+                dataset_id, split_id, ontology_version, adapter_id,
+                prompt_schema_revision, metadata
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (run_id) DO NOTHING
+            """,
+            (
+                artifact.run.run_id,
+                artifact.source_ocr_run_id,
+                artifact.artifact_id,
+                artifact_path.as_posix(),
+                artifact.schema_version,
+                artifact.input_variant,
+                artifact.input_sha256,
+                artifact.dataset_id,
+                artifact.split_id,
+                artifact.ontology_version,
+                artifact.adapter_id,
+                artifact.prompt_schema_revision,
+                Jsonb({"warnings": artifact.warnings}),
+            ),
+        )
+        stored_input = connection.execute(
+            """
+            SELECT source_ocr_run_id, artifact_id, artifact_schema_version,
+                   input_variant, input_sha256, dataset_id, split_id,
+                   ontology_version, adapter_id, prompt_schema_revision
+            FROM evidence.ner_run_input WHERE run_id = %s
+            """,
+            (artifact.run.run_id,),
+        ).fetchone()
+        expected_input = (
+            artifact.source_ocr_run_id,
+            artifact.artifact_id,
+            artifact.schema_version,
+            artifact.input_variant,
+            artifact.input_sha256,
+            artifact.dataset_id,
+            artifact.split_id,
+            artifact.ontology_version,
+            artifact.adapter_id,
+            artifact.prompt_schema_revision,
+        )
+        if stored_input != expected_input:
+            raise ValueError("Stored NER run input differs from the immutable artifact")
         region_rows = connection.execute(
             """
             SELECT r.region_id, r.run_id, r.raw_text, p.page_number,

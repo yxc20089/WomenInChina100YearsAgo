@@ -1,13 +1,20 @@
 # Historical-Chinese NER benchmark
 
-The pinned candidate registry is `candidates.json`. It is a shortlist, not a
-production selection.
+The pinned candidate registry is `candidates.json`; the implementation-ready
+comparison, hardware estimates and frozen stop/go gates are in
+[`decision-memo.md`](decision-memo.md). This is a shortlist, not a production
+selection.
 
 The annotation policy and adjudication rules are in
 [`docs/annotation-guidelines.md`](../../docs/annotation-guidelines.md). The
 machine-readable contract is implemented by `wic_history.ner_gold.NERGoldSet`.
 It rejects fewer than two distinct reviewers, bad corrected/raw offsets,
 surface mismatches, duplicate spans, and duplicate snippet/region identities.
+Gold schema 1.1 assigns a model-independent gold region UUID and explicitly maps
+it to a source OCR run/region. Prediction schema 1.1 records raw versus
+corrected/multimodal input, canonical input SHA-256, dataset/split, ontology,
+adapter and prompt/schema revision. Legacy 1.0 artifacts remain readable but do
+not satisfy the scored benchmark provenance gate.
 
 Evaluate each applicable model on two paired inputs: double-corrected text and
 the corresponding raw OCR. Split by issue/date rather than random snippets so
@@ -20,6 +27,12 @@ project-specific span/token model plus GLiNER-X candidates; then NuExtract3 only
 for disagreements, rare types, implicit relations, or difficult page crops.
 Every stage must preserve exact source offsets and may abstain. Entity linking
 and claim review remain separate gates.
+
+Use an overlap-capable span/GlobalPointer-style SIKU head. A single-label BIO/CRF
+head is only a control because the policy permits nested spans and the same
+surface to carry distinct defensible types. Scores from different extractors are
+not comparable until calibrated, so artifacts retain every extractor's raw
+support instead of discarding disagreements.
 
 ## Pinned compatibility comparison
 
@@ -48,6 +61,20 @@ GLiNER-X candidates include suspicious OCR fragments. This is evidence of
 greater candidate volume and major disagreement—not better accuracy. The
 reproducible report is `artifacts/ner-smoke/comparison-first50.json`; only the
 paired gold benchmark can select the model and threshold.
+
+## Source-resolution non-gold comparison
+
+The comparison was repeated on the 6176×8960 lossless pipeline pilot using all
+14 ontology labels, nested spans and multi-label output. On the identical first
+50 eligible regions (259 Unicode characters), GLiNER multi-v2.1 emitted 7
+candidates and GLiNER-X emitted 82. They shared only 3 exact span/type candidates
+and 5 spans regardless of type; candidate Jaccard was 0.035. Rules found zero
+mentions on the complete 1,099-region page. Many high-confidence GLiNER-X
+outputs are visibly implausible OCR fragments, so neither model is selected or
+promoted.
+
+The artifacts and report are under `artifacts/ner-pilot/`. Their identical input
+SHA-256 is `a354383d42b824d6586fed9a916aec35f4c600083ae1d37ff4d6d3537f121571`.
 
 Score an artifact on both paired inputs after the adjudicated gold set is
 frozen:

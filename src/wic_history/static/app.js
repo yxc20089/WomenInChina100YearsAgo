@@ -133,7 +133,10 @@ function renderMention(item) {
   const card = fragment.querySelector('.mention-card');
   fragment.querySelector('.mention-meta').textContent = `${item.entity_type} · “${item.mention_text}” · ${(item.confidence || 0).toFixed(3)}`;
   appendHighlightedText(fragment.querySelector('.mention-context'), item.region_text, item.text_start, item.text_end);
-  fragment.querySelector('.mention-provenance').textContent = `Volume ${item.volume_number} · ${item.publication_year} · page ${item.page_number} · ${item.model_name} @ ${item.model_revision}`;
+  const inputProvenance = item.input_variant
+    ? ` · ${item.input_variant} · ${item.dataset_id || 'unassigned'} / ${item.split_id || 'unassigned'}`
+    : '';
+  fragment.querySelector('.mention-provenance').textContent = `Volume ${item.volume_number} · ${item.publication_year} · page ${item.page_number} · ${item.model_name} @ ${item.model_revision}${inputProvenance}`;
   fragment.querySelector('.mention-scan').href = pageImageUrl(
     item.volume_number, item.page_number, item.derivative_id
   );

@@ -38,7 +38,10 @@ class ReviewWorkflowTests(unittest.TestCase):
         self.assertIn("JOIN evidence.ocr_region", MENTION_QUEUE_SQL)
         self.assertIn("JOIN evidence.processing_run", MENTION_QUEUE_SQL)
         self.assertIn("JOIN evidence.ocr_run_input", MENTION_QUEUE_SQL)
+        self.assertIn("JOIN evidence.ner_run_input", MENTION_QUEUE_SQL)
         self.assertIn("derivative.image_uri", MENTION_QUEUE_SQL)
+        self.assertIn("ner_input.dataset_id", MENTION_QUEUE_SQL)
+        self.assertIn("ner_input.source_ocr_run_id", MENTION_QUEUE_SQL)
         self.assertIn("m.mention_status", MENTION_QUEUE_SQL)
 
     def test_claim_queue_carries_entities_model_and_evidence_join_key(self):

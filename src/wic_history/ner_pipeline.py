@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -23,11 +24,14 @@ from .evidence import (
 
 DEFAULT_MODEL = "urchade/gliner_multi-v2.1"
 DEFAULT_MODEL_REVISION = "443d26d654e0324125a96bebd8e796c14ff2efe6"
-CHALLENGER_MODEL = "gliner-community/gliner_large-v2.5"
-CHALLENGER_REVISION = "3d6d1760be1c591069f85f207fced9214df8b15f"
+CHALLENGER_MODEL = "knowledgator/gliner-x-large"
+CHALLENGER_REVISION = "4a4437f439a78d67c87781b42e8c45373d2adcb0"
+ONTOLOGY_VERSION = "women-history-zh-v1"
 
 MODEL_LABELS: dict[str, EntityType] = {
     "person": EntityType.PERSON,
+    "person alias": EntityType.ALIAS,
+    "kinship term": EntityType.KINSHIP_TERM,
     "place": EntityType.PLACE,
     "address": EntityType.ADDRESS,
     "organization": EntityType.ORGANIZATION,
@@ -38,6 +42,7 @@ MODEL_LABELS: dict[str, EntityType] = {
     "event": EntityType.EVENT,
     "date": EntityType.DATE,
     "product": EntityType.PRODUCT,
+    "advertisement": EntityType.ADVERTISEMENT,
 }
 
 
@@ -49,6 +54,7 @@ class SpanCandidate:
     entity_type: EntityType
     score: float
     extractor: str
+    supports: tuple[tuple[str, float], ...] = ()
 
 
 class BatchPredictor(Protocol):
@@ -147,6 +153,8 @@ class GLiNERPredictor:
         revision: str,
         batch_size: int = 8,
         word_splitter_language: str | None = None,
+        flat_ner: bool = False,
+        multi_label: bool = True,
     ):
         try:
             from gliner import GLiNER
@@ -155,6 +163,8 @@ class GLiNERPredictor:
         self.model_name = model_name
         self.revision = revision
         self.batch_size = batch_size
+        self.flat_ner = flat_ner
+        self.multi_label = multi_label
         self.model = GLiNER.from_pretrained(
             model_name,
             revision=revision,
@@ -172,8 +182,8 @@ class GLiNERPredictor:
             texts,
             list(MODEL_LABELS),
             threshold=threshold,
-            flat_ner=True,
-            multi_label=False,
+            flat_ner=self.flat_ner,
+            multi_label=self.multi_label,
             batch_size=self.batch_size,
         )
         results = []
@@ -206,14 +216,47 @@ def merge_candidates(*candidate_sets: list[list[SpanCandidate]]) -> list[list[Sp
         return []
     merged: list[list[SpanCandidate]] = []
     for per_text in zip(*candidate_sets, strict=True):
-        by_key: dict[tuple[int, int, EntityType], SpanCandidate] = {}
+        by_key: dict[tuple[int, int, EntityType], list[SpanCandidate]] = {}
         for candidate in (item for group in per_text for item in group):
             key = (candidate.start, candidate.end, candidate.entity_type)
-            current = by_key.get(key)
-            if current is None or candidate.score > current.score:
-                by_key[key] = candidate
-        merged.append(sorted(by_key.values(), key=lambda item: (item.start, item.end, item.entity_type)))
+            by_key.setdefault(key, []).append(candidate)
+        combined = []
+        for candidates in by_key.values():
+            best = max(candidates, key=lambda item: item.score)
+            support_scores: dict[str, float] = {}
+            for candidate in candidates:
+                supports = candidate.supports or ((candidate.extractor, candidate.score),)
+                for extractor, score in supports:
+                    support_scores[extractor] = max(score, support_scores.get(extractor, 0.0))
+            combined.append(
+                SpanCandidate(
+                    best.start,
+                    best.end,
+                    best.text,
+                    best.entity_type,
+                    best.score,
+                    best.extractor,
+                    tuple(sorted(support_scores.items())),
+                )
+            )
+        merged.append(
+            sorted(combined, key=lambda item: (item.start, item.end, item.entity_type))
+        )
     return merged
+
+
+def ner_input_sha256(source_ocr_run_id: object, regions: list[object]) -> str:
+    payload = {
+        "source_ocr_run_id": str(source_ocr_run_id),
+        "regions": [
+            {"region_id": str(region.region_id), "text": region.raw_text}
+            for region in regions
+        ],
+    }
+    canonical = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def create_ner_artifact(
@@ -225,12 +268,17 @@ def create_ner_artifact(
     batch_size: int,
     word_splitter_language: str | None = None,
     max_regions: int | None = None,
+    flat_ner: bool = False,
+    multi_label: bool = True,
+    dataset_id: str | None = None,
+    split_id: str | None = None,
 ) -> NERArtifact:
     started_at = datetime.now(timezone.utc)
     eligible = [region for region in ocr.regions if len(region.raw_text.strip()) >= 2]
     if max_regions is not None:
         eligible = eligible[:max_regions]
     texts = [region.raw_text for region in eligible]
+    input_sha256 = ner_input_sha256(ocr.run.run_id, eligible)
     predicted_sets = [predictor.predict(texts, threshold) for predictor in predictors]
     candidates = merge_candidates(*predicted_sets)
     run = ProcessingRun(
@@ -246,6 +294,15 @@ def create_ner_artifact(
             "rule_set": "historical-women-zh-v1",
             "word_splitter_language": word_splitter_language,
             "max_regions": max_regions,
+            "flat_ner": flat_ner,
+            "multi_label": multi_label,
+            "ontology_version": ONTOLOGY_VERSION,
+            "input_variant": "raw_ocr",
+            "input_sha256": input_sha256,
+            "input_region_count": len(eligible),
+            "input_character_count": sum(len(text) for text in texts),
+            "device": "cpu",
+            "dtype": "float32",
         },
         started_at=started_at,
         completed_at=datetime.now(timezone.utc),
@@ -261,6 +318,8 @@ def create_ner_artifact(
                     source=SourcePointer(
                         source_uri=ocr.source.source_uri,
                         source_sha256=ocr.source.source_sha256,
+                        image_sha256=ocr.image_sha256,
+                        evidence_tier=ocr.run.configuration.get("evidence_tier"),
                         volume_number=ocr.source.volume_number,
                         publication_year=ocr.source.publication_year,
                         page_number=ocr.source.page_number,
@@ -271,7 +330,15 @@ def create_ner_artifact(
                     ),
                     confidence=span.score,
                     run_id=run.run_id,
-                    attributes={"extractor": span.extractor, "candidate_only": True},
+                    attributes={
+                        "extractor": span.extractor,
+                        "extractor_support": [
+                            {"extractor": extractor, "raw_score": score}
+                            for extractor, score in span.supports
+                        ],
+                        "confidence_semantics": "maximum uncalibrated candidate score",
+                        "candidate_only": True,
+                    },
                 )
             )
     warnings = [
@@ -283,7 +350,14 @@ def create_ner_artifact(
         )
     warnings.extend(ocr.warnings)
     return NERArtifact(
+        schema_version="1.1",
         source_ocr_run_id=ocr.run.run_id,
+        input_variant="raw_ocr",
+        input_sha256=input_sha256,
+        dataset_id=dataset_id or f"ocr-run:{ocr.run.run_id}",
+        split_id=split_id or ("technical_pilot" if max_regions else "unassigned"),
+        ontology_version=ONTOLOGY_VERSION,
+        adapter_id="rules+gliner" if len(predictors) > 1 else "rules",
         run=run,
         mentions=mentions,
         warnings=warnings,
@@ -303,6 +377,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Force a pre-downloaded Stanza tokenizer language, e.g. zh-hant",
     )
     parser.add_argument("--max-regions", type=int, help="Bound a technical compatibility run")
+    parser.add_argument("--dataset-id")
+    parser.add_argument("--split-id")
+    parser.add_argument(
+        "--flat-ner",
+        action="store_true",
+        help="Disallow nested spans for a legacy flat-NER control arm",
+    )
+    parser.add_argument(
+        "--single-label",
+        action="store_true",
+        help="Disallow distinct entity types on an identical span for a control arm",
+    )
     parser.add_argument("--rules-only", action="store_true")
     return parser
 
@@ -325,6 +411,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.revision,
                 args.batch_size,
                 args.word_splitter_language,
+                args.flat_ner,
+                not args.single_label,
             )
         )
         model_name = f"{args.model}+historical-women-zh-rules"
@@ -338,6 +426,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.batch_size,
         args.word_splitter_language,
         args.max_regions,
+        args.flat_ner,
+        not args.single_label,
+        args.dataset_id,
+        args.split_id,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")

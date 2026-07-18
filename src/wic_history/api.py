@@ -258,6 +258,9 @@ def create_app(
         limit: int = 25,
         offset: int = 0,
         model_name: str | None = None,
+        dataset_id: str | None = None,
+        ner_run_id: UUID | None = None,
+        source_ocr_run_id: UUID | None = None,
     ) -> MentionQueueResponse:
         if not 1 <= limit <= 100 or offset < 0:
             raise HTTPException(status_code=422, detail="limit must be 1–100 and offset nonnegative")
@@ -268,6 +271,9 @@ def create_app(
                 limit=limit,
                 offset=offset,
                 model_name=model_name,
+                dataset_id=dataset_id,
+                ner_run_id=ner_run_id,
+                source_ocr_run_id=source_ocr_run_id,
             )
         except HTTPException:
             raise

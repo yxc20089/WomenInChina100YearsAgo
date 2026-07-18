@@ -113,6 +113,9 @@ uv run wic-ingest --database-url "$DATABASE_URL" manifest artifacts/corpus-audit
 uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-smoke/v219-p0308.ppocrv6.json
 uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json
 uv run wic-ingest --database-url "$DATABASE_URL" ner artifacts/ner-smoke/v219-p0308.gliner-multi-v2.1.json
+uv run wic-ingest --database-url "$DATABASE_URL" ner \
+  artifacts/ner-pilot/v219-p0308.lossless.gliner-multi-v2.1.first50.json \
+  artifacts/ner-pilot/v219-p0308.lossless.gliner-x.first50.json
 ```
 
 OCR ingestion retains every byte-distinct page image in
@@ -216,6 +219,7 @@ reading-order, region-kind/direction, geometry, throughput and stratified
 metrics. Benchmark commands and refusal conditions are under `experiments/ocr/`.
 
 The committed OCR/NER files include technical smoke artifacts from a lossy
-screening derivative and one source-resolution, explicitly non-gold lossless OCR
-pilot. They demonstrate provenance, coordinates, persistence, and retrieval;
-they are not gold transcriptions or reviewed historical assertions.
+screening derivative and source-resolution, explicitly non-gold lossless
+OCR/NER pilots. They demonstrate provenance, coordinates, persistence,
+retrieval and benchmark isolation; they are not gold transcriptions, accuracy
+results, or reviewed historical assertions.

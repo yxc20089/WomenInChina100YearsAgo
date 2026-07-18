@@ -84,6 +84,21 @@ class EvidenceContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "kind=ner"):
             NERArtifact(source_ocr_run_id=uuid4(), run=run, mentions=[])
 
+    def test_ner_schema_1_1_requires_exact_input_identity(self):
+        run = ProcessingRun(
+            kind=RunKind.NER,
+            engine="test",
+            model_name="fixture",
+            model_revision="1",
+        )
+        with self.assertRaisesRegex(ValidationError, "input identity"):
+            NERArtifact(
+                schema_version="1.1",
+                source_ocr_run_id=uuid4(),
+                run=run,
+                mentions=[],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

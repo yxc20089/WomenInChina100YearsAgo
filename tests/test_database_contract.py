@@ -31,6 +31,7 @@ class DatabaseContractTests(unittest.TestCase):
                 "003_claim_review_index.sql",
                 "004_page_derivatives.sql",
                 "005_ocr_run_selection.sql",
+                "006_ner_run_input.sql",
             ],
         )
 
@@ -49,6 +50,15 @@ class DatabaseContractTests(unittest.TestCase):
         self.assertIn("CREATE TABLE evidence.page_ocr_selection", sql)
         self.assertIn("WHERE superseded_at IS NULL", sql)
         self.assertIn("historian_approved", sql)
+
+    def test_ner_run_input_persists_benchmark_identity(self):
+        sql = Path("db/migrations/006_ner_run_input.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("CREATE TABLE evidence.ner_run_input", sql)
+        self.assertIn("source_ocr_run_id", sql)
+        self.assertIn("input_sha256", sql)
+        self.assertIn("ontology_version", sql)
 
 
 if __name__ == "__main__":

@@ -170,6 +170,21 @@ class NERGoldTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             NERGoldSet.model_validate(data)
 
+    def test_schema_1_1_maps_model_independent_gold_to_source_ocr_region(self):
+        data = gold_set().model_dump(mode="json")
+        data["schema_version"] = "1.1"
+        snippet = data["snippets"][0]
+        snippet["gold_region_id"] = "00000000-0000-0000-0000-000000000099"
+        snippet["source_ocr_run_id"] = "00000000-0000-0000-0000-000000000098"
+        snippet["source_ocr_region_id"] = str(REGION_ID)
+        mapped_gold = NERGoldSet.model_validate(data)
+
+        report = score_ner_artifact(
+            mapped_gold, predictions("raw_ocr"), "raw_ocr"
+        )
+
+        self.assertEqual(report["exact"]["true_positive"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

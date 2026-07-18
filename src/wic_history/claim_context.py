@@ -29,9 +29,9 @@ REVIEWED_CLAIM_CONTEXT_SQL = """
     LEFT JOIN archive.page_derivative derivative
       ON derivative.derivative_id = input.derivative_id
      AND derivative.page_id = input.page_id
-    JOIN archive.page p USING (page_id)
-    JOIN archive.volume v USING (volume_id)
-    JOIN archive.source_object s USING (source_object_id)
+    JOIN archive.page p ON p.page_id = r.page_id
+    JOIN archive.volume v ON v.volume_id = p.volume_id
+    JOIN archive.source_object s ON s.source_object_id = v.source_object_id
     WHERE c.claim_id = ANY(%s)
       AND c.claim_status = 'reviewed'
       AND subject.entity_status = 'reviewed'

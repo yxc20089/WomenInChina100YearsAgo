@@ -3,7 +3,13 @@ from __future__ import annotations
 import unittest
 
 from wic_history.evidence import EntityType
-from wic_history.ner_pipeline import RulePredictor, SpanCandidate, build_parser, merge_candidates
+from wic_history.ner_pipeline import (
+    MODEL_LABELS,
+    RulePredictor,
+    SpanCandidate,
+    build_parser,
+    merge_candidates,
+)
 
 
 class NERPipelineTests(unittest.TestCase):
@@ -36,7 +42,12 @@ class NERPipelineTests(unittest.TestCase):
         lower = SpanCandidate(0, 2, "申報", EntityType.PUBLICATION, 0.5, "one")
         higher = SpanCandidate(0, 2, "申報", EntityType.PUBLICATION, 0.9, "two")
         merged = merge_candidates([[lower]], [[higher]])
-        self.assertEqual(merged[0], [higher])
+        self.assertEqual(merged[0][0].score, 0.9)
+        self.assertEqual(merged[0][0].extractor, "two")
+        self.assertEqual(merged[0][0].supports, (("one", 0.5), ("two", 0.9)))
+
+    def test_model_labels_cover_the_full_project_ontology(self):
+        self.assertEqual(set(MODEL_LABELS.values()), set(EntityType))
 
 
 if __name__ == "__main__":

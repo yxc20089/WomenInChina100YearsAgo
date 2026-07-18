@@ -15,8 +15,8 @@
       "model": "SIKU-BERT/sikubert",
       "revision": "fc656de2d6bde33919102dd3abe31c843f42226a",
       "license": "Apache-2.0",
-      "role": "historical-Chinese supervised encoder",
-      "evidence": "Pretrained on Siku Quanshu; requires a project-trained token/span head and Shen Bao validation."
+      "role": "historical-Chinese supervised primary with an overlap-capable span head",
+      "evidence": "Pretrained on Siku Quanshu; requires a project-trained span/GlobalPointer-style head and Shen Bao validation. A single-label BIO/CRF arm is only a control because the project ontology permits overlaps."
     },
     {
       "id": "nuextract3",

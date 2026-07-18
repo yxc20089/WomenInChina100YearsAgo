@@ -61,6 +61,12 @@ missing or multiply covered non-whitespace characters, or any probe that does
 not round-trip to the exact source span. The fixture covers uninterrupted
 Traditional Chinese, variant forms, a supplementary-plane character, line
 breaks/full-width punctuation, OCR-confusion stress strings, `□`, and `�`.
+The sole virtual-token exception is
+`standalone_sentencepiece_prefix_duplicate_v1`: an initial standalone `▁`
+may be excluded from alignment only when it duplicates the real next token's
+exact `(0, 1)` source offset. The artifact retains and flags that token, and
+downstream adapters must apply the same policy. Other overlap remains a hard
+failure.
 Passing proves offset plumbing only; unknown-token counts are reported, and no
 result is evidence of NER accuracy or historical validity.
 

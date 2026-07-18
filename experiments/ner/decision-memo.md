@@ -81,7 +81,10 @@ permission with permission to publish scans, OCR, or annotations.
   one frozen encoder; do not attribute head gains to a different backbone.
 - Before the mmBERT arm, prove tokenizer-to-Unicode-character round trips on
   uninterrupted Traditional Chinese, variants, punctuation and observed OCR
-  confusions; any invalid offset is a hard failure.
+  confusions; any invalid offset is a hard failure. A standalone initial
+  SentencePiece `▁` may be excluded only under the committed duplicate-`(0, 1)`
+  virtual-prefix policy, must remain visible in the audit artifact, and must be
+  handled identically by the training/inference adapter.
 - Build the MacBERT-DAPT corpus only from training issues after splitting;
   freeze its document list, bytes and SHA-256 so development/test language
   cannot leak into continued pretraining.

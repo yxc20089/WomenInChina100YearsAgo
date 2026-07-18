@@ -93,6 +93,7 @@ class TokenObservation(StrictModel):
     end: int = Field(ge=0)
     surface: str
     is_unknown: bool
+    is_virtual_prefix: bool = False
 
 
 class ProbeObservation(StrictModel):
@@ -118,6 +119,7 @@ class TokenizerCaseResult(StrictModel):
     uncovered_non_whitespace_indices: list[int]
     multiply_covered_indices: list[int]
     unknown_token_indices: list[int]
+    virtual_prefix_token_indices: list[int]
     failures: list[str]
     passed: bool
 
@@ -128,12 +130,38 @@ class TokenizerCaseResult(StrictModel):
         if self.unknown_token_indices != [
             token.token_index for token in self.tokens if token.is_unknown
         ]:
-            raise ValueError("tokenizer unknown-token indices disagree with observations")
+            raise ValueError(
+                "tokenizer unknown-token indices disagree with observations"
+            )
+        virtual_prefix_indices = [
+            token.token_index for token in self.tokens if token.is_virtual_prefix
+        ]
+        if self.virtual_prefix_token_indices != virtual_prefix_indices:
+            raise ValueError(
+                "tokenizer virtual-prefix indices disagree with observations"
+            )
+        if len(virtual_prefix_indices) > 1:
+            raise ValueError("a tokenizer case may contain at most one virtual prefix")
+        if virtual_prefix_indices:
+            virtual = self.tokens[virtual_prefix_indices[0]]
+            if (
+                virtual.token_index != 0
+                or virtual.token != "▁"
+                or virtual.start != 0
+                or virtual.end != 1
+                or len(self.tokens) < 2
+                or self.tokens[1].token_index != 1
+                or self.tokens[1].start != virtual.start
+                or self.tokens[1].end != virtual.end
+                or self.tokens[1].surface != virtual.surface
+                or self.tokens[1].is_virtual_prefix
+            ):
+                raise ValueError("virtual prefix does not satisfy the recorded policy")
         return self
 
 
 class TokenizerQualificationArtifact(StrictModel):
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.1"] = "1.1"
     artifact_kind: Literal["ner_tokenizer_offset_qualification"] = (
         "ner_tokenizer_offset_qualification"
     )
@@ -149,6 +177,9 @@ class TokenizerQualificationArtifact(StrictModel):
     tokenizer_file_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     transformers_version: str = Field(min_length=1, max_length=100)
     tokenizers_version: str = Field(min_length=1, max_length=100)
+    virtual_prefix_policy: Literal["standalone_sentencepiece_prefix_duplicate_v1"] = (
+        "standalone_sentencepiece_prefix_duplicate_v1"
+    )
     results: list[TokenizerCaseResult] = Field(min_length=1)
     global_failures: list[str]
     warnings: list[str]
@@ -174,7 +205,9 @@ class TokenizerQualificationArtifact(StrictModel):
             and all(result.passed for result in self.results)
         )
         if self.passed != expected_passed:
-            raise ValueError("tokenizer qualification pass state disagrees with results")
+            raise ValueError(
+                "tokenizer qualification pass state disagrees with results"
+            )
         return self
 
 
@@ -194,6 +227,31 @@ def _normalized_text(tokenizer: OffsetTokenizer, text: str) -> str:
     if normalizer is None:
         return text
     return normalizer.normalize_str(text)
+
+
+def _is_virtual_prefix_token(
+    index: int,
+    token: str,
+    offsets: list[Any],
+    token_strings: list[str],
+) -> bool:
+    """Recognize one audited SentencePiece prefix marker with no unique source span."""
+    if index != 0 or token != "▁" or len(offsets) < 2 or len(token_strings) < 2:
+        return False
+    current, following = offsets[0], offsets[1]
+    if not (
+        isinstance(current, (list, tuple))
+        and isinstance(following, (list, tuple))
+        and len(current) == 2
+        and len(following) == 2
+        and all(isinstance(value, int) for value in (*current, *following))
+    ):
+        return False
+    return (
+        tuple(current) == (0, 1)
+        and tuple(following) == tuple(current)
+        and token_strings[1] != "▁"
+    )
 
 
 def _case_result(
@@ -236,11 +294,15 @@ def _case_result(
         if not 0 <= start < end <= len(case.text):
             failures.append(f"token {index} has an empty or out-of-range offset")
             continue
-        if start < previous_end:
+        is_virtual_prefix = _is_virtual_prefix_token(
+            index, str(token), offsets, token_strings
+        )
+        if not is_virtual_prefix and start < previous_end:
             failures.append(f"token {index} overlaps or precedes the prior token")
-        previous_end = max(previous_end, end)
-        for character_index in range(start, end):
-            coverage[character_index] += 1
+        if not is_virtual_prefix:
+            previous_end = max(previous_end, end)
+            for character_index in range(start, end):
+                coverage[character_index] += 1
         observations.append(
             TokenObservation(
                 token_index=index,
@@ -252,6 +314,7 @@ def _case_result(
                 is_unknown=(
                     tokenizer.unk_token is not None and token == tokenizer.unk_token
                 ),
+                is_virtual_prefix=is_virtual_prefix,
             )
         )
     uncovered = [
@@ -270,7 +333,8 @@ def _case_result(
         matching = [
             token
             for token in observations
-            if max(token.start, probe.start) < min(token.end, probe.end)
+            if not token.is_virtual_prefix
+            and max(token.start, probe.start) < min(token.end, probe.end)
         ]
         token_indices = [token.token_index for token in matching]
         if matching:
@@ -319,6 +383,9 @@ def _case_result(
         unknown_token_indices=[
             token.token_index for token in observations if token.is_unknown
         ],
+        virtual_prefix_token_indices=[
+            token.token_index for token in observations if token.is_virtual_prefix
+        ],
         failures=failures,
         passed=not failures,
     )
@@ -342,6 +409,9 @@ def qualify_tokenizer(
         global_failures.append("tokenizer is not a fast tokenizer with source offsets")
     results = [_case_result(case, tokenizer) for case in fixture.cases]
     unknown_count = sum(len(result.unknown_token_indices) for result in results)
+    virtual_prefix_count = sum(
+        len(result.virtual_prefix_token_indices) for result in results
+    )
     warnings = [
         "This artifact qualifies tokenizer offset integrity only; it is not NER accuracy evidence.",
         "Passing does not authorize model selection, entity acceptance, or graph promotion.",
@@ -349,6 +419,10 @@ def qualify_tokenizer(
     if unknown_count:
         warnings.append(
             f"Tokenizer emitted {unknown_count} unknown tokens; offsets may still pass, but representation quality requires benchmark evaluation."
+        )
+    if virtual_prefix_count:
+        warnings.append(
+            f"Tokenizer emitted {virtual_prefix_count} standalone SentencePiece prefix markers with duplicated first-character offsets. They were retained in the audit record but excluded from character coverage and span alignment under standalone_sentencepiece_prefix_duplicate_v1; downstream adapters must apply the same policy."
         )
     manifest_sha256 = canonical_sha256(
         [record.model_dump(mode="json") for record in tokenizer_files]

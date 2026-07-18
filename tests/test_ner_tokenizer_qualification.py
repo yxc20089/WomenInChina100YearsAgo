@@ -60,6 +60,24 @@ class CharacterTokenizer:
         return [self._tokens[token_id] for token_id in token_ids]
 
 
+class PrefixMarkerTokenizer(CharacterTokenizer):
+    def __call__(self, text: str, **kwargs):
+        encoded = super().__call__(text, **kwargs)
+        self._tokens[1000] = "▁"
+        encoded["input_ids"].insert(0, 1000)
+        encoded["offset_mapping"].insert(0, (0, 1))
+        return encoded
+
+
+class ArbitraryOverlapTokenizer(CharacterTokenizer):
+    def __call__(self, text: str, **kwargs):
+        encoded = super().__call__(text, **kwargs)
+        self._tokens[1000] = "BAD"
+        encoded["input_ids"].insert(0, 1000)
+        encoded["offset_mapping"].insert(0, (0, 1))
+        return encoded
+
+
 def fixture() -> TokenizerQualificationFixture:
     text = "宋女士入學\n上海女子學校。"
     return TokenizerQualificationFixture(
@@ -72,7 +90,9 @@ def fixture() -> TokenizerQualificationFixture:
                 text=text,
                 probes=[
                     TokenizerProbeSpan(label="person", start=0, end=3, text="宋女士"),
-                    TokenizerProbeSpan(label="school", start=6, end=12, text="上海女子學校"),
+                    TokenizerProbeSpan(
+                        label="school", start=6, end=12, text="上海女子學校"
+                    ),
                 ],
             )
         ],
@@ -80,9 +100,7 @@ def fixture() -> TokenizerQualificationFixture:
 
 
 def file_records() -> list[TokenizerFileRecord]:
-    return [
-        TokenizerFileRecord(path="tokenizer.json", sha256="1" * 64, size_bytes=10)
-    ]
+    return [TokenizerFileRecord(path="tokenizer.json", sha256="1" * 64, size_bytes=10)]
 
 
 class TokenizerQualificationTests(unittest.TestCase):
@@ -120,6 +138,44 @@ class TokenizerQualificationTests(unittest.TestCase):
         self.assertFalse(artifact.passed)
         self.assertTrue(artifact.results[0].normalization_changed)
         self.assertIn("normalization", artifact.results[0].failures[0])
+
+    def test_standalone_sentencepiece_prefix_is_recorded_but_not_aligned(self):
+        artifact = qualify_tokenizer(
+            fixture(),
+            PrefixMarkerTokenizer(),
+            fixture_sha256="2" * 64,
+            model_name="example/tokenizer",
+            model_revision="a" * 40,
+            code_revision="b" * 40,
+            tokenizer_files=file_records(),
+            transformers_version="5.5.3",
+            tokenizers_version="0.22.1",
+            generated_at=NOW,
+        )
+        self.assertTrue(artifact.passed)
+        self.assertEqual(artifact.results[0].virtual_prefix_token_indices, [0])
+        self.assertTrue(artifact.results[0].tokens[0].is_virtual_prefix)
+        self.assertNotIn(0, artifact.results[0].probes[0].token_indices)
+        self.assertIn(
+            "standalone_sentencepiece_prefix_duplicate_v1", artifact.warnings[-1]
+        )
+
+    def test_arbitrary_duplicate_offset_remains_a_hard_failure(self):
+        artifact = qualify_tokenizer(
+            fixture(),
+            ArbitraryOverlapTokenizer(),
+            fixture_sha256="2" * 64,
+            model_name="example/tokenizer",
+            model_revision="a" * 40,
+            code_revision="b" * 40,
+            tokenizer_files=file_records(),
+            transformers_version="5.5.3",
+            tokenizers_version="0.22.1",
+            generated_at=NOW,
+        )
+        self.assertFalse(artifact.passed)
+        self.assertEqual(artifact.results[0].virtual_prefix_token_indices, [])
+        self.assertEqual(artifact.results[0].multiply_covered_indices, [0])
 
     def test_fixture_and_artifact_states_cannot_be_forged(self):
         data = fixture().model_dump(mode="json")

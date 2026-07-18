@@ -3,7 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 .cache/
+*.egg-info/
 
 # Screening derivatives are reproducible and may be hundreds of megabytes.
 artifacts/benchmark-pages/images/
-

@@ -1,0 +1,4871 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "155483d2-1a09-41ce-b52c-3499a8f9d450",
+  "source_ocr_run_id": "213e0078-59d5-4a56-8811-a59e40ed0800",
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+    "kind": "ner",
+    "engine": "rules+GLiNER",
+    "model_name": "urchade/gliner_multi-v2.1+historical-women-zh-rules",
+    "model_revision": "443d26d654e0324125a96bebd8e796c14ff2efe6+rules-v1",
+    "software_version": "gliner-0.2.27",
+    "configuration": {
+      "threshold": 0.45,
+      "batch_size": 8,
+      "labels": [
+        "person",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product"
+      ],
+      "rule_set": "historical-women-zh-v1"
+    },
+    "started_at": "2026-07-18T06:12:31.851641Z",
+    "completed_at": "2026-07-18T06:12:45.048255Z"
+  },
+  "mentions": [
+    {
+      "mention_id": "fa181d7d-64c7-4d95-b2e2-f23130966500",
+      "entity_type": "place",
+      "text": "楚陽",
+      "normalized_text": "楚陽",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "c8a4ffc4-632b-43f5-bc58-f1399ced7259",
+        "polygon": {
+          "points": [
+            {
+              "x": 540.0,
+              "y": 344.0
+            },
+            {
+              "x": 592.0,
+              "y": 344.0
+            },
+            {
+              "x": 592.0,
+              "y": 385.0
+            },
+            {
+              "x": 540.0,
+              "y": 385.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6000171899795532,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "64ccc5b8-ddd5-47f3-b346-b1938c6fc110",
+      "entity_type": "organization",
+      "text": "兴医",
+      "normalized_text": "兴医",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "602f3c00-8082-4ebe-afbf-682eab7845ab",
+        "polygon": {
+          "points": [
+            {
+              "x": 1045.0,
+              "y": 410.0
+            },
+            {
+              "x": 1075.0,
+              "y": 412.0
+            },
+            {
+              "x": 1072.0,
+              "y": 458.0
+            },
+            {
+              "x": 1042.0,
+              "y": 456.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.4944438636302948,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "120b9fa5-6ecb-4283-ba62-f2f08c4d5d72",
+      "entity_type": "person",
+      "text": "謙別劉",
+      "normalized_text": "謙別劉",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "5853f268-61fc-4472-896c-1bb71220c342",
+        "polygon": {
+          "points": [
+            {
+              "x": 638.0,
+              "y": 447.0
+            },
+            {
+              "x": 1140.0,
+              "y": 447.0
+            },
+            {
+              "x": 1140.0,
+              "y": 600.0
+            },
+            {
+              "x": 638.0,
+              "y": 600.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.4507460296154022,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "4fb4c5f3-dba3-432a-b345-88fcd6d242f0",
+      "entity_type": "school",
+      "text": "崔中大",
+      "normalized_text": "崔中大",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "efcd7914-6ec0-42d5-b232-eed3ba05fcf8",
+        "polygon": {
+          "points": [
+            {
+              "x": 1620.0,
+              "y": 481.0
+            },
+            {
+              "x": 1722.0,
+              "y": 481.0
+            },
+            {
+              "x": 1722.0,
+              "y": 520.0
+            },
+            {
+              "x": 1620.0,
+              "y": 520.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.5673581957817078,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "154cc9c1-4032-469f-83ca-293525eabd07",
+      "entity_type": "person",
+      "text": "人開於",
+      "normalized_text": "人開於",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1724a973-19d0-4146-bc6d-ea12375d5267",
+        "polygon": {
+          "points": [
+            {
+              "x": 2296.0,
+              "y": 531.0
+            },
+            {
+              "x": 2326.0,
+              "y": 531.0
+            },
+            {
+              "x": 2326.0,
+              "y": 595.0
+            },
+            {
+              "x": 2296.0,
+              "y": 595.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.4998641312122345,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "749c57d0-a34f-46fc-8047-a6e98f61c328",
+      "entity_type": "person",
+      "text": "顺工女法味倾得元",
+      "normalized_text": "顺工女法味倾得元",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "cb875b97-6846-4abd-80a9-23b782169408",
+        "polygon": {
+          "points": [
+            {
+              "x": 1273.0,
+              "y": 541.0
+            },
+            {
+              "x": 1676.0,
+              "y": 541.0
+            },
+            {
+              "x": 1676.0,
+              "y": 555.0
+            },
+            {
+              "x": 1273.0,
+              "y": 555.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 8
+      },
+      "confidence": 0.5597057342529297,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "4a4a4399-c7ee-4984-91f6-89d30b875a9a",
+      "entity_type": "organization",
+      "text": "沃因",
+      "normalized_text": "沃因",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "9653e9cc-9bfe-4c53-8c5e-bc216f88c01e",
+        "polygon": {
+          "points": [
+            {
+              "x": 540.0,
+              "y": 604.0
+            },
+            {
+              "x": 592.0,
+              "y": 604.0
+            },
+            {
+              "x": 592.0,
+              "y": 645.0
+            },
+            {
+              "x": 540.0,
+              "y": 645.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6075085401535034,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "802c9764-2cc4-447e-a487-148afa9fe617",
+      "entity_type": "place",
+      "text": "CH",
+      "normalized_text": "CH",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d00cd629-3818-4eac-adb2-81363b6ef8da",
+        "polygon": {
+          "points": [
+            {
+              "x": 1080.0,
+              "y": 703.0
+            },
+            {
+              "x": 1140.0,
+              "y": 703.0
+            },
+            {
+              "x": 1140.0,
+              "y": 747.0
+            },
+            {
+              "x": 1080.0,
+              "y": 747.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5487388968467712,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6430e971-6e5e-4802-afa6-783b8ff4069b",
+      "entity_type": "person",
+      "text": "ERNST LUBITSCH",
+      "normalized_text": "ERNST LUBITSCH",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1fcc303a-36d9-4dc0-806b-d6a46bf996a1",
+        "polygon": {
+          "points": [
+            {
+              "x": 709.0,
+              "y": 705.0
+            },
+            {
+              "x": 1137.0,
+              "y": 705.0
+            },
+            {
+              "x": 1137.0,
+              "y": 745.0
+            },
+            {
+              "x": 709.0,
+              "y": 745.0
+            }
+          ]
+        },
+        "text_start": 1,
+        "text_end": 15
+      },
+      "confidence": 0.9461769461631775,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "a4cfc83e-a344-412a-b364-63e2ff91fb26",
+      "entity_type": "place",
+      "text": "樓上",
+      "normalized_text": "樓上",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "76e8f3fc-c974-437f-be6f-41b34b02612d",
+        "polygon": {
+          "points": [
+            {
+              "x": 293.0,
+              "y": 716.0
+            },
+            {
+              "x": 335.0,
+              "y": 713.0
+            },
+            {
+              "x": 336.0,
+              "y": 735.0
+            },
+            {
+              "x": 294.0,
+              "y": 738.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5807825326919556,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "4b16e2ff-7538-4b03-8fe5-c33a1dd4fa8e",
+      "entity_type": "person",
+      "text": "人设",
+      "normalized_text": "人设",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "ebe2f1d9-3916-456a-9b08-b2a978865397",
+        "polygon": {
+          "points": [
+            {
+              "x": 1595.0,
+              "y": 805.0
+            },
+            {
+              "x": 1680.0,
+              "y": 805.0
+            },
+            {
+              "x": 1680.0,
+              "y": 829.0
+            },
+            {
+              "x": 1595.0,
+              "y": 829.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5064190626144409,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5223d68d-b674-45bf-af1d-bb0d3a67b547",
+      "entity_type": "person",
+      "text": "父",
+      "normalized_text": "父",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d95dfa09-bb34-47d2-9e99-f04099752a6b",
+        "polygon": {
+          "points": [
+            {
+              "x": 1361.0,
+              "y": 824.0
+            },
+            {
+              "x": 1580.0,
+              "y": 824.0
+            },
+            {
+              "x": 1580.0,
+              "y": 848.0
+            },
+            {
+              "x": 1361.0,
+              "y": 848.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 1
+      },
+      "confidence": 0.9366095066070557,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5c76a21d-8259-4888-a988-e2976395955d",
+      "entity_type": "place",
+      "text": "名著二了即照外样",
+      "normalized_text": "名著二了即照外样",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d95dfa09-bb34-47d2-9e99-f04099752a6b",
+        "polygon": {
+          "points": [
+            {
+              "x": 1361.0,
+              "y": 824.0
+            },
+            {
+              "x": 1580.0,
+              "y": 824.0
+            },
+            {
+              "x": 1580.0,
+              "y": 848.0
+            },
+            {
+              "x": 1361.0,
+              "y": 848.0
+            }
+          ]
+        },
+        "text_start": 2,
+        "text_end": 10
+      },
+      "confidence": 0.4985117018222809,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "a0102ad2-7c8a-417a-853e-8cdf1acfd058",
+      "entity_type": "organization",
+      "text": "AG",
+      "normalized_text": "AG",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "a6f84eb2-53ac-4d6f-b876-c40d850a9c85",
+        "polygon": {
+          "points": [
+            {
+              "x": 1653.0,
+              "y": 901.0
+            },
+            {
+              "x": 1671.0,
+              "y": 901.0
+            },
+            {
+              "x": 1671.0,
+              "y": 922.0
+            },
+            {
+              "x": 1653.0,
+              "y": 922.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5385182499885559,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "36fc3e35-1939-4d6d-8b2e-77ab755af4a4",
+      "entity_type": "place",
+      "text": "九屯",
+      "normalized_text": "九屯",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "8fe7b690-66ae-4f0e-b006-7398d147af73",
+        "polygon": {
+          "points": [
+            {
+              "x": 1233.0,
+              "y": 1016.0
+            },
+            {
+              "x": 1277.0,
+              "y": 1016.0
+            },
+            {
+              "x": 1277.0,
+              "y": 1042.0
+            },
+            {
+              "x": 1233.0,
+              "y": 1042.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6145353317260742,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "bb64126e-8956-42b8-a8e5-246a549a8e02",
+      "entity_type": "organization",
+      "text": "三洋河廣",
+      "normalized_text": "三洋河廣",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "3d7d3e45-743e-48c7-b8d3-540ddd0d8b17",
+        "polygon": {
+          "points": [
+            {
+              "x": 1743.0,
+              "y": 1019.0
+            },
+            {
+              "x": 1768.0,
+              "y": 1019.0
+            },
+            {
+              "x": 1768.0,
+              "y": 1117.0
+            },
+            {
+              "x": 1743.0,
+              "y": 1117.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.4572666585445404,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "7c98287f-1e4d-4246-908f-def4983c0da5",
+      "entity_type": "place",
+      "text": "一中",
+      "normalized_text": "一中",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "33136aff-b17a-4979-9aa2-979b3bd88562",
+        "polygon": {
+          "points": [
+            {
+              "x": 1234.0,
+              "y": 1063.0
+            },
+            {
+              "x": 1278.0,
+              "y": 1065.0
+            },
+            {
+              "x": 1276.0,
+              "y": 1093.0
+            },
+            {
+              "x": 1232.0,
+              "y": 1090.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5500311851501465,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "7ae5c5e8-6e2d-4a88-84fc-f51bf4b69820",
+      "entity_type": "place",
+      "text": "H元角",
+      "normalized_text": "H元角",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "daaefd9d-f60e-4dd2-ab49-22dc93e1fb9d",
+        "polygon": {
+          "points": [
+            {
+              "x": 1858.0,
+              "y": 1080.0
+            },
+            {
+              "x": 1883.0,
+              "y": 1080.0
+            },
+            {
+              "x": 1879.0,
+              "y": 1142.0
+            },
+            {
+              "x": 1854.0,
+              "y": 1140.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6981140375137329,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "90b958ca-d345-44ac-95b2-ff5c44edda5b",
+      "entity_type": "person",
+      "text": "王十一人本",
+      "normalized_text": "王十一人本",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "770bc9eb-ace8-4b7a-a697-2bc9f29b9e8a",
+        "polygon": {
+          "points": [
+            {
+              "x": 2309.0,
+              "y": 1080.0
+            },
+            {
+              "x": 2337.0,
+              "y": 1080.0
+            },
+            {
+              "x": 2335.0,
+              "y": 1245.0
+            },
+            {
+              "x": 2307.0,
+              "y": 1245.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 5
+      },
+      "confidence": 0.5488683581352234,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "18bacf3c-272a-4dd3-9893-33e44795cca0",
+      "entity_type": "person",
+      "text": "門東人",
+      "normalized_text": "門東人",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "3a6fe163-fc92-432e-8f96-ad2562897da9",
+        "polygon": {
+          "points": [
+            {
+              "x": 1084.0,
+              "y": 1092.0
+            },
+            {
+              "x": 1167.0,
+              "y": 1092.0
+            },
+            {
+              "x": 1167.0,
+              "y": 1119.0
+            },
+            {
+              "x": 1084.0,
+              "y": 1119.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.49996626377105713,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6a4ae400-c8d9-41d9-9cc4-6b913dc9e786",
+      "entity_type": "place",
+      "text": "浜外西",
+      "normalized_text": "浜外西",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b3b5a3db-8644-48c2-aaff-2d5540fe0cfe",
+        "polygon": {
+          "points": [
+            {
+              "x": 490.0,
+              "y": 1096.0
+            },
+            {
+              "x": 587.0,
+              "y": 1096.0
+            },
+            {
+              "x": 587.0,
+              "y": 1131.0
+            },
+            {
+              "x": 490.0,
+              "y": 1131.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6475269198417664,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "edf21315-df6e-4987-933f-bbf434ee94b1",
+      "entity_type": "place",
+      "text": "浜橋",
+      "normalized_text": "浜橋",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "72efdf9e-6a19-4a37-946c-c945463f0e3a",
+        "polygon": {
+          "points": [
+            {
+              "x": 494.0,
+              "y": 1098.0
+            },
+            {
+              "x": 529.0,
+              "y": 1098.0
+            },
+            {
+              "x": 529.0,
+              "y": 1160.0
+            },
+            {
+              "x": 494.0,
+              "y": 1160.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.7276360392570496,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "9a1368da-7ab6-4c27-9e97-677c813e867f",
+      "entity_type": "person",
+      "text": "小方涼二",
+      "normalized_text": "小方涼二",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "259a78ce-2a49-47fd-9605-b4aa5acbe008",
+        "polygon": {
+          "points": [
+            {
+              "x": 542.0,
+              "y": 1102.0
+            },
+            {
+              "x": 556.0,
+              "y": 1102.0
+            },
+            {
+              "x": 556.0,
+              "y": 1201.0
+            },
+            {
+              "x": 542.0,
+              "y": 1201.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.611172616481781,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "400afc4e-a27e-4269-9fec-ebda76dee127",
+      "entity_type": "organization",
+      "text": "Robinhood",
+      "normalized_text": "Robinhood",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "69246b2f-73f7-441f-bf44-ba9aa74c74c0",
+        "polygon": {
+          "points": [
+            {
+              "x": 2005.0,
+              "y": 1147.0
+            },
+            {
+              "x": 2205.0,
+              "y": 1147.0
+            },
+            {
+              "x": 2205.0,
+              "y": 1181.0
+            },
+            {
+              "x": 2005.0,
+              "y": 1181.0
+            }
+          ]
+        },
+        "text_start": 1,
+        "text_end": 10
+      },
+      "confidence": 0.4838748872280121,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "e5a64a75-c5fe-4241-8293-d20d5c6cde8d",
+      "entity_type": "place",
+      "text": "谷山",
+      "normalized_text": "谷山",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "0451e0cd-a704-47a8-99dd-cda693658930",
+        "polygon": {
+          "points": [
+            {
+              "x": 299.0,
+              "y": 1175.0
+            },
+            {
+              "x": 378.0,
+              "y": 1175.0
+            },
+            {
+              "x": 378.0,
+              "y": 1212.0
+            },
+            {
+              "x": 299.0,
+              "y": 1212.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6101105809211731,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5200fc93-a4ad-4290-a8f6-c614e064cc92",
+      "entity_type": "place",
+      "text": "谷山",
+      "normalized_text": "谷山",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "54377356-629e-4cde-a54c-605ba8e89077",
+        "polygon": {
+          "points": [
+            {
+              "x": 482.0,
+              "y": 1177.0
+            },
+            {
+              "x": 559.0,
+              "y": 1177.0
+            },
+            {
+              "x": 559.0,
+              "y": 1214.0
+            },
+            {
+              "x": 482.0,
+              "y": 1214.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6101084351539612,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "31a31a70-27a4-40a1-b83a-65e9902fd4d2",
+      "entity_type": "person",
+      "text": "陶約勒史",
+      "normalized_text": "陶約勒史",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "2b96d7ec-90e7-434e-81aa-6ccb88c9fb29",
+        "polygon": {
+          "points": [
+            {
+              "x": 2243.0,
+              "y": 1189.0
+            },
+            {
+              "x": 2267.0,
+              "y": 1188.0
+            },
+            {
+              "x": 2270.0,
+              "y": 1269.0
+            },
+            {
+              "x": 2245.0,
+              "y": 1270.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.5939611196517944,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "fc0261cc-1a6d-4931-9c5a-223b90e0fe02",
+      "entity_type": "person",
+      "text": "范明充挾",
+      "normalized_text": "范明充挾",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "11233ee8-8635-4f9e-8e81-d703e8b87dde",
+        "polygon": {
+          "points": [
+            {
+              "x": 2224.0,
+              "y": 1190.0
+            },
+            {
+              "x": 2246.0,
+              "y": 1189.0
+            },
+            {
+              "x": 2248.0,
+              "y": 1268.0
+            },
+            {
+              "x": 2226.0,
+              "y": 1269.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.676902711391449,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "9d1b2568-a971-43eb-81a6-82f6964ba87b",
+      "entity_type": "person",
+      "text": "小洋",
+      "normalized_text": "小洋",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "96535c4b-dcd2-463e-a201-e1eda48e2422",
+        "polygon": {
+          "points": [
+            {
+              "x": 671.0,
+              "y": 1192.0
+            },
+            {
+              "x": 693.0,
+              "y": 1192.0
+            },
+            {
+              "x": 693.0,
+              "y": 1232.0
+            },
+            {
+              "x": 671.0,
+              "y": 1232.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.691015899181366,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "4cc9a6b4-efa5-4bbe-8087-a1c10f2982d3",
+      "entity_type": "organization",
+      "text": "興極",
+      "normalized_text": "興極",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "fe674800-bbfc-4533-8d72-97b1e636489b",
+        "polygon": {
+          "points": [
+            {
+              "x": 1980.0,
+              "y": 1192.0
+            },
+            {
+              "x": 2002.0,
+              "y": 1192.0
+            },
+            {
+              "x": 2002.0,
+              "y": 1235.0
+            },
+            {
+              "x": 1980.0,
+              "y": 1235.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5101855993270874,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ec616a18-385d-4c03-9320-1e3ec293923b",
+      "entity_type": "person",
+      "text": "本人",
+      "normalized_text": "本人",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "2c74d576-79fb-4130-82ca-803878252ae9",
+        "polygon": {
+          "points": [
+            {
+              "x": 1438.0,
+              "y": 1248.0
+            },
+            {
+              "x": 1575.0,
+              "y": 1245.0
+            },
+            {
+              "x": 1576.0,
+              "y": 1268.0
+            },
+            {
+              "x": 1439.0,
+              "y": 1272.0
+            }
+          ]
+        },
+        "text_start": 5,
+        "text_end": 7
+      },
+      "confidence": 0.5421856045722961,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "eb6fff46-682f-4b08-abe8-8d95b30388d8",
+      "entity_type": "organization",
+      "text": "定教",
+      "normalized_text": "定教",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "24386cac-24b0-4283-a9d5-9bc653dc0fe3",
+        "polygon": {
+          "points": [
+            {
+              "x": 372.0,
+              "y": 1248.0
+            },
+            {
+              "x": 396.0,
+              "y": 1246.0
+            },
+            {
+              "x": 401.0,
+              "y": 1307.0
+            },
+            {
+              "x": 377.0,
+              "y": 1310.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.454216867685318,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "efec0d79-bb29-4ddf-8514-4d001c2d4906",
+      "entity_type": "person",
+      "text": "弗勞倫斯惟事未果成蓋但丁嘗以政治之",
+      "normalized_text": "弗勞倫斯惟事未果成蓋但丁嘗以政治之",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "2fdb058b-f54d-4686-a5ba-7cc58f1aa80a",
+        "polygon": {
+          "points": [
+            {
+              "x": 2109.0,
+              "y": 1286.0
+            },
+            {
+              "x": 2135.0,
+              "y": 1286.0
+            },
+            {
+              "x": 2136.0,
+              "y": 1679.0
+            },
+            {
+              "x": 2110.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 17
+      },
+      "confidence": 0.6033053994178772,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "9e76126b-b7f1-401e-af7d-f42afcc64434",
+      "entity_type": "person",
+      "text": "但丁之第一人安氏當為帝子時已好誦",
+      "normalized_text": "但丁之第一人安氏當為帝子時已好誦",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "e054b4aa-200c-48e5-a4f1-4697518834cb",
+        "polygon": {
+          "points": [
+            {
+              "x": 2165.0,
+              "y": 1286.0
+            },
+            {
+              "x": 2192.0,
+              "y": 1286.0
+            },
+            {
+              "x": 2193.0,
+              "y": 1679.0
+            },
+            {
+              "x": 2166.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 16
+      },
+      "confidence": 0.5255671143531799,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "9ce44b3a-7083-4338-a2e9-6740d0dd9dc6",
+      "entity_type": "person",
+      "text": "羅此家及雕刻家也一名薄卡西著作家",
+      "normalized_text": "羅此家及雕刻家也一名薄卡西著作家",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "ca000c36-0a2b-468d-b601-b0ce837247a6",
+        "polygon": {
+          "points": [
+            {
+              "x": 2250.0,
+              "y": 1286.0
+            },
+            {
+              "x": 2277.0,
+              "y": 1286.0
+            },
+            {
+              "x": 2275.0,
+              "y": 1679.0
+            },
+            {
+              "x": 2248.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 16
+      },
+      "confidence": 0.45001792907714844,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "fa0fd4da-f2b0-4989-a0e6-1d775e9474b3",
+      "entity_type": "person",
+      "text": "弗勞倫斯惟事未果成善但丁嘗以政治之",
+      "normalized_text": "弗勞倫斯惟事未果成善但丁嘗以政治之",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "45dc3700-5c06-4be0-ae6b-ba98b65d0ff3",
+        "polygon": {
+          "points": [
+            {
+              "x": 2109.0,
+              "y": 1287.0
+            },
+            {
+              "x": 2136.0,
+              "y": 1287.0
+            },
+            {
+              "x": 2137.0,
+              "y": 1679.0
+            },
+            {
+              "x": 2110.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 17
+      },
+      "confidence": 0.7010254859924316,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "2749d3af-2510-4560-a529-3c497919c57c",
+      "entity_type": "person",
+      "text": "但丁之著作而爲隨傳於衆人者也故但丁",
+      "normalized_text": "但丁之著作而爲隨傳於衆人者也故但丁",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b3b81376-ba84-420e-a4a0-3b48dc899174",
+        "polygon": {
+          "points": [
+            {
+              "x": 2220.0,
+              "y": 1288.0
+            },
+            {
+              "x": 2247.0,
+              "y": 1288.0
+            },
+            {
+              "x": 2247.0,
+              "y": 1678.0
+            },
+            {
+              "x": 2220.0,
+              "y": 1678.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 17
+      },
+      "confidence": 0.5171872973442078,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "bbaab329-1719-4e6d-a62a-ada2421bf87c",
+      "entity_type": "person",
+      "text": "上書教王",
+      "normalized_text": "上書教王",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "57641daf-66b5-46d1-8b0c-4e3a42eb6d3b",
+        "polygon": {
+          "points": [
+            {
+              "x": 2139.0,
+              "y": 1289.0
+            },
+            {
+              "x": 2163.0,
+              "y": 1289.0
+            },
+            {
+              "x": 2163.0,
+              "y": 1679.0
+            },
+            {
+              "x": 2139.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 11,
+        "text_end": 15
+      },
+      "confidence": 0.45093899965286255,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "348e53c9-0380-4e63-a645-99e21ea6598b",
+      "entity_type": "person",
+      "text": "其作此",
+      "normalized_text": "其作此",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "8040dac9-5f12-4dee-83af-78f8c85dfbb3",
+        "polygon": {
+          "points": [
+            {
+              "x": 1153.0,
+              "y": 1290.0
+            },
+            {
+              "x": 1180.0,
+              "y": 1290.0
+            },
+            {
+              "x": 1178.0,
+              "y": 1679.0
+            },
+            {
+              "x": 1151.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.5813172459602356,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "3325ce0a-6dbd-44a5-be94-541a249512cb",
+      "entity_type": "place",
+      "text": "魯捨角大受當比生術界之殷待後重千白",
+      "normalized_text": "魯捨角大受當比生術界之殷待後重千白",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "8c9f8a0f-91e8-4e5d-b75a-0332046a32ba",
+        "polygon": {
+          "points": [
+            {
+              "x": 1123.0,
+              "y": 1291.0
+            },
+            {
+              "x": 1140.0,
+              "y": 1291.0
+            },
+            {
+              "x": 1139.0,
+              "y": 1678.0
+            },
+            {
+              "x": 1122.0,
+              "y": 1678.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 17
+      },
+      "confidence": 0.470449835062027,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "712d0141-31ac-4cbe-a3c4-9fb8e9d4a7a4",
+      "entity_type": "place",
+      "text": "歐洲藝術界最近之發現",
+      "normalized_text": "歐洲藝術界最近之發現",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "61fc0072-7fb8-4216-aeab-da413bd4afa4",
+        "polygon": {
+          "points": [
+            {
+              "x": 1876.0,
+              "y": 1291.0
+            },
+            {
+              "x": 1913.0,
+              "y": 1291.0
+            },
+            {
+              "x": 1913.0,
+              "y": 1657.0
+            },
+            {
+              "x": 1876.0,
+              "y": 1657.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 10
+      },
+      "confidence": 0.4511184096336365,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "b832116c-5cd8-4b3b-a7a3-3e507920cfe3",
+      "entity_type": "place",
+      "text": "閘北",
+      "normalized_text": "閘北",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b8c8d9b0-52e3-4d68-a8d8-378710b611c2",
+        "polygon": {
+          "points": [
+            {
+              "x": 523.0,
+              "y": 1325.0
+            },
+            {
+              "x": 562.0,
+              "y": 1325.0
+            },
+            {
+              "x": 562.0,
+              "y": 1387.0
+            },
+            {
+              "x": 523.0,
+              "y": 1387.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6706129312515259,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "7d4aee07-0b1c-455e-bae7-bf08979d7bed",
+      "entity_type": "person",
+      "text": "Hans Holbein德人也",
+      "normalized_text": "Hans Holbein德人也",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "f82ac3ce-acf2-4d15-9728-ec523ca7d18b",
+        "polygon": {
+          "points": [
+            {
+              "x": 1710.0,
+              "y": 1331.0
+            },
+            {
+              "x": 1733.0,
+              "y": 1331.0
+            },
+            {
+              "x": 1733.0,
+              "y": 1677.0
+            },
+            {
+              "x": 1710.0,
+              "y": 1677.0
+            }
+          ]
+        },
+        "text_start": 3,
+        "text_end": 18
+      },
+      "confidence": 0.9420599937438965,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6c9086b2-b985-4956-ba7f-8b2f2399e5b8",
+      "entity_type": "person",
+      "text": "詩人游地獄即根據但丁神曲所攝製",
+      "normalized_text": "詩人游地獄即根據但丁神曲所攝製",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "6457482b-289e-45d7-9578-af1852c9da3e",
+        "polygon": {
+          "points": [
+            {
+              "x": 1971.0,
+              "y": 1332.0
+            },
+            {
+              "x": 1997.0,
+              "y": 1332.0
+            },
+            {
+              "x": 1997.0,
+              "y": 1679.0
+            },
+            {
+              "x": 1971.0,
+              "y": 1679.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 15
+      },
+      "confidence": 0.47849294543266296,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5a1008b3-f47b-4b43-8d0b-36f0579803da",
+      "entity_type": "place",
+      "text": "子西",
+      "normalized_text": "子西",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "f91b4cf7-d6d1-4651-8db0-d2d0d9bb4e25",
+        "polygon": {
+          "points": [
+            {
+              "x": 328.0,
+              "y": 1400.0
+            },
+            {
+              "x": 349.0,
+              "y": 1400.0
+            },
+            {
+              "x": 349.0,
+              "y": 1440.0
+            },
+            {
+              "x": 328.0,
+              "y": 1440.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.765320897102356,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "a5d2b260-8e49-4043-aae7-0a3b43383927",
+      "entity_type": "person",
+      "text": "爹爹",
+      "normalized_text": "爹爹",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "e07a5576-83df-4d87-a476-7d465690e375",
+        "polygon": {
+          "points": [
+            {
+              "x": 363.0,
+              "y": 1437.0
+            },
+            {
+              "x": 574.0,
+              "y": 1437.0
+            },
+            {
+              "x": 574.0,
+              "y": 1536.0
+            },
+            {
+              "x": 363.0,
+              "y": 1536.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6514280438423157,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "e69ac1da-2aba-4751-9e70-887936c7c865",
+      "entity_type": "organization",
+      "text": "中虹",
+      "normalized_text": "中虹",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "8eda182d-e664-489f-85c3-8e09de4502f4",
+        "polygon": {
+          "points": [
+            {
+              "x": 575.0,
+              "y": 1552.0
+            },
+            {
+              "x": 615.0,
+              "y": 1550.0
+            },
+            {
+              "x": 617.0,
+              "y": 1615.0
+            },
+            {
+              "x": 578.0,
+              "y": 1616.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6683771014213562,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "3f73df3c-3f96-4cf5-9f27-634efe97b727",
+      "entity_type": "place",
+      "text": "大東",
+      "normalized_text": "大東",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "5107dbce-7327-4dba-a60e-763b7a8d6b4f",
+        "polygon": {
+          "points": [
+            {
+              "x": 60.0,
+              "y": 1553.0
+            },
+            {
+              "x": 95.0,
+              "y": 1553.0
+            },
+            {
+              "x": 95.0,
+              "y": 1613.0
+            },
+            {
+              "x": 60.0,
+              "y": 1613.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.7479900121688843,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "b56729e1-f04f-4f08-88fc-9eb8dbe5b150",
+      "entity_type": "school",
+      "text": "院戲影大國中",
+      "normalized_text": "院戲影大國中",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "478b4a54-da53-4473-967f-d80720575f17",
+        "polygon": {
+          "points": [
+            {
+              "x": 124.0,
+              "y": 1553.0
+            },
+            {
+              "x": 546.0,
+              "y": 1553.0
+            },
+            {
+              "x": 546.0,
+              "y": 1613.0
+            },
+            {
+              "x": 124.0,
+              "y": 1613.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 6
+      },
+      "confidence": 0.4910929501056671,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "df93a0cb-aaf0-4bd1-81cf-534faf622bfe",
+      "entity_type": "school",
+      "text": "樓一小百靈",
+      "normalized_text": "樓一小百靈",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "f6517d15-ac5c-4377-a755-1b26cde8d61a",
+        "polygon": {
+          "points": [
+            {
+              "x": 1011.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1038.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1038.0,
+              "y": 1796.0
+            },
+            {
+              "x": 1011.0,
+              "y": 1796.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 5
+      },
+      "confidence": 0.5817208886146545,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "3d5cbd3d-a712-4e61-b903-e012af769870",
+      "entity_type": "place",
+      "text": "頭圍",
+      "normalized_text": "頭圍",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "f6517d15-ac5c-4377-a755-1b26cde8d61a",
+        "polygon": {
+          "points": [
+            {
+              "x": 1011.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1038.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1038.0,
+              "y": 1796.0
+            },
+            {
+              "x": 1011.0,
+              "y": 1796.0
+            }
+          ]
+        },
+        "text_start": 6,
+        "text_end": 8
+      },
+      "confidence": 0.46170005202293396,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "e04e796a-5f20-4472-82d1-b0eee3b5a36a",
+      "entity_type": "place",
+      "text": "申平白客爾少片",
+      "normalized_text": "申平白客爾少片",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "96ca2054-3068-4532-8bec-315dff5c8fd0",
+        "polygon": {
+          "points": [
+            {
+              "x": 1123.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1140.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1139.0,
+              "y": 1796.0
+            },
+            {
+              "x": 1122.0,
+              "y": 1796.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 7
+      },
+      "confidence": 0.45556390285491943,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "1dcd397f-7ac7-4dc1-a638-89c7deba161e",
+      "entity_type": "place",
+      "text": "地方",
+      "normalized_text": "地方",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d97d672d-f219-463a-9b3c-8663ab4bb126",
+        "polygon": {
+          "points": [
+            {
+              "x": 1652.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1679.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1679.0,
+              "y": 1796.0
+            },
+            {
+              "x": 1652.0,
+              "y": 1796.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5432395935058594,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "7141458d-8d8c-4280-a36d-190714fe7c92",
+      "entity_type": "place",
+      "text": "地方",
+      "normalized_text": "地方",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "fad23595-879d-46f8-99cc-4c5db2bcce32",
+        "polygon": {
+          "points": [
+            {
+              "x": 1653.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1679.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1679.0,
+              "y": 1794.0
+            },
+            {
+              "x": 1653.0,
+              "y": 1794.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5331792235374451,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "671d627c-1716-4871-9001-d8763238ade4",
+      "entity_type": "person",
+      "text": "爾平在英時所作之",
+      "normalized_text": "爾平在英時所作之",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "7244f018-72e0-4f06-96c2-7f5092523f32",
+        "polygon": {
+          "points": [
+            {
+              "x": 1819.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1846.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1846.0,
+              "y": 1793.0
+            },
+            {
+              "x": 1819.0,
+              "y": 1793.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 8
+      },
+      "confidence": 0.6949487924575806,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "66e4ed62-907b-4f74-925e-5165f7ab733e",
+      "entity_type": "organization",
+      "text": "巧爾門逆來",
+      "normalized_text": "巧爾門逆來",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "06b67f9d-a143-46e1-b542-d65b37172ee5",
+        "polygon": {
+          "points": [
+            {
+              "x": 1847.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1875.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1875.0,
+              "y": 1795.0
+            },
+            {
+              "x": 1847.0,
+              "y": 1795.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 5
+      },
+      "confidence": 0.5032109022140503,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "10690e12-1f64-4441-8882-321c95ddfc1a",
+      "entity_type": "organization",
+      "text": "Cholin",
+      "normalized_text": "Cholin",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "06b67f9d-a143-46e1-b542-d65b37172ee5",
+        "polygon": {
+          "points": [
+            {
+              "x": 1847.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1875.0,
+              "y": 1620.0
+            },
+            {
+              "x": 1875.0,
+              "y": 1795.0
+            },
+            {
+              "x": 1847.0,
+              "y": 1795.0
+            }
+          ]
+        },
+        "text_start": 6,
+        "text_end": 12
+      },
+      "confidence": 0.486208975315094,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d89700d1-d3ed-4949-b9c9-033956f4b49f",
+      "entity_type": "person",
+      "text": "作家也二人俱好",
+      "normalized_text": "作家也二人俱好",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "3aae8e34-52a7-481e-961d-f1737159c300",
+        "polygon": {
+          "points": [
+            {
+              "x": 2247.0,
+              "y": 1620.0
+            },
+            {
+              "x": 2275.0,
+              "y": 1620.0
+            },
+            {
+              "x": 2277.0,
+              "y": 1792.0
+            },
+            {
+              "x": 2249.0,
+              "y": 1793.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 7
+      },
+      "confidence": 0.4787684977054596,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "0453eb83-b96d-49c9-89dd-d52764f95914",
+      "entity_type": "school",
+      "text": "本大二十共",
+      "normalized_text": "本大二十共",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "414c5d77-b175-479f-8090-a37e085dc1e9",
+        "polygon": {
+          "points": [
+            {
+              "x": 302.0,
+              "y": 1735.0
+            },
+            {
+              "x": 533.0,
+              "y": 1735.0
+            },
+            {
+              "x": 533.0,
+              "y": 1776.0
+            },
+            {
+              "x": 302.0,
+              "y": 1776.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 5
+      },
+      "confidence": 0.6348313093185425,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ca7cf11b-9b65-46f3-b9b7-2c1d0e1428dd",
+      "entity_type": "event",
+      "text": "BIRTH OF A NATION",
+      "normalized_text": "BIRTH OF A NATION",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "c97ca224-5828-4d2d-a0e4-4c7890fe04f8",
+        "polygon": {
+          "points": [
+            {
+              "x": 303.0,
+              "y": 1781.0
+            },
+            {
+              "x": 531.0,
+              "y": 1781.0
+            },
+            {
+              "x": 531.0,
+              "y": 1801.0
+            },
+            {
+              "x": 303.0,
+              "y": 1801.0
+            }
+          ]
+        },
+        "text_start": 1,
+        "text_end": 18
+      },
+      "confidence": 0.5409456491470337,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "913206af-9ed1-42a9-95d2-d55574e55090",
+      "entity_type": "person",
+      "text": "一人造象牙近日市間出售之盒裝象牙",
+      "normalized_text": "一人造象牙近日市間出售之盒裝象牙",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "4296f5ce-8ddd-4408-a4b8-22d726d87c64",
+        "polygon": {
+          "points": [
+            {
+              "x": 1129.0,
+              "y": 1800.0
+            },
+            {
+              "x": 1159.0,
+              "y": 1800.0
+            },
+            {
+              "x": 1160.0,
+              "y": 2218.0
+            },
+            {
+              "x": 1130.0,
+              "y": 2218.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 16
+      },
+      "confidence": 0.7089118361473083,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d77d4cc0-fd78-40dc-abad-125bd8906b0f",
+      "entity_type": "product",
+      "text": "樹膠",
+      "normalized_text": "樹膠",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "0a1be05d-9d01-47da-91fd-9f326966f036",
+        "polygon": {
+          "points": [
+            {
+              "x": 970.0,
+              "y": 1805.0
+            },
+            {
+              "x": 998.0,
+              "y": 1805.0
+            },
+            {
+              "x": 998.0,
+              "y": 1897.0
+            },
+            {
+              "x": 970.0,
+              "y": 1897.0
+            }
+          ]
+        },
+        "text_start": 3,
+        "text_end": 5
+      },
+      "confidence": 0.45486462116241455,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "754655d4-a7a8-4c9c-8201-f77c9d44a06f",
+      "entity_type": "school",
+      "text": "六二中電",
+      "normalized_text": "六二中電",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "5cf249ba-08b7-44f3-9f93-3f90bc14e238",
+        "polygon": {
+          "points": [
+            {
+              "x": 77.0,
+              "y": 1811.0
+            },
+            {
+              "x": 157.0,
+              "y": 1811.0
+            },
+            {
+              "x": 157.0,
+              "y": 1832.0
+            },
+            {
+              "x": 77.0,
+              "y": 1832.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.6520310640335083,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ce0feafb-fc67-45ab-97e3-43e063ac0681",
+      "entity_type": "place",
+      "text": "五路四",
+      "normalized_text": "五路四",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "26da6ba3-8e21-4141-893c-1b57ec0603d2",
+        "polygon": {
+          "points": [
+            {
+              "x": 531.0,
+              "y": 1811.0
+            },
+            {
+              "x": 591.0,
+              "y": 1811.0
+            },
+            {
+              "x": 591.0,
+              "y": 1833.0
+            },
+            {
+              "x": 531.0,
+              "y": 1833.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.4711873233318329,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "77989643-40d5-4787-9a7d-38b6c008a6cc",
+      "entity_type": "place",
+      "text": "楚石",
+      "normalized_text": "楚石",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "db4ffa39-631b-4ee1-bcf9-280c51a58475",
+        "polygon": {
+          "points": [
+            {
+              "x": 1653.0,
+              "y": 1816.0
+            },
+            {
+              "x": 1680.0,
+              "y": 1816.0
+            },
+            {
+              "x": 1680.0,
+              "y": 1899.0
+            },
+            {
+              "x": 1653.0,
+              "y": 1899.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5552317500114441,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6bb6c682-1fe4-4dcd-8ad9-b8b824a080b3",
+      "entity_type": "place",
+      "text": "大田",
+      "normalized_text": "大田",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d869529f-7390-405a-b02e-3389b003053c",
+        "polygon": {
+          "points": [
+            {
+              "x": 1696.0,
+              "y": 1817.0
+            },
+            {
+              "x": 1729.0,
+              "y": 1816.0
+            },
+            {
+              "x": 1732.0,
+              "y": 1894.0
+            },
+            {
+              "x": 1698.0,
+              "y": 1895.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.7987920045852661,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5e65b25a-26f5-4297-8826-83d2371aa455",
+      "entity_type": "place",
+      "text": "莆田石",
+      "normalized_text": "莆田石",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "6f78d6e0-8689-4154-b79b-34957da4fb4d",
+        "polygon": {
+          "points": [
+            {
+              "x": 1749.0,
+              "y": 1818.0
+            },
+            {
+              "x": 1779.0,
+              "y": 1818.0
+            },
+            {
+              "x": 1779.0,
+              "y": 1892.0
+            },
+            {
+              "x": 1749.0,
+              "y": 1892.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.7215065956115723,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "dadfeda1-e2b4-41a4-8f94-406457f327d7",
+      "entity_type": "place",
+      "text": "萊州石",
+      "normalized_text": "萊州石",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "ef39566d-0542-4b69-85f0-90a4e4b684fa",
+        "polygon": {
+          "points": [
+            {
+              "x": 1512.0,
+              "y": 1819.0
+            },
+            {
+              "x": 1540.0,
+              "y": 1819.0
+            },
+            {
+              "x": 1540.0,
+              "y": 1896.0
+            },
+            {
+              "x": 1512.0,
+              "y": 1896.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6758949756622314,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "1979967b-d6d3-449d-af38-0809e8ada6c2",
+      "entity_type": "person",
+      "text": "大王",
+      "normalized_text": "大王",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "a718506b-a29a-46c8-a334-11360b0eabc9",
+        "polygon": {
+          "points": [
+            {
+              "x": 532.0,
+              "y": 1852.0
+            },
+            {
+              "x": 559.0,
+              "y": 1852.0
+            },
+            {
+              "x": 559.0,
+              "y": 1896.0
+            },
+            {
+              "x": 532.0,
+              "y": 1896.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5568605065345764,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "8623ca2c-4b86-42b1-8db0-285daed1ba14",
+      "entity_type": "organization",
+      "text": "全寶",
+      "normalized_text": "全寶",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "98e15242-314b-4d1e-8cbe-5579eb19212c",
+        "polygon": {
+          "points": [
+            {
+              "x": 532.0,
+              "y": 1890.0
+            },
+            {
+              "x": 600.0,
+              "y": 1890.0
+            },
+            {
+              "x": 600.0,
+              "y": 1934.0
+            },
+            {
+              "x": 532.0,
+              "y": 1934.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.4721519351005554,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "4753fa5d-da83-4830-88aa-e1f18941a65e",
+      "entity_type": "place",
+      "text": "村其堅緻量輕故人喜用之為印",
+      "normalized_text": "村其堅緻量輕故人喜用之為印",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "f458c266-8ad5-45bd-a647-c2d3cb9d1c6e",
+        "polygon": {
+          "points": [
+            {
+              "x": 1287.0,
+              "y": 1905.0
+            },
+            {
+              "x": 1317.0,
+              "y": 1905.0
+            },
+            {
+              "x": 1317.0,
+              "y": 2219.0
+            },
+            {
+              "x": 1287.0,
+              "y": 2219.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 13
+      },
+      "confidence": 0.6738946437835693,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "f0636483-ee31-4571-ae0b-66f5a513bc59",
+      "entity_type": "organization",
+      "text": "湖南產之色黑如淡而有光質軟",
+      "normalized_text": "湖南產之色黑如淡而有光質軟",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "3b485be9-b9e7-4453-b89f-65690cd01998",
+        "polygon": {
+          "points": [
+            {
+              "x": 1656.0,
+              "y": 1906.0
+            },
+            {
+              "x": 1680.0,
+              "y": 1906.0
+            },
+            {
+              "x": 1678.0,
+              "y": 2219.0
+            },
+            {
+              "x": 1654.0,
+              "y": 2219.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 13
+      },
+      "confidence": 0.4572199881076813,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "21b90dc4-7f34-454f-ba42-1dbe8edc6856",
+      "entity_type": "organization",
+      "text": "湖南產之色黑如漆而有光質軟",
+      "normalized_text": "湖南產之色黑如漆而有光質軟",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "e21cc28d-ebd4-4691-8489-6cef38c17e0d",
+        "polygon": {
+          "points": [
+            {
+              "x": 1655.0,
+              "y": 1906.0
+            },
+            {
+              "x": 1684.0,
+              "y": 1906.0
+            },
+            {
+              "x": 1684.0,
+              "y": 2220.0
+            },
+            {
+              "x": 1655.0,
+              "y": 2220.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 13
+      },
+      "confidence": 0.45040395855903625,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "2e882c8e-b354-4972-8002-8f86456b370d",
+      "entity_type": "place",
+      "text": "X",
+      "normalized_text": "X",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "dee75040-ae18-4a1f-ba1a-f0944af51a09",
+        "polygon": {
+          "points": [
+            {
+              "x": 1833.0,
+              "y": 1907.0
+            },
+            {
+              "x": 1856.0,
+              "y": 1907.0
+            },
+            {
+              "x": 1856.0,
+              "y": 1943.0
+            },
+            {
+              "x": 1833.0,
+              "y": 1943.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 1
+      },
+      "confidence": 0.5005887746810913,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6c78d876-d885-4e91-b526-97b98150399d",
+      "entity_type": "place",
+      "text": "日本",
+      "normalized_text": "日本",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "263c981b-d6ac-4ae3-aaf6-63d1f514ee39",
+        "polygon": {
+          "points": [
+            {
+              "x": 1103.0,
+              "y": 1908.0
+            },
+            {
+              "x": 1132.0,
+              "y": 1908.0
+            },
+            {
+              "x": 1132.0,
+              "y": 2220.0
+            },
+            {
+              "x": 1103.0,
+              "y": 2220.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.919563353061676,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d4dc3d10-6ea7-4f84-bb93-8b43fa469489",
+      "entity_type": "person",
+      "text": "板之神",
+      "normalized_text": "板之神",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "235d3ad8-aa05-4927-a6ec-90e312b34f49",
+        "polygon": {
+          "points": [
+            {
+              "x": 1261.0,
+              "y": 1908.0
+            },
+            {
+              "x": 1288.0,
+              "y": 1908.0
+            },
+            {
+              "x": 1288.0,
+              "y": 1993.0
+            },
+            {
+              "x": 1261.0,
+              "y": 1993.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6539061069488525,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ec678ce1-0567-4b05-bfc0-c7670572660f",
+      "entity_type": "place",
+      "text": "日本其色白",
+      "normalized_text": "日本其色白",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "e67918b2-3a3f-40f1-af58-6587376c914c",
+        "polygon": {
+          "points": [
+            {
+              "x": 1103.0,
+              "y": 1909.0
+            },
+            {
+              "x": 1133.0,
+              "y": 1909.0
+            },
+            {
+              "x": 1133.0,
+              "y": 2220.0
+            },
+            {
+              "x": 1103.0,
+              "y": 2220.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 5
+      },
+      "confidence": 0.8763108849525452,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "fad529e7-f52a-46b2-b0e5-6105608a96a9",
+      "entity_type": "person",
+      "text": "我",
+      "normalized_text": "我",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b8e09b4b-1c6c-4adb-88e9-ca08aa215f75",
+        "polygon": {
+          "points": [
+            {
+              "x": 1080.0,
+              "y": 1910.0
+            },
+            {
+              "x": 1103.0,
+              "y": 1910.0
+            },
+            {
+              "x": 1103.0,
+              "y": 2219.0
+            },
+            {
+              "x": 1080.0,
+              "y": 2219.0
+            }
+          ]
+        },
+        "text_start": 14,
+        "text_end": 15
+      },
+      "confidence": 0.5693442821502686,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "02605555-a24b-4fa7-937f-c534f3a6bd8f",
+      "entity_type": "place",
+      "text": "家不取也",
+      "normalized_text": "家不取也",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "0ef3b167-49f1-45b0-8f4d-8e493265cbcd",
+        "polygon": {
+          "points": [
+            {
+              "x": 1000.0,
+              "y": 1913.0
+            },
+            {
+              "x": 1025.0,
+              "y": 1913.0
+            },
+            {
+              "x": 1025.0,
+              "y": 2013.0
+            },
+            {
+              "x": 1000.0,
+              "y": 2013.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 4
+      },
+      "confidence": 0.5580992698669434,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6af1183c-bc37-4b72-b8be-05abb88ae943",
+      "entity_type": "person",
+      "text": "岩叔",
+      "normalized_text": "岩叔",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b15d83a2-9e18-4280-9959-bdcd36a46a2c",
+        "polygon": {
+          "points": [
+            {
+              "x": 134.0,
+              "y": 1914.0
+            },
+            {
+              "x": 217.0,
+              "y": 1914.0
+            },
+            {
+              "x": 217.0,
+              "y": 1960.0
+            },
+            {
+              "x": 134.0,
+              "y": 1960.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.8250453472137451,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "b8b20d6b-7729-4158-be8f-ffa263ec7d68",
+      "entity_type": "person",
+      "text": "曹放捉",
+      "normalized_text": "曹放捉",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "c509e060-d701-4090-99b5-9557e044c022",
+        "polygon": {
+          "points": [
+            {
+              "x": 143.0,
+              "y": 1961.0
+            },
+            {
+              "x": 212.0,
+              "y": 1961.0
+            },
+            {
+              "x": 212.0,
+              "y": 1990.0
+            },
+            {
+              "x": 143.0,
+              "y": 1990.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.7404505014419556,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5de045a7-d8ec-48fc-9748-60fda26f51c4",
+      "entity_type": "place",
+      "text": "河南路拋球塲",
+      "normalized_text": "河南路拋球塲",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "cbb3b214-d0a9-48e4-a482-ca5b617c51e5",
+        "polygon": {
+          "points": [
+            {
+              "x": 665.0,
+              "y": 2030.0
+            },
+            {
+              "x": 699.0,
+              "y": 2030.0
+            },
+            {
+              "x": 699.0,
+              "y": 2219.0
+            },
+            {
+              "x": 665.0,
+              "y": 2219.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 6
+      },
+      "confidence": 0.6135902404785156,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "e2ad5dd1-cc61-473d-a84f-0c3640d40fbe",
+      "entity_type": "place",
+      "text": "路九",
+      "normalized_text": "路九",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1db59ba0-e1e2-4071-8081-c1b59d63b5de",
+        "polygon": {
+          "points": [
+            {
+              "x": 92.0,
+              "y": 2160.0
+            },
+            {
+              "x": 132.0,
+              "y": 2160.0
+            },
+            {
+              "x": 132.0,
+              "y": 2257.0
+            },
+            {
+              "x": 92.0,
+              "y": 2257.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.573545515537262,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "0b12d16a-ed46-4d14-bc05-60c3cbc88868",
+      "entity_type": "place",
+      "text": "我國尙未有",
+      "normalized_text": "我國尙未有",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "4c4d0361-4b45-41ea-8792-a54d5c4e8d33",
+        "polygon": {
+          "points": [
+            {
+              "x": 1073.0,
+              "y": 2160.0
+            },
+            {
+              "x": 1103.0,
+              "y": 2160.0
+            },
+            {
+              "x": 1106.0,
+              "y": 2307.0
+            },
+            {
+              "x": 1075.0,
+              "y": 2307.0
+            }
+          ]
+        },
+        "text_start": 2,
+        "text_end": 7
+      },
+      "confidence": 0.5866031646728516,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "768c6638-0b37-450f-a5a8-bdaf9c5cc7af",
+      "entity_type": "organization",
+      "text": "印產山東萊州",
+      "normalized_text": "印產山東萊州",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "9bceac64-aaf3-47de-a002-8bbbd1a7aaae",
+        "polygon": {
+          "points": [
+            {
+              "x": 1510.0,
+              "y": 2160.0
+            },
+            {
+              "x": 1538.0,
+              "y": 2160.0
+            },
+            {
+              "x": 1540.0,
+              "y": 2302.0
+            },
+            {
+              "x": 1512.0,
+              "y": 2302.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 6
+      },
+      "confidence": 0.46839308738708496,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ee92b6dc-f8d2-4798-b26d-bb51aa1a726f",
+      "entity_type": "organization",
+      "text": "華益書局出售",
+      "normalized_text": "華益書局出售",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "2c80f24a-0301-4f89-906d-4af025695f08",
+        "polygon": {
+          "points": [
+            {
+              "x": 1907.0,
+              "y": 2160.0
+            },
+            {
+              "x": 1935.0,
+              "y": 2160.0
+            },
+            {
+              "x": 1938.0,
+              "y": 2304.0
+            },
+            {
+              "x": 1910.0,
+              "y": 2304.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 6
+      },
+      "confidence": 0.45526444911956787,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ef98841e-1def-43d6-bca3-21bb92e1d7cd",
+      "entity_type": "person",
+      "text": "羊",
+      "normalized_text": "羊",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1f11acde-f7b5-48ca-8aed-9449b2ae93a3",
+        "polygon": {
+          "points": [
+            {
+              "x": 2184.0,
+              "y": 2160.0
+            },
+            {
+              "x": 2215.0,
+              "y": 2160.0
+            },
+            {
+              "x": 2218.0,
+              "y": 2303.0
+            },
+            {
+              "x": 2188.0,
+              "y": 2303.0
+            }
+          ]
+        },
+        "text_start": 5,
+        "text_end": 6
+      },
+      "confidence": 0.4545477032661438,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d5c084d8-1235-4af5-bc9a-f0ca2e5ae290",
+      "entity_type": "place",
+      "text": "十路西",
+      "normalized_text": "十路西",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d9335917-8111-47fb-932f-9062f134b3bd",
+        "polygon": {
+          "points": [
+            {
+              "x": 58.0,
+              "y": 2175.0
+            },
+            {
+              "x": 173.0,
+              "y": 2175.0
+            },
+            {
+              "x": 173.0,
+              "y": 2210.0
+            },
+            {
+              "x": 58.0,
+              "y": 2210.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6365230679512024,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "7794fcb3-6f5c-48ab-bf0a-85bf4ba715a0",
+      "entity_type": "publication",
+      "text": "中新網上H戲",
+      "normalized_text": "中新網上H戲",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "30372595-74ba-4230-98a5-7771385adefe",
+        "polygon": {
+          "points": [
+            {
+              "x": 1699.0,
+              "y": 2321.0
+            },
+            {
+              "x": 1733.0,
+              "y": 2321.0
+            },
+            {
+              "x": 1736.0,
+              "y": 2457.0
+            },
+            {
+              "x": 1701.0,
+              "y": 2457.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 6
+      },
+      "confidence": 0.5120108127593994,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "1ecbe97a-8d49-45a4-a2e5-efb68d6fdf0f",
+      "entity_type": "place",
+      "text": "卡鸿路",
+      "normalized_text": "卡鸿路",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "a0dbc924-375a-474a-8615-b0b11ddaf442",
+        "polygon": {
+          "points": [
+            {
+              "x": 1734.0,
+              "y": 2325.0
+            },
+            {
+              "x": 1760.0,
+              "y": 2325.0
+            },
+            {
+              "x": 1760.0,
+              "y": 2385.0
+            },
+            {
+              "x": 1734.0,
+              "y": 2385.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.5425039529800415,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "c182caac-ff56-479d-aff2-d13ca02e3f0c",
+      "entity_type": "place",
+      "text": "路口",
+      "normalized_text": "路口",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "3f78f39f-19e0-462b-8279-9d10caf66815",
+        "polygon": {
+          "points": [
+            {
+              "x": 1681.0,
+              "y": 2326.0
+            },
+            {
+              "x": 1704.0,
+              "y": 2326.0
+            },
+            {
+              "x": 1704.0,
+              "y": 2368.0
+            },
+            {
+              "x": 1681.0,
+              "y": 2368.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6119930148124695,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "afd7bf4e-a67f-4a7a-a70f-f5f785f678fa",
+      "entity_type": "person",
+      "text": "富紳雅十淑女名媛豈是貪便宜",
+      "normalized_text": "富紳雅十淑女名媛豈是貪便宜",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "abaad60e-1927-44e6-a875-50e8304b53fe",
+        "polygon": {
+          "points": [
+            {
+              "x": 537.0,
+              "y": 2379.0
+            },
+            {
+              "x": 570.0,
+              "y": 2379.0
+            },
+            {
+              "x": 572.0,
+              "y": 2759.0
+            },
+            {
+              "x": 539.0,
+              "y": 2759.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 13
+      },
+      "confidence": 0.49086257815361023,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ee0a06b4-2155-4c34-aad5-0fb07719a58e",
+      "entity_type": "place",
+      "text": "世界",
+      "normalized_text": "世界",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "c0d5a875-9b36-4b95-9b92-8461e1ce9135",
+        "polygon": {
+          "points": [
+            {
+              "x": 1054.0,
+              "y": 2481.0
+            },
+            {
+              "x": 1140.0,
+              "y": 2481.0
+            },
+            {
+              "x": 1140.0,
+              "y": 2760.0
+            },
+            {
+              "x": 1054.0,
+              "y": 2760.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.4704534411430359,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "c9fb652c-018b-44ad-aafd-f1cd46a39c45",
+      "entity_type": "person",
+      "text": "THE WOMAN",
+      "normalized_text": "THE WOMAN",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "ab5b7318-cf68-40b8-bd9a-75a46cc1b4a9",
+        "polygon": {
+          "points": [
+            {
+              "x": 1376.0,
+              "y": 2504.0
+            },
+            {
+              "x": 1647.0,
+              "y": 2504.0
+            },
+            {
+              "x": 1647.0,
+              "y": 2524.0
+            },
+            {
+              "x": 1376.0,
+              "y": 2524.0
+            }
+          ]
+        },
+        "text_start": 1,
+        "text_end": 10
+      },
+      "confidence": 0.5120415091514587,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "1bd995e8-2efc-425f-b7fe-223eeea5b890",
+      "entity_type": "person",
+      "text": "福艷童",
+      "normalized_text": "福艷童",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "97ffac55-dfb2-4c19-8576-de0db2d0664b",
+        "polygon": {
+          "points": [
+            {
+              "x": 1843.0,
+              "y": 2504.0
+            },
+            {
+              "x": 2216.0,
+              "y": 2507.0
+            },
+            {
+              "x": 2216.0,
+              "y": 2615.0
+            },
+            {
+              "x": 1842.0,
+              "y": 2613.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.48345401883125305,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "5c5f7271-00e0-4969-b8cd-4fefdb49012e",
+      "entity_type": "organization",
+      "text": "宣精密",
+      "normalized_text": "宣精密",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "71bbded1-5bb7-4943-8f17-2799e268493d",
+        "polygon": {
+          "points": [
+            {
+              "x": 1620.0,
+              "y": 2517.0
+            },
+            {
+              "x": 1648.0,
+              "y": 2517.0
+            },
+            {
+              "x": 1648.0,
+              "y": 2584.0
+            },
+            {
+              "x": 1620.0,
+              "y": 2584.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.695141613483429,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "816ed285-f38b-4719-8fe1-826b74f6da88",
+      "entity_type": "organization",
+      "text": "秋堂",
+      "normalized_text": "秋堂",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "af204f34-2cc2-47fd-b418-97f5aec09361",
+        "polygon": {
+          "points": [
+            {
+              "x": 1435.0,
+              "y": 2540.0
+            },
+            {
+              "x": 1457.0,
+              "y": 2540.0
+            },
+            {
+              "x": 1457.0,
+              "y": 2579.0
+            },
+            {
+              "x": 1435.0,
+              "y": 2579.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.45945417881011963,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "76543390-f6e5-4606-8242-34b4bb02005a",
+      "entity_type": "place",
+      "text": "北二",
+      "normalized_text": "北二",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "ea4dac62-025f-468d-93e0-2f877bf6ac5a",
+        "polygon": {
+          "points": [
+            {
+              "x": 1296.0,
+              "y": 2589.0
+            },
+            {
+              "x": 1330.0,
+              "y": 2590.0
+            },
+            {
+              "x": 1327.0,
+              "y": 2654.0
+            },
+            {
+              "x": 1293.0,
+              "y": 2652.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.641507625579834,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "0e5f5a3f-f564-48c5-b8f4-1724f295e4ef",
+      "entity_type": "place",
+      "text": "虹口",
+      "normalized_text": "虹口",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "a6fc5cc9-d31a-49ee-bff6-2bcf13ad6315",
+        "polygon": {
+          "points": [
+            {
+              "x": 1754.0,
+              "y": 2591.0
+            },
+            {
+              "x": 1788.0,
+              "y": 2591.0
+            },
+            {
+              "x": 1788.0,
+              "y": 2654.0
+            },
+            {
+              "x": 1754.0,
+              "y": 2654.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.8103795051574707,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "19a9b4d2-ccc4-4e2b-88be-dd390e36af29",
+      "entity_type": "person",
+      "text": "Tom",
+      "normalized_text": "Tom",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "2cb914ce-5186-4831-8468-df85c2140ca1",
+        "polygon": {
+          "points": [
+            {
+              "x": 1926.0,
+              "y": 2615.0
+            },
+            {
+              "x": 1965.0,
+              "y": 2617.0
+            },
+            {
+              "x": 1964.0,
+              "y": 2632.0
+            },
+            {
+              "x": 1925.0,
+              "y": 2629.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.8832577466964722,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6a7a8cfc-be5f-4c72-9106-178649cd077a",
+      "entity_type": "person",
+      "text": "You",
+      "normalized_text": "You",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "2edd49c9-c570-44c4-bcf2-9ac15f74f584",
+        "polygon": {
+          "points": [
+            {
+              "x": 2145.0,
+              "y": 2615.0
+            },
+            {
+              "x": 2190.0,
+              "y": 2615.0
+            },
+            {
+              "x": 2190.0,
+              "y": 2634.0
+            },
+            {
+              "x": 2145.0,
+              "y": 2634.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.7268114686012268,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "bf816599-1bd8-4098-ac55-31d7c065122a",
+      "entity_type": "organization",
+      "text": "會社",
+      "normalized_text": "會社",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d4fbe2a4-dbba-4f79-9c43-920843800af3",
+        "polygon": {
+          "points": [
+            {
+              "x": 1632.0,
+              "y": 2649.0
+            },
+            {
+              "x": 1736.0,
+              "y": 2649.0
+            },
+            {
+              "x": 1736.0,
+              "y": 2701.0
+            },
+            {
+              "x": 1632.0,
+              "y": 2701.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5402287244796753,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "0f20b0ad-a68b-4fc1-a2a2-583899de27f6",
+      "entity_type": "school",
+      "text": "院戲大",
+      "normalized_text": "院戲大",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b96b139b-1366-497b-b7c9-a4b0c3d2d29c",
+        "polygon": {
+          "points": [
+            {
+              "x": 1849.0,
+              "y": 2649.0
+            },
+            {
+              "x": 2215.0,
+              "y": 2653.0
+            },
+            {
+              "x": 2215.0,
+              "y": 2714.0
+            },
+            {
+              "x": 1849.0,
+              "y": 2710.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6067373752593994,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "6f04d471-e963-4199-b7ee-61011089a641",
+      "entity_type": "person",
+      "text": "小洋",
+      "normalized_text": "小洋",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "22e2edb2-d023-4443-b050-0a8b57f09416",
+        "polygon": {
+          "points": [
+            {
+              "x": 1351.0,
+              "y": 2762.0
+            },
+            {
+              "x": 1379.0,
+              "y": 2762.0
+            },
+            {
+              "x": 1379.0,
+              "y": 2808.0
+            },
+            {
+              "x": 1351.0,
+              "y": 2808.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6910174489021301,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "84b7f849-6cbe-4a19-bc16-2e53837ccce4",
+      "entity_type": "organization",
+      "text": "世新",
+      "normalized_text": "世新",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "65a7037f-97df-4b8a-9b97-5e8cf6a533f0",
+        "polygon": {
+          "points": [
+            {
+              "x": 540.0,
+              "y": 2847.0
+            },
+            {
+              "x": 960.0,
+              "y": 2845.0
+            },
+            {
+              "x": 961.0,
+              "y": 3025.0
+            },
+            {
+              "x": 540.0,
+              "y": 3028.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5737418532371521,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "f07222ed-4945-4e42-a3f0-3880a7daa8bc",
+      "entity_type": "place",
+      "text": "橋洲",
+      "normalized_text": "橋洲",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "0b922c0f-9a8e-4ecf-bafb-0cacad456506",
+        "polygon": {
+          "points": [
+            {
+              "x": 1311.0,
+              "y": 2848.0
+            },
+            {
+              "x": 1339.0,
+              "y": 2847.0
+            },
+            {
+              "x": 1342.0,
+              "y": 2911.0
+            },
+            {
+              "x": 1313.0,
+              "y": 2913.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5862231254577637,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ae6ddf04-77f2-40ed-a9e2-7cda6b272859",
+      "entity_type": "organization",
+      "text": "爱多亞",
+      "normalized_text": "爱多亞",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "743e0d80-251a-4256-a718-af396a526237",
+        "polygon": {
+          "points": [
+            {
+              "x": 1721.0,
+              "y": 2849.0
+            },
+            {
+              "x": 1746.0,
+              "y": 2849.0
+            },
+            {
+              "x": 1746.0,
+              "y": 2914.0
+            },
+            {
+              "x": 1721.0,
+              "y": 2914.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6984252333641052,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "4c9e9275-17b5-45af-bb55-cce2a17fa18e",
+      "entity_type": "organization",
+      "text": "IHE",
+      "normalized_text": "IHE",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "d34587b3-2f6c-4e7e-808b-d6b73df99f16",
+        "polygon": {
+          "points": [
+            {
+              "x": 1936.0,
+              "y": 2901.0
+            },
+            {
+              "x": 2235.0,
+              "y": 2901.0
+            },
+            {
+              "x": 2235.0,
+              "y": 2918.0
+            },
+            {
+              "x": 1936.0,
+              "y": 2918.0
+            }
+          ]
+        },
+        "text_start": 1,
+        "text_end": 4
+      },
+      "confidence": 0.554027259349823,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "1dfae329-1c57-4bea-a292-84a7c6c2ae63",
+      "entity_type": "place",
+      "text": "上イ西門拉電之",
+      "normalized_text": "上イ西門拉電之",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "5986c76a-a97d-437d-b4e7-889b90dfb708",
+        "polygon": {
+          "points": [
+            {
+              "x": 1448.0,
+              "y": 2925.0
+            },
+            {
+              "x": 1473.0,
+              "y": 2925.0
+            },
+            {
+              "x": 1471.0,
+              "y": 3064.0
+            },
+            {
+              "x": 1446.0,
+              "y": 3064.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 7
+      },
+      "confidence": 0.45175033807754517,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d9bf7cd3-4e89-4245-b408-1d4f0a6361f3",
+      "entity_type": "organization",
+      "text": "海甯",
+      "normalized_text": "海甯",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "909d1978-20ff-4ce8-a2eb-548f1d255fad",
+        "polygon": {
+          "points": [
+            {
+              "x": 2335.0,
+              "y": 2990.0
+            },
+            {
+              "x": 2378.0,
+              "y": 2990.0
+            },
+            {
+              "x": 2378.0,
+              "y": 3090.0
+            },
+            {
+              "x": 2335.0,
+              "y": 3090.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.48344144225120544,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "91c13ad1-d06d-49b2-acb2-806b1b2eff78",
+      "entity_type": "place",
+      "text": "海寧",
+      "normalized_text": "海寧",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "ba57cbfc-3f66-4fb0-b91f-fb91e0e943c2",
+        "polygon": {
+          "points": [
+            {
+              "x": 2339.0,
+              "y": 2993.0
+            },
+            {
+              "x": 2374.0,
+              "y": 2993.0
+            },
+            {
+              "x": 2374.0,
+              "y": 3086.0
+            },
+            {
+              "x": 2339.0,
+              "y": 3086.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.8005679249763489,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "dc0b18a8-f5f3-4a7f-a72f-4cca836977eb",
+      "entity_type": "organization",
+      "text": "寶興",
+      "normalized_text": "寶興",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "210deeac-ec81-446a-8e71-3cb1647b86b2",
+        "polygon": {
+          "points": [
+            {
+              "x": 1308.0,
+              "y": 3097.0
+            },
+            {
+              "x": 1345.0,
+              "y": 3097.0
+            },
+            {
+              "x": 1345.0,
+              "y": 3161.0
+            },
+            {
+              "x": 1308.0,
+              "y": 3161.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.5893015265464783,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "ca18bc12-2e7a-4996-a208-26d1d777dc39",
+      "entity_type": "place",
+      "text": "閘北",
+      "normalized_text": "閘北",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "1e09f204-652e-4dd5-a9bf-edc437bab73a",
+        "polygon": {
+          "points": [
+            {
+              "x": 1679.0,
+              "y": 3099.0
+            },
+            {
+              "x": 1717.0,
+              "y": 3099.0
+            },
+            {
+              "x": 1717.0,
+              "y": 3169.0
+            },
+            {
+              "x": 1679.0,
+              "y": 3169.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 2
+      },
+      "confidence": 0.6706147193908691,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "d641ab29-6c00-48c2-90f1-bf523eeeda4c",
+      "entity_type": "person",
+      "text": "人任旁廳由自部北在",
+      "normalized_text": "人任旁廳由自部北在",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "dfd5fafd-bd84-47f1-937a-9e87e56879eb",
+        "polygon": {
+          "points": [
+            {
+              "x": 541.0,
+              "y": 3239.0
+            },
+            {
+              "x": 1070.0,
+              "y": 3239.0
+            },
+            {
+              "x": 1070.0,
+              "y": 3300.0
+            },
+            {
+              "x": 541.0,
+              "y": 3300.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 9
+      },
+      "confidence": 0.5624027848243713,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    },
+    {
+      "mention_id": "2d66c56f-e75b-4dca-b3be-503d2693a9b6",
+      "entity_type": "date",
+      "text": "二九七",
+      "normalized_text": "二九七",
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": null,
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "b34647d2-7698-4799-ab18-77693df11556",
+        "polygon": {
+          "points": [
+            {
+              "x": 2096.0,
+              "y": 3286.0
+            },
+            {
+              "x": 2377.0,
+              "y": 3286.0
+            },
+            {
+              "x": 2377.0,
+              "y": 3344.0
+            },
+            {
+              "x": 2096.0,
+              "y": 3344.0
+            }
+          ]
+        },
+        "text_start": 0,
+        "text_end": 3
+      },
+      "confidence": 0.6332237124443054,
+      "run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+      "attributes": {
+        "extractor": "gliner:urchade/gliner_multi-v2.1@443d26d654e0324125a96bebd8e796c14ff2efe6",
+        "candidate_only": true
+      }
+    }
+  ],
+  "warnings": [
+    "All NER outputs are machine candidates and require benchmark validation or review before entity linking.",
+    "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+    "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+  ]
+}

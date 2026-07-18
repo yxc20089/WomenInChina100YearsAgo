@@ -1,6 +1,6 @@
 # Technical design: reconstructing women's history from *Shen Bao*
 
-Status: proposed architecture and benchmark plan  
+Status: selected architecture, benchmark plan, and tested one-page vertical slice
 Research cutoff: 2026-07-18  
 Scope: `s3://ccaa-us-east-1-504133794192/sb_raw/`
 
@@ -15,6 +15,17 @@ Use three distinct data planes:
 3. **Experimental graph plane:** rebuildable Neo4j projections and graph-RAG indexes. Start with LightRAG; benchmark Microsoft GraphRAG Global and DRIFT. Do not treat LazyGraphRAG as an installable OSS component.
 
 The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-preserving evidence extraction, with **PaddleOCR-VL-1.6** as a fallback/challenger on difficult regions. This is a benchmark hypothesis, not a final model lock.
+
+### Verified implementation slice (2026-07-18)
+
+- Dockerized PostgreSQL 17/pgvector 0.8.5, OpenSearch 3.7.0, and Neo4j Community 2026.06.0 are healthy and accept real queries/writes.
+- The complete fast audit—401 objects and 400 numbered volumes—loads transactionally and idempotently into PostgreSQL.
+- PaddleOCR 3.7.0 with PP-OCRv6 medium produced a coordinate-preserving 1,138-region smoke artifact for volume 219, page 308. It used 35 bounded-memory tiles; the input was a lossy screening JPEG, so this proves plumbing, not OCR quality.
+- The explicitly multilingual `urchade/gliner_multi-v2.1` at commit `443d26d654e0324125a96bebd8e796c14ff2efe6` produced 115 exact-offset candidates. Manual inspection found substantial false positives from OCR noise, so every result remains an unlinked `candidate`; the model has not passed the NER gate.
+- BGE-M3 at commit `5617a9f61b028005a4858fdac845db406aefb181` produced 1,138 normalized 1,024-dimensional embeddings. PostgreSQL/pgvector and OpenSearch contain the same region set.
+- OpenSearch CJK lexical, BGE-M3 dense, and client-side RRF hybrid retrieval return exact S3 volume/page/region polygons and propagate page-quality warnings. The query `富紳淑女` placed the two exact matching regions first in the hybrid result.
+
+The slice intentionally contains no reviewed entities or claims. It must not be described as a reconstructed knowledge graph until historian review data exists.
 
 ## 2. What the archive actually contains
 
@@ -204,6 +215,8 @@ NER is not entity linking. The pipeline must retain OCR uncertainty, identify a 
 
 GLiNER v2.5-large is not selected in advance. The project-specific evaluation matters more than its generic benchmark. Relevant sources include the [GLiNER model card](https://huggingface.co/gliner-community/gliner_large-v2.5), [GLiNER paper/repository](https://github.com/urchade/GLiNER), [NuNER paper](https://aclanthology.org/2024.emnlp-main.660/), and a directly relevant [historical Chinese NER/entity-linking/coreference/relation dataset](https://www.lrec-conf.org/proceedings/lrec-coling-2024/pdf/2024.main-1.35.pdf).
 
+The first technical smoke test used the explicit multilingual v2.1 checkpoint because its official card identifies it as a 209M multilingual Apache-2.0 model. Its poor unreviewed output on noisy *Shen Bao* OCR confirms that generic model-card claims and confidence scores are not sufficient. High scores such as single-character kinship terms classified as people still occurred. Benchmark future models on corrected gold text and raw OCR separately to distinguish OCR propagation from NER failure.
+
 ### 7.2 Proposed extraction flow
 
 ```text
@@ -332,31 +345,30 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 
 ## 12. Immediate implementation backlog
 
-1. Build a read-only S3 manifest command with PDF/DjVu integrity and page-count checks.
-2. Define page/region/OCR JSON schemas and stable identifiers.
-3. Select and render the stratified benchmark pages.
-4. Write annotation guidelines for original characters, normalization, layout and women-centered entities.
-5. Containerize the six OCR benchmark configurations and pin model revisions.
-6. Implement metric computation and artifact comparison.
-7. Draft the PostgreSQL evidence schema and OpenSearch index mappings only after the annotation schema is reviewed.
+1. Finish human review of the 500-page visual screen and select 150–250 gold pages.
+2. Write annotation guidelines for original characters, normalization, layout and women-centered entities.
+3. Render gold pages losslessly and run PP-StructureV3/PP-OCRv6 versus the difficult-page challengers.
+4. Build OCR/layout and NER metric computation against double-reviewed annotations.
+5. Implement candidate-link and claim-review queues; do not promote current GLiNER smoke outputs.
+6. Build the reviewed-only Neo4j projection and researcher query API.
+7. Evaluate LightRAG and Microsoft GraphRAG only after article segmentation and the hybrid baseline are scored.
 
 ## 13. Selected technologies, pending benchmark
 
 | Layer | Provisional selection | Status |
 |---|---|---|
 | Source/archive | Existing S3 raw prefix + new versioned derivative area | Selected architecture |
-| Validation/rendering | PDF/JBIG2 and DjVu-aware batch pipeline | Must implement |
+| Validation/rendering | PDF/JBIG2 and DjVu-aware batch pipeline | Implemented for screening; gold lossless flow pending |
 | Evidence OCR | PP-StructureV3 + PP-OCRv6 | Benchmark leader candidate |
 | Difficult OCR | PaddleOCR-VL-1.6 | Benchmark fallback candidate |
-| Authoritative database | PostgreSQL | Selected |
-| Embeddings near evidence | pgvector | Selected for pilot |
-| Production retrieval | OpenSearch hybrid + reranker | Selected architecture; models TBD |
+| Authoritative database | PostgreSQL 17 | Implemented and live-tested locally |
+| Embeddings near evidence | pgvector 0.8.5 + BGE-M3 challenger | Implemented for smoke slice; benchmark pending |
+| Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline; reranker/evaluation pending |
 | Graph exploration | Neo4j Community derived projection | Selected for pilot if graph questions justify it |
 | Standards export | CIDOC CRM profile + PROV-O + Web Annotation, validated with Jena/SHACL | Selected architecture |
-| NER | Rules + multilingual GLiNER + supervised Chinese encoder comparison | Benchmark required |
+| NER | Rules + multilingual GLiNER + supervised Chinese encoder comparison | Candidate storage implemented; GLiNER smoke quality insufficient |
 | Relation/event extraction | Schema-constrained Chinese-capable LLM with grounded offsets | Benchmark/model selection required |
 | Graph-RAG experiment | LightRAG pinned stable version | Selected first experiment |
 | Graph-RAG comparator | Microsoft GraphRAG Global + DRIFT | Selected bounded experiment |
 | LazyGraphRAG | Track product/research availability | Not currently selected as deployable OSS |
 | Simulation | None in factual system | Explicitly deferred |
-

@@ -34,6 +34,8 @@ Run tests without AWS access:
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
+For the fully locked development environment, use `uv sync --all-extras` and `uv run` instead of setting `PYTHONPATH`.
+
 Create the deterministic visual-screening page plan after the audit:
 
 ```bash
@@ -61,3 +63,30 @@ PYTHONPATH=src python -m wic_history.review_server
 ```
 
 Open `http://127.0.0.1:8765`. Reviews are stored atomically in `artifacts/benchmark-review/annotations.json`. The server binds to localhost by default and has no authentication; do not expose it on a public interface.
+
+## Local evidence and retrieval stack
+
+Copy `.env.example` to an untracked `.env` and replace its development passwords, then start the selected databases:
+
+```bash
+docker compose up -d
+uv run wic-migrate --database-url "$DATABASE_URL"
+```
+
+Load the audited archive catalog and versioned OCR/NER artifacts:
+
+```bash
+uv run wic-ingest --database-url "$DATABASE_URL" manifest artifacts/corpus-audit/manifest.jsonl
+uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-smoke/v219-p0308.ppocrv6.json
+uv run wic-ingest --database-url "$DATABASE_URL" ner artifacts/ner-smoke/v219-p0308.gliner-multi-v2.1.json
+```
+
+Generate BGE-M3 embeddings, rebuild the OpenSearch projection, and issue an evidence-citing hybrid query:
+
+```bash
+uv run wic-embed --database-url "$DATABASE_URL" --source-ocr-run-id 213e0078-59d5-4a56-8811-a59e40ed0800
+uv run wic-search --opensearch-url "$OPENSEARCH_URL" project --database-url "$DATABASE_URL" --recreate
+uv run wic-search --opensearch-url "$OPENSEARCH_URL" query '富紳淑女' --mode hybrid --limit 5
+```
+
+The committed OCR/NER files are technical smoke artifacts from a lossy screening derivative. They demonstrate provenance, coordinates, persistence, and retrieval; they are not gold transcriptions or reviewed historical assertions.

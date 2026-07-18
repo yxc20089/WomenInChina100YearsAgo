@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "bd8de86e-eab8-4aea-86c3-eb7c1cb2ec4f",
+  "source_ocr_run_id": "213e0078-59d5-4a56-8811-a59e40ed0800",
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "9ec8073e-9b9e-4d2c-9b0c-0fcd68ddf128",
+    "kind": "ner",
+    "engine": "RulePredictor",
+    "model_name": "historical-women-zh-rules",
+    "model_revision": "1",
+    "software_version": "gliner-0.2.27",
+    "configuration": {
+      "threshold": 0.45,
+      "batch_size": 8,
+      "labels": [
+        "person",
+        "place",
+        "address",
+        "organization",
+        "school",
+        "occupation",
+        "role title",
+        "publication",
+        "event",
+        "date",
+        "product"
+      ],
+      "rule_set": "historical-women-zh-v1"
+    },
+    "started_at": "2026-07-18T06:11:44.210092Z",
+    "completed_at": "2026-07-18T06:11:44.213939Z"
+  },
+  "mentions": [],
+  "warnings": [
+    "All NER outputs are machine candidates and require benchmark validation or review before entity linking.",
+    "Reading order is a geometric fallback and has not been validated for vertical newspaper columns.",
+    "Input is a lossy screening derivative; this artifact is a technical smoke test, not gold OCR evidence."
+  ]
+}

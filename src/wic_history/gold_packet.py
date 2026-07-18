@@ -85,6 +85,8 @@ class NERAnnotationUnit(StrictModel):
     target: PacketOCRRegion
     context_before: list[PacketOCRRegion] = Field(default_factory=list)
     context_after: list[PacketOCRRegion] = Field(default_factory=list)
+    reviewed_coherent_unit_revision_id: UUID | None = None
+    reviewed_issue_id: UUID | None = None
     selection_reasons: list[SamplingReason] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -106,7 +108,7 @@ class PacketCoverage(StrictModel):
 
 
 class NERAnnotationPacket(StrictModel):
-    schema_version: Literal["1.0"] = "1.0"
+    schema_version: Literal["1.0", "1.1"] = "1.1"
     packet_id: str = Field(pattern=r"^[0-9a-f]{64}$")
     dataset_id: str = Field(min_length=1, max_length=300)
     status: Literal["annotation_candidate"] = "annotation_candidate"
@@ -183,7 +185,8 @@ SELECT region.region_id, region.run_id AS source_ocr_run_id, region.page_id,
        derivative.image_uri, derivative.image_sha256, derivative.width,
        derivative.height, derivative.dpi, derivative.media_type,
        derivative.evidence_tier, derivative.render_manifest_uri,
-       selection.selection_basis
+       selection.selection_basis, issue_assignment.issue_id,
+       approved_unit.revision_id AS coherent_unit_revision_id
 FROM evidence.ocr_region region
 JOIN archive.page page USING (page_id)
 JOIN archive.volume volume USING (volume_id)
@@ -194,6 +197,22 @@ JOIN evidence.page_ocr_selection selection
  AND selection.superseded_at IS NULL
 JOIN archive.page_derivative derivative
   ON derivative.derivative_id = selection.derivative_id
+LEFT JOIN archive.page_issue_assignment issue_assignment
+  ON issue_assignment.page_id = page.page_id
+ AND issue_assignment.superseded_at IS NULL
+LEFT JOIN (
+    SELECT span.region_id,
+           CASE WHEN count(DISTINCT revision.revision_id) = 1
+                THEN (array_agg(DISTINCT revision.revision_id ORDER BY revision.revision_id))[1]
+                ELSE NULL END AS revision_id
+    FROM evidence.coherent_unit_span span
+    JOIN evidence.coherent_unit_revision revision USING (revision_id)
+    JOIN evidence.page_article_segmentation_selection segmentation_selection
+      ON segmentation_selection.selection_id = revision.approval_selection_id
+     AND segmentation_selection.superseded_at IS NULL
+    WHERE revision.superseded_at IS NULL
+    GROUP BY span.region_id
+) approved_unit ON approved_unit.region_id = region.region_id
 WHERE (CAST(%s AS integer) IS NULL OR volume.volume_number = CAST(%s AS integer))
   AND (CAST(%s AS integer) IS NULL OR page.page_number = CAST(%s AS integer))
 ORDER BY volume.publication_year, volume.volume_number, page.page_number,
@@ -304,6 +323,11 @@ def _select_rows(
 
 
 def _identity_payload(packet: NERAnnotationPacket) -> dict[str, Any]:
+    units = [unit.model_dump(mode="json") for unit in packet.units]
+    if packet.schema_version == "1.0":
+        for unit in units:
+            unit.pop("reviewed_coherent_unit_revision_id", None)
+            unit.pop("reviewed_issue_id", None)
     return {
         "schema_version": packet.schema_version,
         "dataset_id": packet.dataset_id,
@@ -314,7 +338,7 @@ def _identity_payload(packet: NERAnnotationPacket) -> dict[str, Any]:
         "benchmark_eligible": packet.benchmark_eligible,
         "eligibility_failures": packet.eligibility_failures,
         "pages": [page.model_dump(mode="json") for page in packet.pages],
-        "units": [unit.model_dump(mode="json") for unit in packet.units],
+        "units": units,
     }
 
 
@@ -397,22 +421,32 @@ def build_packet_from_rows(
     if not selected:
         raise ValueError("no text-bearing OCR regions are available for annotation")
 
-    rows_by_page: dict[UUID, list[dict[str, Any]]] = {}
+    rows_by_context: dict[tuple[str, UUID], list[dict[str, Any]]] = {}
     for row in text_rows:
-        rows_by_page.setdefault(row["page_id"], []).append(row)
-    for page_rows in rows_by_page.values():
-        page_rows.sort(key=lambda row: (row["reading_order"], str(row["region_id"])))
+        context_key = (
+            ("reviewed_unit", row.get("coherent_unit_revision_id"))
+            if row.get("coherent_unit_revision_id")
+            else ("page", row["page_id"])
+        )
+        rows_by_context.setdefault(context_key, []).append(row)
+    for context_rows in rows_by_context.values():
+        context_rows.sort(key=lambda row: (row["reading_order"], str(row["region_id"])))
     indexes = {
         row["region_id"]: index
-        for page_rows in rows_by_page.values()
-        for index, row in enumerate(page_rows)
+        for context_rows in rows_by_context.values()
+        for index, row in enumerate(context_rows)
     }
 
     units = []
     selected_page_ids: set[UUID] = set()
     for row, reasons in selected:
         selected_page_ids.add(row["page_id"])
-        page_rows = rows_by_page[row["page_id"]]
+        context_key = (
+            ("reviewed_unit", row.get("coherent_unit_revision_id"))
+            if row.get("coherent_unit_revision_id")
+            else ("page", row["page_id"])
+        )
+        context_rows = rows_by_context[context_key]
         index = indexes[row["region_id"]]
         target = _packet_region(row)
         source = SourcePointer(
@@ -440,12 +474,14 @@ def build_packet_from_rows(
                 target=target,
                 context_before=[
                     _packet_region(context)
-                    for context in page_rows[max(0, index - context_radius) : index]
+                    for context in context_rows[max(0, index - context_radius) : index]
                 ],
                 context_after=[
                     _packet_region(context)
-                    for context in page_rows[index + 1 : index + 1 + context_radius]
+                    for context in context_rows[index + 1 : index + 1 + context_radius]
                 ],
+                reviewed_coherent_unit_revision_id=row.get("coherent_unit_revision_id"),
+                reviewed_issue_id=row.get("issue_id"),
                 selection_reasons=reasons,
             )
         )
@@ -467,6 +503,7 @@ def build_packet_from_rows(
             PacketPage(
                 page_id=row["page_id"],
                 page_key=_page_key(row),
+                issue_id=str(row["issue_id"]) if row.get("issue_id") else None,
                 source=SourcePointer(
                     source_uri=row["source_uri"],
                     source_sha256=row["source_sha256"],
@@ -511,6 +548,13 @@ def build_packet_from_rows(
         failures.append(
             "Issue/article identifiers are unavailable or cover fewer than 30 issues; issue-level splitting is not yet possible."
         )
+    reviewed_selected = sum(
+        unit.reviewed_coherent_unit_revision_id is not None for unit in units
+    )
+    if reviewed_selected != len(units):
+        failures.append(
+            f"Only {reviewed_selected} of {len(units)} sampled units are bounded by historian-approved coherent-unit revisions."
+        )
     if len({(year // 10) * 10 for year in years}) < 3:
         failures.append("Packet covers fewer than three publication decades.")
 
@@ -545,6 +589,7 @@ def build_packet_from_rows(
             "Independent reviewers must not see model outputs or each other's annotations.",
             "Selection is deliberately stratified; publish stratum counts and retain an unbiased baseline.",
             "Finalization requires two distinct reviews, adjudication, and a model-independent gold region UUID.",
+            "Context is bounded by an approved coherent unit when available; page context is retained only for ineligible proposal packets.",
         ],
     )
     return packet.model_copy(update={"packet_id": packet_identity(packet)})

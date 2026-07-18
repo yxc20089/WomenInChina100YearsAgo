@@ -13,6 +13,7 @@ artifacts/gold-pages/
 # local until data-rights and publication review explicitly approve release.
 artifacts/gold-packet*/
 artifacts/rag-three-year/
+artifacts/segmentation-*.json
 # Per-job ingestion outputs are content-addressed in PostgreSQL and may contain
 # full-resolution page images or model artifacts.
 artifacts/ingestion-*/

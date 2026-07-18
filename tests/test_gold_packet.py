@@ -117,6 +117,42 @@ def packet(max_units: int = 6) -> NERAnnotationPacket:
 class GoldPacketTests(unittest.TestCase):
     def test_global_scope_casts_nullable_database_filters(self):
         self.assertIn("CAST(%s AS integer)", ACTIVE_REGION_SQL)
+        self.assertIn("archive.page_issue_assignment", ACTIVE_REGION_SQL)
+        self.assertIn("evidence.coherent_unit_revision", ACTIVE_REGION_SQL)
+
+    def test_context_does_not_cross_reviewed_coherent_unit_boundaries(self):
+        rows = [
+            region_row(index, text, 0.9)
+            for index, text in enumerate(
+                ["女學", "教育", "新聞", "商務", "廣告", "社會"], start=1
+            )
+        ]
+        first_revision = UUID("00000000-0000-0000-0000-000000000401")
+        second_revision = UUID("00000000-0000-0000-0000-000000000402")
+        region_group = {}
+        for index, row in enumerate(rows):
+            revision_id = first_revision if index < 3 else second_revision
+            row["coherent_unit_revision_id"] = revision_id
+            row["issue_id"] = UUID("00000000-0000-0000-0000-000000000403")
+            region_group[row["region_id"]] = revision_id
+
+        result = build_packet_from_rows(
+            rows,
+            [],
+            dataset_id="bounded-context",
+            ontology_version="women-history-zh-v1",
+            max_units=6,
+            context_radius=5,
+            generated_at=datetime(2026, 7, 18, tzinfo=timezone.utc),
+        )
+
+        for unit in result.units:
+            expected = unit.reviewed_coherent_unit_revision_id
+            context = unit.context_before + unit.context_after
+            self.assertTrue(context)
+            self.assertTrue(
+                all(region_group[item.source_ocr_region_id] == expected for item in context)
+            )
 
     def test_balanced_packet_is_candidate_only_and_content_addressed(self):
         result = packet()

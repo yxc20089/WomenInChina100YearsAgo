@@ -136,10 +136,12 @@ This distinction supports two honest raw-input measures:
 `wic-gold-packet` may be used to prepare candidate work. Its administrative
 packet contains selection strata, while its blinded reviewer view removes those
 signals and all model predictions. A packet target is an OCR-region pilot unit
-with adjacent regions supplied only as reading context. It is not a substitute
-for historian-reviewed article/coherent-region segmentation, and the builder
-must report it ineligible for the final benchmark while issue IDs or the frozen
-sample requirements are missing. The finalizer requires a newly assigned gold
+with adjacent regions supplied only as reading context. Packet schema 1.1
+bounds that context to an active historian-approved coherent-unit revision when
+one exists. Page-wide context is retained only for an explicitly ineligible
+proposal packet. The builder must report the packet ineligible while any
+sampled unit lacks an approved bound, issue IDs are missing, or the frozen
+sample requirements are unmet. The finalizer requires a newly assigned gold
 region UUID; it rejects reuse of the source model's OCR region UUID.
 
 Report agreement before adjudication, exact and relaxed span F1 by type, raw

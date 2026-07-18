@@ -5,6 +5,8 @@ from wic_history.rag_experiment import (
     EXPORT_SQL,
     GRAPHRAG_REVISION,
     LIGHTRAG_REVISION,
+    REVIEWED_UNIT_EXPORT_SQL,
+    build_coherent_unit_documents,
     build_documents,
 )
 
@@ -73,3 +75,43 @@ class RAGExperimentTests(unittest.TestCase):
         self.assertIn("JOIN evidence.ocr_run_input", EXPORT_SQL)
         self.assertIn("CAST(%(volume_number)s AS integer)", EXPORT_SQL)
         self.assertIn("CAST(%(page_number)s AS integer)", EXPORT_SQL)
+
+    def test_reviewed_export_requires_active_approved_revisions(self) -> None:
+        self.assertIn("evidence.coherent_unit_revision", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("segmentation_selection.superseded_at IS NULL", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("revision.superseded_at IS NULL", REVIEWED_UNIT_EXPORT_SQL)
+
+    def test_reviewed_unit_offsets_map_back_to_raw_ocr(self) -> None:
+        base = _row(
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000010",
+            "甲女子乙",
+            1,
+        )
+        base.update(
+            {
+                "revision_id": UUID("00000000-0000-0000-0000-000000000040"),
+                "unit_id": UUID("00000000-0000-0000-0000-000000000041"),
+                "issue_id": None,
+                "unit_kind": "article",
+                "title": "女學",
+                "content_sha256": "c" * 64,
+                "approved_by": "historian-a",
+                "segmentation_selection_id": UUID("00000000-0000-0000-0000-000000000042"),
+                "segmentation_review_id": UUID("00000000-0000-0000-0000-000000000043"),
+                "span_sequence_number": 0,
+                "span_text_start": 1,
+                "span_text_end": 3,
+                "span_role": "body",
+            }
+        )
+
+        document, citations = build_coherent_unit_documents([base])[0]
+
+        self.assertEqual(document["text"], "女子")
+        self.assertEqual(citations[0]["region_text_start"], 1)
+        self.assertEqual(citations[0]["region_text_end"], 3)
+        self.assertEqual(
+            document["text"][citations[0]["start_char"] : citations[0]["end_char"]],
+            "女子",
+        )

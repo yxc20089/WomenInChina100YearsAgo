@@ -35,8 +35,29 @@ class DatabaseContractTests(unittest.TestCase):
                 "007_ingestion_jobs.sql",
                 "008_batch_terminal_states.sql",
                 "009_job_replay_events.sql",
+                "010_article_segmentation_review.sql",
+                "011_segmentation_span_splits.sql",
+                "012_coherent_unit_provenance_guards.sql",
             ],
         )
+
+    def test_reviewed_segmentation_is_distinct_from_machine_proposals(self):
+        sql = Path("db/migrations/010_article_segmentation_review.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("source_ocr_selection_id", sql)
+        self.assertIn("evidence.coherent_unit_revision", sql)
+        self.assertIn("evidence.coherent_unit_span", sql)
+        self.assertIn("archive.page_issue_assignment", sql)
+        self.assertIn("review_decision IS DISTINCT FROM 'accept'", sql)
+        self.assertIn("reject_proposal_mutation", sql)
+
+    def test_approved_spans_are_bound_back_to_the_reviewed_proposal(self):
+        sql = Path("db/migrations/012_coherent_unit_provenance_guards.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("coherent_revision_proposal_selection_trigger", sql)
+        self.assertIn("coherent_span_proposal_membership_trigger", sql)
 
     def test_page_derivatives_preserve_multiple_image_tiers(self):
         sql = Path("db/migrations/004_page_derivatives.sql").read_text(encoding="utf-8")

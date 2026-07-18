@@ -129,6 +129,20 @@ offsets/surfaces, a changed packet hash, and reuse of a model OCR region UUID as
 the independent gold identity. See
 [docs/gold-annotation-packets.md](docs/gold-annotation-packets.md).
 
+Generate immutable coherent-unit candidates only after OCR selection. Machine
+windows are not articles and do not enter reviewed retrieval:
+
+```bash
+uv run wic-segment --database-url "$DATABASE_URL" propose \
+  --max-regions 24 --max-characters 600 \
+  --proposed-by deterministic-baseline-v1
+```
+
+An accepted named review and a separate activation copy approved content into
+revisioned coherent units with exact OCR spans. See
+[docs/segmentation-operations.md](docs/segmentation-operations.md) before using
+the export/import/review/activate workflow.
+
 ## Local evidence and retrieval stack
 
 Copy `.env.example` to an untracked `.env` and replace its development passwords, then start the selected databases:

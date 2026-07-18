@@ -305,7 +305,7 @@ Compare OpenSearch hybrid retrieval, LightRAG, GraphRAG Global and GraphRAG DRIF
 
 A graph approach enters production only where it materially outperforms the hybrid baseline without weakening citations.
 
-`wic-rag-export` creates the shared comparison input: plain page text, a JSONL form of the same documents, and a sidecar mapping exact character offsets to OCR-region UUIDs, polygons and scan URIs. Page units are a smoke-test compromise; the scored experiment waits for reviewed article segmentation. Generated graph entities, relations, community reports and summaries never flow back into the evidence plane as reviewed facts.
+`wic-rag-export` creates citation-preserving comparison input. `--unit ocr_page` remains an explicitly labeled smoke-test compromise. `--unit reviewed_coherent_unit` reads only active revisions copied after a named accepted segmentation review and maps exact document offsets through coherent-unit spans to OCR-region UUIDs, raw offsets, polygons and scan URIs. It hard-fails when no reviewed units exist. Generated graph entities, relations, community reports and summaries never flow back into the evidence plane as reviewed facts.
 
 ## 9. Storage and identifiers
 
@@ -315,7 +315,9 @@ Minimum authoritative records:
 - `volume`, `issue`, `page`: bibliographic and image identity;
 - `region`, `line`, `token`: polygons, reading order and region class;
 - `ocr_run`, `ocr_hypothesis`, `correction`: model/version and text lineage;
-- `article`: grouped page regions with versioned segmentation;
+- `article_segmentation`, `article`, `article_region`: immutable machine or historian-authored proposals bound to an exact OCR-selection UUID;
+- `issue`, `page_issue_assignment`: historian-authored issue identity with append-preserving assignment history;
+- `coherent_unit`, `coherent_unit_revision`, `coherent_unit_span`: distinct approved snapshots, including raw-region offsets and optional cross-page membership;
 - `mention`, `entity`, `entity_link_candidate`, `entity_resolution_decision`;
 - `event`, `claim`, `claim_evidence`, `review_decision`;
 - `model_run`, `prompt`, `schema_version`, `software_environment`;

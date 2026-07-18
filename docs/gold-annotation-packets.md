@@ -8,7 +8,10 @@ does not create gold automatically.
 The builder reads only `page_ocr_selection` rows whose `superseded_at` is null.
 Every annotation target retains the source-object SHA-256, registered derivative
 UUID and image SHA-256, OCR run/region UUID, polygon, raw text, confidence and
-adjacent reading-order context. Empty OCR regions are excluded.
+adjacent reading-order context. In packet schema 1.1, context is restricted to
+the active approved coherent-unit revision when one exists, and the unit/issue
+UUIDs are recorded. Page context is a fallback for ineligible proposal packets.
+Empty OCR regions are excluded.
 
 Sampling deliberately covers overlapping strata:
 
@@ -66,8 +69,10 @@ three-page packet produced stable ID
 It contains 150 units across three volumes, including 9 women-theme, 27
 NER-disagreement, 25 low-confidence and 122 no-candidate-baseline selections
 (overlapping counts). It still correctly fails benchmark eligibility: all three
-pages are from the 1920s, issue/article IDs are absent, and it has fewer than
-500 units.
+pages are from the 1920s, issue/article IDs are absent, approved coherent-unit
+bounds are absent, and it has fewer than 500 units. After migration 010, a
+fresh schema-1.1 gate packet made the missing segmentation explicit: 0 of 150
+sampled units had an approved coherent-unit revision.
 
 ## Complete and finalize
 

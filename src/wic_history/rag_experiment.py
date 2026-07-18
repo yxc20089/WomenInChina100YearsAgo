@@ -1,8 +1,9 @@
 """Export one citation-preserving corpus for reproducible RAG comparisons.
 
 The export intentionally contains no generated entities, relations, or summaries.
-Every system receives the same page text. A sidecar maps exact character spans
-back to immutable OCR regions so downstream answers can be grounded again.
+Every compared system receives the same selected page or approved coherent-unit
+text. A sidecar maps exact character spans back to immutable OCR regions so
+downstream answers can be grounded again.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ LIGHTRAG_REVISION = "9a45b64c2ee25b1d806e90db926a8af37480bb16"
 @dataclass(frozen=True, slots=True)
 class RAGExportResult:
     output_dir: str
+    input_unit: str
     documents: int
     source_regions: int
     exported_regions: int
@@ -118,6 +120,83 @@ def _page_document(rows: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dic
     return document, citations
 
 
+def _coherent_unit_document(
+    rows: list[dict[str, Any]],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    if not rows:
+        raise ValueError("Cannot export an empty coherent unit")
+    first = rows[0]
+    document_id = str(first["revision_id"])
+    pieces: list[str] = []
+    citations: list[dict[str, Any]] = []
+    position = 0
+    for row in rows:
+        raw_text = row["raw_text"]
+        start_offset = row["span_text_start"]
+        end_offset = row["span_text_end"]
+        if end_offset > len(raw_text):
+            raise ValueError(f"reviewed span exceeds OCR text for region {row['region_id']}")
+        text = raw_text[start_offset:end_offset]
+        if not text:
+            continue
+        if pieces:
+            pieces.append("\n")
+            position += 1
+        start = position
+        pieces.append(text)
+        position += len(text)
+        citations.append(
+            {
+                "document_id": document_id,
+                "coherent_unit_id": str(row["unit_id"]),
+                "coherent_unit_revision_id": document_id,
+                "region_id": str(row["region_id"]),
+                "start_char": start,
+                "end_char": position,
+                "region_text_start": start_offset,
+                "region_text_end": end_offset,
+                "sequence_number": row["span_sequence_number"],
+                "role": row["span_role"],
+                "polygon": row["polygon"],
+                "ocr_confidence": row["confidence"],
+                "raw_text": raw_text,
+                "exported_text": text,
+                "source_uri": row["source_uri"],
+                "source_sha256": row["source_sha256"],
+                "ocr_run_id": str(row["run_id"]),
+                "derivative_id": str(row["derivative_id"]),
+                "source_image_uri": row["source_image_uri"],
+                "source_image_sha256": row["source_image_sha256"],
+                "evidence_tier": row["evidence_tier"],
+                "ocr_selection_basis": row["ocr_selection_basis"],
+                "segmentation_selection_id": str(row["segmentation_selection_id"]),
+                "segmentation_review_id": str(row["segmentation_review_id"]),
+                "approved_by": row["approved_by"],
+                "issue_id": str(row["issue_id"]) if row["issue_id"] else None,
+                "volume_number": row["volume_number"],
+                "publication_year": row["publication_year"],
+                "page_number": row["page_number"],
+            }
+        )
+    document = {
+        "id": document_id,
+        "title": first["title"] or f"Reviewed {first['unit_kind']} {first['unit_id']}",
+        "text": "".join(pieces),
+        "metadata": {
+            "coherent_unit_id": str(first["unit_id"]),
+            "coherent_unit_revision_id": document_id,
+            "unit_kind": first["unit_kind"],
+            "issue_id": str(first["issue_id"]) if first["issue_id"] else None,
+            "approved_by": first["approved_by"],
+            "approval_selection_id": str(first["segmentation_selection_id"]),
+            "segmentation_review_id": str(first["segmentation_review_id"]),
+            "content_sha256": first["content_sha256"],
+            "region_span_count": len(citations),
+        },
+    }
+    return document, citations
+
+
 def build_documents(rows: Iterable[dict[str, Any]]) -> list[tuple[dict[str, Any], list[dict[str, Any]]]]:
     """Group ordered region rows into page documents with exact offset maps."""
     output: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
@@ -131,6 +210,24 @@ def build_documents(rows: Iterable[dict[str, Any]]) -> list[tuple[dict[str, Any]
         page_rows.append(row)
     if page_rows:
         output.append(_page_document(page_rows))
+    return output
+
+
+def build_coherent_unit_documents(
+    rows: Iterable[dict[str, Any]],
+) -> list[tuple[dict[str, Any], list[dict[str, Any]]]]:
+    """Group approved spans by immutable coherent-unit revision."""
+    output: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
+    current_revision: Any = None
+    revision_rows: list[dict[str, Any]] = []
+    for row in rows:
+        if current_revision is not None and row["revision_id"] != current_revision:
+            output.append(_coherent_unit_document(revision_rows))
+            revision_rows = []
+        current_revision = row["revision_id"]
+        revision_rows.append(row)
+    if revision_rows:
+        output.append(_coherent_unit_document(revision_rows))
     return output
 
 
@@ -170,12 +267,77 @@ EXPORT_SQL = """
 """
 
 
+REVIEWED_UNIT_EXPORT_SQL = """
+    WITH eligible_revision AS (
+        SELECT DISTINCT revision.revision_id
+        FROM evidence.coherent_unit_revision revision
+        JOIN evidence.coherent_unit_span span USING (revision_id)
+        JOIN evidence.ocr_region region USING (region_id)
+        JOIN archive.page page USING (page_id)
+        JOIN archive.volume volume USING (volume_id)
+        JOIN evidence.page_article_segmentation_selection segmentation_selection
+          ON segmentation_selection.selection_id = revision.approval_selection_id
+         AND segmentation_selection.superseded_at IS NULL
+        WHERE revision.superseded_at IS NULL
+          AND (CAST(%(volume_number)s AS integer) IS NULL
+               OR volume.volume_number = CAST(%(volume_number)s AS integer))
+          AND (CAST(%(page_number)s AS integer) IS NULL
+               OR page.page_number = CAST(%(page_number)s AS integer))
+    )
+    SELECT revision.revision_id, revision.unit_id, revision.issue_id,
+           revision.unit_kind, revision.title, revision.content_sha256,
+           revision.approved_by,
+           segmentation_selection.selection_id AS segmentation_selection_id,
+           segmentation_selection.review_id AS segmentation_review_id,
+           span.sequence_number AS span_sequence_number,
+           span.text_start AS span_text_start, span.text_end AS span_text_end,
+           span.role AS span_role,
+           page.page_id, page.page_number, region.run_id,
+           derivative.derivative_id,
+           derivative.image_uri AS source_image_uri,
+           derivative.image_sha256 AS source_image_sha256,
+           derivative.evidence_tier,
+           ocr_selection.selection_basis AS ocr_selection_basis,
+           volume.volume_number, volume.publication_year, source.source_uri,
+           source.sha256 AS source_sha256,
+           region.region_id, region.reading_order, region.region_kind,
+           COALESCE(span.polygon, region.polygon) AS polygon,
+           region.raw_text, region.normalized_text, region.confidence,
+           run.model_name AS ocr_model, run.model_revision AS ocr_model_revision
+    FROM eligible_revision eligible
+    JOIN evidence.coherent_unit_revision revision USING (revision_id)
+    JOIN evidence.coherent_unit_span span USING (revision_id)
+    JOIN evidence.ocr_region region USING (region_id)
+    JOIN archive.page page USING (page_id)
+    JOIN archive.volume volume USING (volume_id)
+    JOIN archive.source_object source USING (source_object_id)
+    JOIN evidence.processing_run run ON run.run_id = region.run_id
+    JOIN evidence.page_ocr_selection ocr_selection
+      ON ocr_selection.page_id = region.page_id
+     AND ocr_selection.run_id = region.run_id
+     AND ocr_selection.superseded_at IS NULL
+    JOIN evidence.ocr_run_input input
+      ON input.run_id = ocr_selection.run_id
+     AND input.page_id = ocr_selection.page_id
+     AND input.derivative_id = ocr_selection.derivative_id
+    JOIN archive.page_derivative derivative
+      ON derivative.derivative_id = input.derivative_id
+     AND derivative.page_id = input.page_id
+    JOIN evidence.page_article_segmentation_selection segmentation_selection
+      ON segmentation_selection.selection_id = revision.approval_selection_id
+     AND segmentation_selection.superseded_at IS NULL
+    WHERE revision.superseded_at IS NULL
+    ORDER BY revision.revision_id, span.sequence_number
+"""
+
+
 def export_rag_corpus(
     database_url: str,
     output_dir: Path,
     *,
     volume_number: int | None = None,
     page_number: int | None = None,
+    input_unit: str = "ocr_page",
     overwrite: bool = False,
 ) -> RAGExportResult:
     """Export authoritative OCR text and region citations, never generated claims."""
@@ -204,13 +366,19 @@ def export_rag_corpus(
             old_document.unlink()
 
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        if input_unit not in {"ocr_page", "reviewed_coherent_unit"}:
+            raise ValueError("input_unit must be ocr_page or reviewed_coherent_unit")
         rows = connection.execute(
-            EXPORT_SQL,
+            REVIEWED_UNIT_EXPORT_SQL if input_unit == "reviewed_coherent_unit" else EXPORT_SQL,
             {"volume_number": volume_number, "page_number": page_number},
         ).fetchall()
-    pages = build_documents(rows)
-    if not pages:
-        raise ValueError("No OCR regions match the requested export scope")
+    documents = (
+        build_coherent_unit_documents(rows)
+        if input_unit == "reviewed_coherent_unit"
+        else build_documents(rows)
+    )
+    if not documents:
+        raise ValueError(f"No {input_unit} records match the requested export scope")
 
     documents_path = output_dir / "documents.jsonl"
     citations_path = output_dir / "citations.jsonl"
@@ -219,7 +387,7 @@ def export_rag_corpus(
     with documents_path.open("w", encoding="utf-8", newline="\n") as document_file, (
         citations_path.open("w", encoding="utf-8", newline="\n")
     ) as citation_file:
-        for document, citations in pages:
+        for document, citations in documents:
             document_file.write(_json_line(document))
             (documents_dir / f"{document['id']}.txt").write_text(
                 document["text"], encoding="utf-8", newline="\n"
@@ -234,11 +402,16 @@ def export_rag_corpus(
         "schema_version": "1.1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "scope": {"volume_number": volume_number, "page_number": page_number},
-        "input_unit": "ocr_page",
+        "input_unit": input_unit,
         "ocr_run_policy": "active_page_selection_only",
-        "citation_contract": "citations.jsonl maps page-text character offsets to OCR regions",
+        "segmentation_policy": (
+            "active_historian_approved_coherent_unit_revisions_only"
+            if input_unit == "reviewed_coherent_unit"
+            else "none_page_smoke_test"
+        ),
+        "citation_contract": "citations.jsonl maps document character offsets to OCR regions",
         "counts": {
-            "documents": len(pages),
+            "documents": len(documents),
             "source_regions": len(rows),
             "exported_regions": region_count,
             "omitted_empty_regions": omitted_empty_regions,
@@ -274,8 +447,9 @@ def export_rag_corpus(
                 "reason": "No reproducible LazyGraphRAG mode is exposed by the OSS GraphRAG CLI",
             },
         },
-        "warnings": [
+        "warnings": ([
             "Page units are temporary until reviewed article segmentation exists.",
+        ] if input_unit == "ocr_page" else []) + [
             "OCR text is machine-generated and must not be treated as a reviewed historical claim.",
             "RAG-generated entities, relations, communities, and summaries are disposable projections.",
             "OCR regions with empty normalized and raw text are omitted and counted in the manifest.",
@@ -289,7 +463,8 @@ def export_rag_corpus(
     )
     return RAGExportResult(
         output_dir=str(output_dir),
-        documents=len(pages),
+        input_unit=input_unit,
+        documents=len(documents),
         source_regions=len(rows),
         exported_regions=region_count,
         omitted_empty_regions=omitted_empty_regions,
@@ -304,6 +479,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--volume", type=int)
     parser.add_argument("--page", type=int)
+    parser.add_argument(
+        "--unit", choices=("ocr_page", "reviewed_coherent_unit"), default="ocr_page"
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser
 
@@ -317,6 +495,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.output,
         volume_number=args.volume,
         page_number=args.page,
+        input_unit=args.unit,
         overwrite=args.overwrite,
     )
     print(json.dumps(asdict(result), ensure_ascii=False, sort_keys=True))

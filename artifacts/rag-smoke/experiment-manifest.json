@@ -1,0 +1,59 @@
+{
+  "citation_contract": "citations.jsonl maps page-text character offsets to OCR regions",
+  "counts": {
+    "documents": 1,
+    "exported_regions": 1131,
+    "omitted_empty_regions": 7,
+    "source_regions": 1138,
+    "text_characters": 6898
+  },
+  "files": {
+    "citations_jsonl": {
+      "path": "citations.jsonl",
+      "sha256": "d5c6b6d50fbe11ae34ecd7643635badd7ffcb1bea79503fcbf6e1817ab065d63"
+    },
+    "documents_jsonl": {
+      "path": "documents.jsonl",
+      "sha256": "cf6e1e6e12f4dd0091f19d8fe5eaab5a37b0b9b5ae885354df87189a95c1a545"
+    },
+    "plain_text_directory": "documents/"
+  },
+  "generated_at": "2026-07-18T06:35:48.860116+00:00",
+  "input_unit": "ocr_page",
+  "schema_version": "1.0",
+  "scope": {
+    "page_number": 308,
+    "volume_number": 219
+  },
+  "systems": {
+    "hybrid_baseline": {
+      "implementation": "wic_history.search",
+      "status": "implemented"
+    },
+    "lazygraphrag": {
+      "package": null,
+      "reason": "No reproducible LazyGraphRAG mode is exposed by the OSS GraphRAG CLI",
+      "status": "tracked_not_installable"
+    },
+    "lightrag": {
+      "git_revision": "9a45b64c2ee25b1d806e90db926a8af37480bb16",
+      "package": "lightrag-hku==1.5.4",
+      "status": "bounded_experiment"
+    },
+    "microsoft_graphrag": {
+      "git_revision": "14a00ad88fc33cf2b52f4f113f25807556f8e25e",
+      "package": "graphrag==3.1.1",
+      "query_modes": [
+        "global",
+        "drift"
+      ],
+      "status": "bounded_experiment"
+    }
+  },
+  "warnings": [
+    "Page units are temporary until reviewed article segmentation exists.",
+    "OCR text is machine-generated and must not be treated as a reviewed historical claim.",
+    "RAG-generated entities, relations, communities, and summaries are disposable projections.",
+    "OCR regions with empty normalized and raw text are omitted and counted in the manifest."
+  ]
+}

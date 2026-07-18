@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from .evidence import NERArtifact, OCRPageArtifact
+from .evidence import ClaimArtifact, EntityLinkArtifact, NERArtifact, OCRPageArtifact
 
 
 @dataclass(frozen=True, slots=True)
@@ -324,6 +324,20 @@ class NERIngestResult:
     mentions_verified: int
 
 
+@dataclass(frozen=True, slots=True)
+class LinkIngestResult:
+    artifact_id: str
+    run_id: str
+    links_verified: int
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimIngestResult:
+    artifact_id: str
+    run_id: str
+    claims_verified: int
+
+
 def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResult:
     """Store exact-offset NER candidates without creating canonical entities."""
     psycopg, Jsonb = _psycopg()
@@ -415,6 +429,216 @@ def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResu
     return NERIngestResult(str(artifact.artifact_id), str(artifact.run.run_id), len(rows))
 
 
+def ingest_link_artifact(database_url: str, artifact_path: Path) -> LinkIngestResult:
+    """Store entity-link candidates while preserving NIL and review boundaries."""
+    psycopg, Jsonb = _psycopg()
+    artifact = EntityLinkArtifact.model_validate_json(
+        artifact_path.read_text(encoding="utf-8")
+    )
+    mention_ids = {link.mention_id for link in artifact.links}
+    with psycopg.connect(database_url) as connection:
+        _verify_run(connection, artifact, Jsonb)
+        mention_rows = connection.execute(
+            """
+            SELECT mention_id, run_id, entity_type
+            FROM evidence.entity_mention WHERE mention_id = ANY(%s)
+            """,
+            (list(mention_ids),),
+        ).fetchall() if mention_ids else []
+        mentions = {row[0]: row[1:] for row in mention_rows}
+        if mentions.keys() != mention_ids:
+            missing = sorted(str(value) for value in mention_ids - mentions.keys())
+            raise ValueError(f"Link artifact references unknown mentions: {', '.join(missing)}")
+
+        entity_ids = {link.entity_id for link in artifact.links if link.entity_id is not None}
+        entity_rows = connection.execute(
+            """
+            SELECT entity_id, entity_type, entity_status
+            FROM evidence.entity WHERE entity_id = ANY(%s)
+            """,
+            (list(entity_ids),),
+        ).fetchall() if entity_ids else []
+        entities = {row[0]: row[1:] for row in entity_rows}
+        if entities.keys() != entity_ids:
+            missing = sorted(str(value) for value in entity_ids - entities.keys())
+            raise ValueError(f"Link artifact targets unknown entities: {', '.join(missing)}")
+
+        rows = []
+        for link in artifact.links:
+            mention_run_id, mention_type = mentions[link.mention_id]
+            if mention_run_id != artifact.source_ner_run_id:
+                raise ValueError("Link artifact source_ner_run_id does not match its mention")
+            if mention_type != link.entity_type.value:
+                raise ValueError("Link candidate type does not match its mention type")
+            if link.entity_id is not None:
+                entity_type, entity_status = entities[link.entity_id]
+                if entity_type != link.entity_type.value or entity_status != "reviewed":
+                    raise ValueError("Link candidates may target only reviewed same-type entities")
+            rows.append(
+                (
+                    link.link_id,
+                    link.mention_id,
+                    link.run_id,
+                    link.entity_id,
+                    link.authority_uri,
+                    link.canonical_name,
+                    link.score,
+                    link.nil_candidate,
+                    link.features,
+                )
+            )
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO evidence.entity_link_candidate (
+                    link_candidate_id, mention_id, run_id, proposed_entity_id,
+                    proposed_authority_uri, proposed_canonical_name, score,
+                    is_nil, features
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (link_candidate_id) DO NOTHING
+                """,
+                [(*row[:8], Jsonb(row[8])) for row in rows],
+            )
+        stored = connection.execute(
+            """
+            SELECT link_candidate_id, mention_id, run_id, proposed_entity_id,
+                   proposed_authority_uri, proposed_canonical_name, score,
+                   is_nil, features
+            FROM evidence.entity_link_candidate WHERE run_id = %s
+            ORDER BY link_candidate_id
+            """,
+            (artifact.run.run_id,),
+        ).fetchall()
+        expected = sorted(rows, key=lambda row: row[0])
+        if stored != expected:
+            raise ValueError(
+                "Stored link candidates differ from the artifact; evidence rows are immutable"
+            )
+    return LinkIngestResult(str(artifact.artifact_id), str(artifact.run.run_id), len(rows))
+
+
+def ingest_claim_artifact(database_url: str, artifact_path: Path) -> ClaimIngestResult:
+    """Store grounded claim candidates and exact region evidence atomically."""
+    psycopg, Jsonb = _psycopg()
+    artifact = ClaimArtifact.model_validate_json(artifact_path.read_text(encoding="utf-8"))
+    entity_ids = {
+        value
+        for claim in artifact.claims
+        for value in (claim.subject_entity_id, claim.object_entity_id)
+        if value is not None
+    }
+    region_ids = {
+        pointer.region_id
+        for claim in artifact.claims
+        for pointer in claim.evidence
+        if pointer.region_id is not None
+    }
+    with psycopg.connect(database_url) as connection:
+        _verify_run(connection, artifact, Jsonb)
+        entity_rows = connection.execute(
+            "SELECT entity_id, entity_status FROM evidence.entity WHERE entity_id = ANY(%s)",
+            (list(entity_ids),),
+        ).fetchall() if entity_ids else []
+        entities = {row[0]: row[1] for row in entity_rows}
+        if entities.keys() != entity_ids or any(status != "reviewed" for status in entities.values()):
+            raise ValueError("Claim candidates may reference only reviewed entities")
+        region_rows = connection.execute(
+            """
+            SELECT r.region_id, r.raw_text, s.source_uri, v.volume_number,
+                   v.publication_year, p.page_number
+            FROM evidence.ocr_region r
+            JOIN archive.page p USING (page_id)
+            JOIN archive.volume v USING (volume_id)
+            JOIN archive.source_object s USING (source_object_id)
+            WHERE r.region_id = ANY(%s)
+            """,
+            (list(region_ids),),
+        ).fetchall() if region_ids else []
+        regions = {row[0]: row[1:] for row in region_rows}
+        if regions.keys() != region_ids:
+            raise ValueError("Claim artifact references unknown evidence regions")
+
+        claim_rows = []
+        evidence_rows = []
+        for claim in artifact.claims:
+            claim_rows.append(
+                (
+                    claim.claim_id,
+                    claim.run_id,
+                    claim.subject_entity_id,
+                    claim.predicate,
+                    claim.object_entity_id,
+                    claim.object_literal,
+                    claim.event_date_start,
+                    claim.event_date_end,
+                    claim.status.value,
+                    claim.confidence,
+                    claim.supporting_quote,
+                )
+            )
+            for pointer in claim.evidence:
+                if pointer.region_id is None or pointer.text_start is None or pointer.text_end is None:
+                    raise ValueError("Claim evidence requires region IDs and exact text offsets")
+                raw_text, source_uri, volume_number, publication_year, page_number = regions[
+                    pointer.region_id
+                ]
+                if (
+                    source_uri != pointer.source_uri
+                    or volume_number != pointer.volume_number
+                    or publication_year != pointer.publication_year
+                    or page_number != pointer.page_number
+                ):
+                    raise ValueError("Claim source pointer disagrees with the evidence record")
+                quote = raw_text[pointer.text_start : pointer.text_end]
+                if quote != claim.supporting_quote:
+                    raise ValueError("Claim supporting quote does not match its exact OCR offsets")
+                evidence_rows.append(
+                    (
+                        claim.claim_id,
+                        pointer.region_id,
+                        pointer.text_start,
+                        pointer.text_end,
+                        quote,
+                        pointer.polygon.model_dump(mode="json") if pointer.polygon else None,
+                    )
+                )
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO evidence.claim (
+                    claim_id, run_id, subject_entity_id, predicate, object_entity_id,
+                    object_literal, event_date_start, event_date_end, claim_status,
+                    confidence, supporting_quote
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (claim_id) DO NOTHING
+                """,
+                [(*row[:5], Jsonb(row[5]) if row[5] is not None else None, *row[6:]) for row in claim_rows],
+            )
+            cursor.executemany(
+                """
+                INSERT INTO evidence.claim_evidence (
+                    claim_id, region_id, text_start, text_end, evidence_quote, polygon
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (claim_id, region_id, evidence_quote) DO NOTHING
+                """,
+                [(*row[:5], Jsonb(row[5]) if row[5] else None) for row in evidence_rows],
+            )
+        stored_claim_count = connection.execute(
+            "SELECT count(*) FROM evidence.claim WHERE run_id = %s",
+            (artifact.run.run_id,),
+        ).fetchone()[0]
+        stored_evidence_count = connection.execute(
+            """
+            SELECT count(*) FROM evidence.claim_evidence ce
+            JOIN evidence.claim c USING (claim_id) WHERE c.run_id = %s
+            """,
+            (artifact.run.run_id,),
+        ).fetchone()[0]
+        if stored_claim_count != len(claim_rows) or stored_evidence_count != len(evidence_rows):
+            raise ValueError("Stored claim evidence differs from the artifact")
+    return ClaimIngestResult(str(artifact.artifact_id), str(artifact.run.run_id), len(claim_rows))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
@@ -425,6 +649,10 @@ def build_parser() -> argparse.ArgumentParser:
     ocr.add_argument("paths", type=Path, nargs="+")
     ner = subparsers.add_parser("ner", help="Load one or more NER candidate artifacts")
     ner.add_argument("paths", type=Path, nargs="+")
+    links = subparsers.add_parser("links", help="Load one or more entity-link artifacts")
+    links.add_argument("paths", type=Path, nargs="+")
+    claims = subparsers.add_parser("claims", help="Load one or more grounded claim artifacts")
+    claims.add_argument("paths", type=Path, nargs="+")
     return parser
 
 
@@ -437,11 +665,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(asdict(result), ensure_ascii=False))
         return 0
     for path in args.paths:
-        result = (
-            ingest_ocr_artifact(args.database_url, path)
-            if args.command == "ocr"
-            else ingest_ner_artifact(args.database_url, path)
-        )
+        if args.command == "ocr":
+            result = ingest_ocr_artifact(args.database_url, path)
+        elif args.command == "ner":
+            result = ingest_ner_artifact(args.database_url, path)
+        elif args.command == "links":
+            result = ingest_link_artifact(args.database_url, path)
+        else:
+            result = ingest_claim_artifact(args.database_url, path)
         print(json.dumps(asdict(result), ensure_ascii=False))
     return 0
 

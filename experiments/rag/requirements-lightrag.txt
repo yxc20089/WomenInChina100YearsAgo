@@ -1,0 +1,2 @@
+# Git tag v1.5.4: 9a45b64c2ee25b1d806e90db926a8af37480bb16
+lightrag-hku==1.5.4

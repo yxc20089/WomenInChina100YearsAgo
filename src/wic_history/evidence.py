@@ -176,6 +176,7 @@ class NERArtifact(StrictModel):
 class EntityLinkCandidate(StrictModel):
     link_id: UUID = Field(default_factory=uuid4)
     mention_id: UUID
+    entity_id: UUID | None = None
     authority_uri: str | None = None
     canonical_name: str
     entity_type: EntityType
@@ -183,6 +184,31 @@ class EntityLinkCandidate(StrictModel):
     features: dict[str, float | str | bool | None] = Field(default_factory=dict)
     nil_candidate: bool = False
     run_id: UUID
+
+    @model_validator(mode="after")
+    def validate_target(self) -> "EntityLinkCandidate":
+        if self.nil_candidate and (self.entity_id is not None or self.authority_uri is not None):
+            raise ValueError("NIL link candidates cannot target an entity or authority URI")
+        if not self.nil_candidate and self.entity_id is None and self.authority_uri is None:
+            raise ValueError("non-NIL link candidates require an entity or authority URI")
+        return self
+
+
+class EntityLinkArtifact(StrictModel):
+    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    artifact_id: UUID = Field(default_factory=uuid4)
+    source_ner_run_id: UUID
+    run: ProcessingRun
+    links: list[EntityLinkCandidate]
+    warnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_run_links(self) -> "EntityLinkArtifact":
+        if self.run.kind != RunKind.ENTITY_LINK:
+            raise ValueError("entity-link artifact processing run must have kind=entity_link")
+        if any(link.run_id != self.run.run_id for link in self.links):
+            raise ValueError("all link candidates must reference the artifact processing run")
+        return self
 
 
 class ClaimStatus(StrEnum):
@@ -213,6 +239,22 @@ class ClaimCandidate(StrictModel):
             raise ValueError("exactly one of object_entity_id and object_literal is required")
         if self.event_date_start and self.event_date_end and self.event_date_end < self.event_date_start:
             raise ValueError("event_date_end cannot precede event_date_start")
+        return self
+
+
+class ClaimArtifact(StrictModel):
+    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    artifact_id: UUID = Field(default_factory=uuid4)
+    run: ProcessingRun
+    claims: list[ClaimCandidate]
+    warnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_run_links(self) -> "ClaimArtifact":
+        if self.run.kind != RunKind.RELATION:
+            raise ValueError("claim artifact processing run must have kind=relation")
+        if any(claim.run_id != self.run.run_id for claim in self.claims):
+            raise ValueError("all claims must reference the artifact processing run")
         return self
 
 
@@ -258,6 +300,7 @@ class ScenarioContextBundle(StrictModel):
     research_query: str
     evidence_items: list[ScenarioEvidenceItem]
     retrieved_context: list[RetrievalHit]
+    warnings: list[str] = Field(default_factory=list)
     required_model_instruction: str = (
         "Keep directly evidenced facts, plausible inference, and speculation visibly separate. "
         "Never present generated details as recovered historical fact."

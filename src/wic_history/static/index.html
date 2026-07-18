@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Women in China 100 Years Ago — Evidence Search</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">申報 · 1872–1949</p>
+    <h1>Women in China<br>100 Years Ago</h1>
+    <p class="lede">Search the archive’s emerging evidence layer. Every result leads back to a scan region; machine readings remain visibly provisional.</p>
+  </header>
+
+  <main>
+    <form id="search-form">
+      <label for="query">Ask the archive</label>
+      <div class="query-row">
+        <input id="query" name="query" value="富紳淑女" placeholder="e.g. 女學生, 女工, 女校" required>
+        <button type="submit">Search</button>
+      </div>
+      <div class="controls">
+        <label>Mode
+          <select id="mode">
+            <option value="hybrid">Hybrid</option>
+            <option value="lexical">Exact / lexical</option>
+            <option value="dense">Semantic</option>
+          </select>
+        </label>
+        <label>From <input id="year-start" type="number" min="1872" max="1949" placeholder="1872"></label>
+        <label>To <input id="year-end" type="number" min="1872" max="1949" placeholder="1949"></label>
+      </div>
+    </form>
+
+    <section class="status-panel" aria-live="polite">
+      <span id="status">Ready</span>
+      <button id="context-button" class="quiet" type="button" disabled>Prepare model context</button>
+    </section>
+    <section id="warnings"></section>
+    <section id="results" class="results"></section>
+    <section id="context-panel" class="context-panel" hidden>
+      <div class="context-heading">
+        <h2>Chatbot / scene context</h2>
+        <button id="copy-context" class="quiet" type="button">Copy JSON</button>
+      </div>
+      <p>This bundle separates retrieved OCR from reviewed claims and carries mandatory model instructions.</p>
+      <pre id="context-json"></pre>
+    </section>
+  </main>
+
+  <template id="result-template">
+    <article class="result-card">
+      <div class="rank"></div>
+      <div>
+        <p class="citation"></p>
+        <blockquote></blockquote>
+        <p class="score"></p>
+        <details>
+          <summary>Evidence pointer</summary>
+          <pre class="pointer"></pre>
+        </details>
+        <a class="scan-link" target="_blank" rel="noopener">Open page scan ↗</a>
+      </div>
+    </article>
+  </template>
+  <script src="/static/app.js"></script>
+</body>
+</html>

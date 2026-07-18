@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "9b0cb366-a6ed-48d0-b590-da4df2f83dd7",
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "7ea4c553-421a-480a-9089-0d6dfbe6e748",
+    "kind": "relation",
+    "engine": "reviewed-comention-rules",
+    "model_name": "historical-women-relations",
+    "model_revision": "1",
+    "software_version": null,
+    "configuration": {
+      "reviewed_mentions_only": true,
+      "evidence_requirement": "exact_full_region_quote",
+      "predicates": [
+        "attended_school",
+        "affiliated_with",
+        "resided_in"
+      ]
+    },
+    "started_at": "2026-07-18T06:29:20.898821Z",
+    "completed_at": "2026-07-18T06:29:20.913274Z"
+  },
+  "claims": [],
+  "warnings": [
+    "Relation outputs are candidates; cues and co-occurrence do not prove the relationship.",
+    "No reviewed linked mentions exist, so relation extraction safely abstained."
+  ]
+}

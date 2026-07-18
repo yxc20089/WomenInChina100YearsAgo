@@ -24,6 +24,9 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - The explicitly multilingual `urchade/gliner_multi-v2.1` at commit `443d26d654e0324125a96bebd8e796c14ff2efe6` produced 115 exact-offset candidates. Manual inspection found substantial false positives from OCR noise, so every result remains an unlinked `candidate`; the model has not passed the NER gate.
 - BGE-M3 at commit `5617a9f61b028005a4858fdac845db406aefb181` produced 1,138 normalized 1,024-dimensional embeddings. PostgreSQL/pgvector and OpenSearch contain the same region set.
 - OpenSearch CJK lexical, BGE-M3 dense, and client-side RRF hybrid retrieval return exact S3 volume/page/region polygons and propagate page-quality warnings. The query `富紳淑女` placed the two exact matching regions first in the hybrid result.
+- Entity-link persistence retains an explicit NIL option. With no reviewed authority catalog yet, all 115 smoke mentions correctly remain NIL rather than manufacturing people. The grounded relation pass emits zero claims because no pair of reviewed linked entities exists.
+- The reviewed-only Neo4j projection was live-tested and correctly produced an empty graph from that state. A local FastAPI/researcher UI exposes lexical, dense and hybrid search, page images, and a scenario-context contract that abstains when no reviewed claims support a reconstruction.
+- A common RAG smoke export accounts for all 1,138 regions: 1,131 text-bearing regions map back from exact page-text character offsets to scan polygons; seven empty regions are recorded as omitted. GraphRAG and LightRAG receive the same text input.
 
 The slice intentionally contains no reviewed entities or claims. It must not be described as a reconstructed knowledge graph until historian review data exists.
 
@@ -206,14 +209,15 @@ NER is not entity linking. The pipeline must retain OCR uncertainty, identify a 
 | Candidate | Role | Selection |
 |---|---|---|
 | Rules + historical gazetteers | Dates, issue structure, titles, addresses, institutions, known people/places | **Required high-precision layer** |
-| GLiNER large v2.5 | Prompted/open-type span NER | **Benchmark challenger only**; model card is multilingual but evidence/examples are largely English |
-| GLiNER multilingual checkpoint | Multilingual open-type span NER | **Benchmark beside v2.5**; freeze exact model and license |
-| NuNER-style compact encoder | Few-shot/fine-tuned NER | **Fine-tuning challenger after gold annotations** |
-| Chinese character encoder + CRF/GlobalPointer | Project-specific supervised NER | **Likely high-volume production route after annotation**; compare modern MacBERT/RoBERTa with GujiRoBERTa-style encoders |
-| Chinese-capable instruct LLM with JSON Schema | Relations, events, implicit roles, weak labeling | **Second-pass candidate extractor**, temperature 0, exact quotation/offset required |
+| GLiNER-X large, revision `4a4437f…` | 865M multilingual open-type span NER | **Primary open-span challenger**; reported `zh_pud` F1 0.6794, but no Traditional/historical/OCR result |
+| SIKU-BERT, revision `fc656de…` + project span/CRF head | Historical-Chinese supervised NER | **Primary supervised challenger after gold annotation**; historical pretraining is relevant but Siku prose differs from newspaper OCR |
+| NuExtract3, revision `2e9fca8…` | Multimodal schema extraction | **Difficult-case/relation challenger**; require valid JSON, verbatim evidence and exact offset recovery |
+| Qwen3.5-9B, revision `c202236…` | Chinese-capable multimodal JSON-schema control | **Higher-compute control**, not the batch default |
+| GLiNER multi v2.1, revision `443d26d…` | Existing multilingual smoke baseline | **Retain as a measured baseline**; its one-page noisy output is not production quality |
+| GLiNER large v2.5 | Prompted/open-type span NER | **Lower-priority control**; no published Chinese evaluation was found to justify prioritizing it |
 | UniNER 7B | Generative universal NER | **Reject as production core** due English focus and non-commercial model license |
 
-GLiNER v2.5-large is not selected in advance. The project-specific evaluation matters more than its generic benchmark. Relevant sources include the [GLiNER model card](https://huggingface.co/gliner-community/gliner_large-v2.5), [GLiNER paper/repository](https://github.com/urchade/GLiNER), [NuNER paper](https://aclanthology.org/2024.emnlp-main.660/), and a directly relevant [historical Chinese NER/entity-linking/coreference/relation dataset](https://www.lrec-conf.org/proceedings/lrec-coling-2024/pdf/2024.main-1.35.pdf).
+The exact registry, roles and revisions are committed in `experiments/ner/candidates.json`; model names alone are not reproducible selections. Generic leaderboards do not settle this choice. GLiNER-X's official card improves over GLiNER multi v2.1 on `zh_pud`, while SIKU-BERT has directly relevant historical-Chinese pretraining and published downstream ancient-text results, but neither tests Traditional-Chinese *Shen Bao* scans. NuExtract3 and Qwen are controls for schema adherence and page-image context, not assumed NER winners. Relevant sources include the [GLiNER-X model card](https://huggingface.co/knowledgator/gliner-x-large), [SIKU-BERT model card](https://huggingface.co/SIKU-BERT/sikubert), [NuExtract3 model card](https://huggingface.co/numind/NuExtract3), [Qwen3.5-9B model card](https://huggingface.co/Qwen/Qwen3.5-9B), [GLiNER v2.5 model card](https://huggingface.co/gliner-community/gliner_large-v2.5), and a directly relevant [historical Chinese NER/entity-linking/coreference/relation dataset](https://www.lrec-conf.org/proceedings/lrec-coling-2024/pdf/2024.main-1.35.pdf).
 
 The first technical smoke test used the explicit multilingual v2.1 checkpoint because its official card identifies it as a 209M multilingual Apache-2.0 model. Its poor unreviewed output on noisy *Shen Bao* OCR confirms that generic model-card claims and confidence scores are not sufficient. High scores such as single-character kinship terms classified as people still occurred. Benchmark future models on corrected gold text and raw OCR separately to distinguish OCR propagation from NER failure.
 
@@ -232,7 +236,9 @@ article/region OCR with character offsets and polygons
 
 Store OCR confidence, mention score, entity-link score and relation score independently. Do not multiply uncalibrated scores into a misleading single probability.
 
-The gold set should report strict and partial span F1 by entity type, candidate recall@k, linking accuracy including NIL, relation F1 conditional on correct evidence, calibration and performance by OCR CER/decade.
+The gold set should report strict and partial span F1 by entity type, candidate recall@k, linking accuracy including NIL, relation F1 conditional on correct evidence, calibration and performance by OCR CER/decade. Evaluate paired corrected-text and raw-OCR inputs; split by issue/date; add hallucinated-span rate, invalid evidence/offset rate, throughput and peak memory. This separates OCR propagation from entity-model failure and prevents newspaper-template leakage.
+
+The current production hypothesis is a cascade, subject to that benchmark: deterministic rules/gazetteers; SIKU-BERT with a project-trained head plus GLiNER-X candidate union; NuExtract3 only for disagreement, rare types, page-image context and implicit relations. Every stage can abstain. No model output creates an authority entity or reviewed claim without a separate link/review decision.
 
 Initial entity types: person, alias/appellation, kinship term, place, address, organization, school, occupation, title/role, publication, event, date, product and advertisement. Historians must approve this ontology using real pages before batch extraction.
 
@@ -243,9 +249,9 @@ Initial entity types: person, alias/appellation, kinship term, place, address, o
 | System | Current reality | Decision |
 |---|---|---|
 | Hybrid lexical+dense retrieval | Mature, cheap and naturally cites exact regions; n-grams help names and OCR variants | **Mandatory production baseline** |
-| Microsoft GraphRAG | Real MIT Python/CLI; extracts graph/claims, Leiden communities and reports; outputs Parquet; Local/Global/DRIFT/Basic query modes; costly indexing and no first-class normal delete flow found | **Benchmark Global and DRIFT on bounded corpus** |
+| Microsoft GraphRAG 3.1.1, revision `14a00ad…` | Real MIT Python/CLI; extracts graph/claims, Leiden communities and reports; outputs Parquet; Local/Global/DRIFT/Basic query modes; costly indexing and no first-class normal delete flow found | **Benchmark Global and DRIFT on bounded corpus in an isolated environment** |
 | LazyGraphRAG | Microsoft research/product method using cheap NLP graph construction and deferred query-time LLM work; not an OSS GraphRAG CLI mode | **Track or reproduce later; do not specify as deployable component now** |
-| LightRAG | Active MIT implementation with incremental insertion, deletion/KG regeneration, citations, reranking, multiple stores and current multimodal adapters | **First experimental graph-RAG implementation, pinned and isolated** |
+| LightRAG 1.5.4, revision `9a45b64…` | Active MIT implementation with incremental insertion, deletion/KG regeneration, citations, reranking, multiple stores and current multimodal adapters | **First experimental graph-RAG implementation, pinned and isolated; do not use the 1.5.5 release candidate** |
 | RAG-Anything | Multimodal parsing adapter around LightRAG | **Optional adapter only; does not replace evidence-grade OCR** |
 | HippoRAG 2 | Research implementation for associative/multi-hop retrieval and continual memory | **Later multi-hop challenger** |
 | RAPTOR | Batch hierarchical clustering/summarization tree | **Low priority; OCR errors may propagate into summaries** |
@@ -273,6 +279,8 @@ Historians should author 30–50 initial questions, growing toward 100+, across:
 Compare OpenSearch hybrid retrieval, LightRAG, GraphRAG Global and GraphRAG DRIFT. Later add HippoRAG for multi-hop questions. Report Recall@k, nDCG, citation-region precision, evidence entailment, answer completeness, hallucination/abstention, latency, indexing/query cost, update correctness and delete completeness.
 
 A graph approach enters production only where it materially outperforms the hybrid baseline without weakening citations.
+
+`wic-rag-export` creates the shared comparison input: plain page text, a JSONL form of the same documents, and a sidecar mapping exact character offsets to OCR-region UUIDs, polygons and scan URIs. Page units are a smoke-test compromise; the scored experiment waits for reviewed article segmentation. Generated graph entities, relations, community reports and summaries never flow back into the evidence plane as reviewed facts.
 
 ## 9. Storage and identifiers
 
@@ -349,9 +357,9 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 2. Write annotation guidelines for original characters, normalization, layout and women-centered entities.
 3. Render gold pages losslessly and run PP-StructureV3/PP-OCRv6 versus the difficult-page challengers.
 4. Build OCR/layout and NER metric computation against double-reviewed annotations.
-5. Implement candidate-link and claim-review queues; do not promote current GLiNER smoke outputs.
-6. Build the reviewed-only Neo4j projection and researcher query API.
-7. Evaluate LightRAG and Microsoft GraphRAG only after article segmentation and the hybrid baseline are scored.
+5. Build historian-facing candidate-link and claim-review queues on the implemented candidate persistence; do not promote current GLiNER smoke outputs.
+6. Create reviewed article segmentation and historian-authored retrieval questions.
+7. Use the implemented shared export to evaluate LightRAG and Microsoft GraphRAG only after the hybrid baseline is scored.
 
 ## 13. Selected technologies, pending benchmark
 
@@ -366,9 +374,9 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 | Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline; reranker/evaluation pending |
 | Graph exploration | Neo4j Community derived projection | Selected for pilot if graph questions justify it |
 | Standards export | CIDOC CRM profile + PROV-O + Web Annotation, validated with Jena/SHACL | Selected architecture |
-| NER | Rules + multilingual GLiNER + supervised Chinese encoder comparison | Candidate storage implemented; GLiNER smoke quality insufficient |
+| NER | Rules + SIKU-BERT supervised head + GLiNER-X union; NuExtract3 difficult-case challenger | Pinned benchmark registry committed; candidate storage implemented; gold comparison pending |
 | Relation/event extraction | Schema-constrained Chinese-capable LLM with grounded offsets | Benchmark/model selection required |
-| Graph-RAG experiment | LightRAG pinned stable version | Selected first experiment |
-| Graph-RAG comparator | Microsoft GraphRAG Global + DRIFT | Selected bounded experiment |
+| Graph-RAG experiment | LightRAG 1.5.4 (`9a45b64…`) | Selected first isolated experiment; shared export implemented |
+| Graph-RAG comparator | Microsoft GraphRAG 3.1.1 (`14a00ad…`) Global + DRIFT | Selected bounded experiment; shared export implemented |
 | LazyGraphRAG | Track product/research availability | Not currently selected as deployable OSS |
 | Simulation | None in factual system | Explicitly deferred |

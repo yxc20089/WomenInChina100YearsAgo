@@ -142,8 +142,10 @@ REGION_PROJECTION_SQL = """
                WHERE m.region_id = r.region_id AND m.entity_id IS NOT NULL
            ) AS entity_ids,
            ARRAY(
-               SELECT DISTINCT ce.claim_id FROM evidence.claim_evidence ce
-               WHERE ce.region_id = r.region_id
+               SELECT DISTINCT ce.claim_id
+               FROM evidence.claim_evidence ce
+               JOIN evidence.claim c USING (claim_id)
+               WHERE ce.region_id = r.region_id AND c.claim_status = 'reviewed'
            ) AS claim_ids
     FROM evidence.ocr_region r
     JOIN archive.page p USING (page_id)
@@ -339,6 +341,8 @@ def dense_search(
     embedder: BGEEmbedder,
     index: str = DEFAULT_ALIAS,
     limit: int = 10,
+    year_start: int | None = None,
+    year_end: int | None = None,
 ) -> RetrievalResponse:
     try:
         from opensearchpy import OpenSearch
@@ -346,11 +350,19 @@ def dense_search(
         raise RuntimeError("Install the data extra: uv sync --extra data") from exc
     search = OpenSearch(hosts=[opensearch_url], http_compress=True)
     vector = embedder.encode_query(query)
+    knn: dict[str, Any] = {"vector": vector, "k": limit}
+    if year_start is not None or year_end is not None:
+        bounds = {
+            key: value
+            for key, value in (("gte", year_start), ("lte", year_end))
+            if value is not None
+        }
+        knn["filter"] = {"range": {"publication_year": bounds}}
     response = search.search(
         index=index,
         body={
             "size": limit,
-            "query": {"knn": {"embedding": {"vector": vector, "k": limit}}},
+            "query": {"knn": {"embedding": knn}},
             "_source": {"excludes": ["embedding"]},
         },
     )
@@ -367,9 +379,15 @@ def hybrid_search(
     limit: int = 10,
     candidate_limit: int = 50,
     rrf_k: int = 60,
+    year_start: int | None = None,
+    year_end: int | None = None,
 ) -> RetrievalResponse:
-    lexical = lexical_search(opensearch_url, query, index, candidate_limit)
-    dense = dense_search(opensearch_url, query, embedder, index, candidate_limit)
+    lexical = lexical_search(
+        opensearch_url, query, index, candidate_limit, year_start, year_end
+    )
+    dense = dense_search(
+        opensearch_url, query, embedder, index, candidate_limit, year_start, year_end
+    )
     fused: dict[UUID, tuple[RetrievalHit, float, dict[str, int]]] = {}
     for retriever, response in (("lexical", lexical), ("dense", dense)):
         for hit in response.hits:
@@ -486,9 +504,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         embedder = BGEEmbedder(args.model, args.revision)
         response = (
-            dense_search(args.opensearch_url, args.query, embedder, args.index, args.limit)
+            dense_search(
+                args.opensearch_url,
+                args.query,
+                embedder,
+                args.index,
+                args.limit,
+                args.year_start,
+                args.year_end,
+            )
             if args.mode == "dense"
-            else hybrid_search(args.opensearch_url, args.query, embedder, args.index, args.limit)
+            else hybrid_search(
+                args.opensearch_url,
+                args.query,
+                embedder,
+                args.index,
+                args.limit,
+                year_start=args.year_start,
+                year_end=args.year_end,
+            )
         )
     print(response.model_dump_json(indent=2))
     return 0

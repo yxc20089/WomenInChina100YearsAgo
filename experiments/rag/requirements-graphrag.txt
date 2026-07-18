@@ -1,0 +1,2 @@
+# Git tag v3.1.1: 14a00ad88fc33cf2b52f4f113f25807556f8e25e
+graphrag==3.1.1

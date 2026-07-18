@@ -89,4 +89,22 @@ uv run wic-search --opensearch-url "$OPENSEARCH_URL" project --database-url "$DA
 uv run wic-search --opensearch-url "$OPENSEARCH_URL" query '富紳淑女' --mode hybrid --limit 5
 ```
 
+Project reviewed claims/entities to Neo4j, export an identical citation-mapped
+corpus for the isolated RAG comparisons, and start the local researcher API:
+
+```bash
+uv run wic-graph --database-url "$DATABASE_URL" --neo4j-uri "$NEO4J_URI" \
+  --neo4j-user "$NEO4J_USER" --neo4j-password "$NEO4J_PASSWORD"
+uv run wic-rag-export --database-url "$DATABASE_URL" \
+  --output artifacts/rag-smoke --volume 219 --page 308
+uv run wic-api --host 127.0.0.1 --port 8766
+```
+
+Open `http://127.0.0.1:8766` for lexical, dense, or hybrid search. Scenario
+context returned by the API contains only reviewed claims; with the current
+smoke data it abstains explicitly. Pinned NER candidates and the paired
+corrected-text/raw-OCR protocol are under `experiments/ner/`; isolated
+GraphRAG/LightRAG requirements and the fair-comparison protocol are under
+`experiments/rag/`.
+
 The committed OCR/NER files are technical smoke artifacts from a lossy screening derivative. They demonstrate provenance, coordinates, persistence, and retrieval; they are not gold transcriptions or reviewed historical assertions.

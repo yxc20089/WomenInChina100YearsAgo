@@ -1,0 +1,1753 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "b4b0b532-756a-4325-9792-6d31f61ddb7f",
+  "source_ner_run_id": "160c2582-dff4-401b-a80d-dfef5114f646",
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3",
+    "kind": "entity_link",
+    "engine": "exact-alias+character-similarity",
+    "model_name": "reviewed-authority-candidate-generator",
+    "model_revision": "1",
+    "software_version": null,
+    "configuration": {
+      "reviewed_entities_only": true,
+      "top_k": 5,
+      "fuzzy_threshold": 0.72,
+      "normalization": "NFC+strip-space-punctuation-symbols"
+    },
+    "started_at": "2026-07-18T06:27:14.113087Z",
+    "completed_at": "2026-07-18T06:27:14.113213Z"
+  },
+  "links": [
+    {
+      "link_id": "6b4ae995-4ff6-4d29-ac03-9af72e55c9eb",
+      "mention_id": "fa181d7d-64c7-4d95-b2e2-f23130966500",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "楚陽",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "2e9a10a2-f88c-4af6-b1a5-77a5ad18820d",
+      "mention_id": "64ccc5b8-ddd5-47f3-b346-b1938c6fc110",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "兴医",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "a7a26479-f271-451d-8d17-7982b9f29a7d",
+      "mention_id": "120b9fa5-6ecb-4283-ba62-f2f08c4d5d72",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "謙別劉",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "f723bd10-9894-48ba-9698-37babf3df7be",
+      "mention_id": "4fb4c5f3-dba3-432a-b345-88fcd6d242f0",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "崔中大",
+      "entity_type": "school",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "d0a7b259-db97-4636-ac2b-e715d5f386eb",
+      "mention_id": "154cc9c1-4032-469f-83ca-293525eabd07",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "人開於",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "c1bb331d-a10f-462a-be23-954a4971c39f",
+      "mention_id": "749c57d0-a34f-46fc-8047-a6e98f61c328",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "顺工女法味倾得元",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "28f306ac-69cc-42df-95c4-0490a5042464",
+      "mention_id": "4a4a4399-c7ee-4984-91f6-89d30b875a9a",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "沃因",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "ada85223-d7fb-4ce1-8af5-3dc035c4bfd3",
+      "mention_id": "802c9764-2cc4-447e-a487-148afa9fe617",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "CH",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "8df5de57-8f0d-4206-ac7f-068da7f51e7a",
+      "mention_id": "6430e971-6e5e-4802-afa6-783b8ff4069b",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "ERNST LUBITSCH",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "0536f957-19a2-41a7-8499-10d2117d912e",
+      "mention_id": "a4cfc83e-a344-412a-b364-63e2ff91fb26",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "樓上",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "da133800-8cc3-4055-b4fd-8c141d2675ac",
+      "mention_id": "4b16e2ff-7538-4b03-8fe5-c33a1dd4fa8e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "人设",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "a4bf19a8-5a69-414e-975b-4f9308b0e5ba",
+      "mention_id": "5223d68d-b674-45bf-af1d-bb0d3a67b547",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "父",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "5197924f-38d4-475d-a0e3-f0fd6c1b8192",
+      "mention_id": "5c76a21d-8259-4888-a988-e2976395955d",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "名著二了即照外样",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "a7855101-6db7-4bed-8a27-94fba2e12d1e",
+      "mention_id": "a0102ad2-7c8a-417a-853e-8cdf1acfd058",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "AG",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "f7512ffb-585c-4279-a85b-dce8042643a3",
+      "mention_id": "36fc3e35-1939-4d6d-8b2e-77ab755af4a4",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "九屯",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1c4f4a00-a85b-4b35-af39-5db635e16df3",
+      "mention_id": "bb64126e-8956-42b8-a8e5-246a549a8e02",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "三洋河廣",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "107ceb73-19f8-448b-b395-87cc4050c3ec",
+      "mention_id": "7c98287f-1e4d-4246-908f-def4983c0da5",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "一中",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "809722ed-8d99-4b38-82b8-b00830818f9a",
+      "mention_id": "7ae5c5e8-6e2d-4a88-84fc-f51bf4b69820",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "H元角",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "a026dd80-37ee-4902-80dd-c4f39a8e2dcd",
+      "mention_id": "90b958ca-d345-44ac-95b2-ff5c44edda5b",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "王十一人本",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9944dab1-df93-4595-a122-184123ab256d",
+      "mention_id": "18bacf3c-272a-4dd3-9893-33e44795cca0",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "門東人",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "b1b26b8e-5f07-4290-9cb5-03bf481ac030",
+      "mention_id": "6a4ae400-c8d9-41d9-9cc4-6b913dc9e786",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "浜外西",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "96fff085-de9d-48ab-967c-58814ae4fa83",
+      "mention_id": "edf21315-df6e-4987-933f-bbf434ee94b1",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "浜橋",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "924dfe3d-0cd0-4b71-bd26-8321b740a943",
+      "mention_id": "9a1368da-7ab6-4c27-9e97-677c813e867f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "小方涼二",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "27ef5230-3f70-44cb-ae57-2892dc657148",
+      "mention_id": "400afc4e-a27e-4269-9fec-ebda76dee127",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "Robinhood",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1e5cb162-9229-45ac-bc41-1f433a2e95aa",
+      "mention_id": "e5a64a75-c5fe-4241-8293-d20d5c6cde8d",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "谷山",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "cf585ec3-be7a-436e-88c1-8a8080dfb097",
+      "mention_id": "5200fc93-a4ad-4290-a8f6-c614e064cc92",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "谷山",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "3b2b5446-1b14-499e-a65a-806d33e31acb",
+      "mention_id": "31a31a70-27a4-40a1-b83a-65e9902fd4d2",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "陶約勒史",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "078136bc-5786-42da-b422-bae754564f95",
+      "mention_id": "fc0261cc-1a6d-4931-9c5a-223b90e0fe02",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "范明充挾",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "5aacc3c5-6161-4f39-9f07-800ef80b0cd6",
+      "mention_id": "9d1b2568-a971-43eb-81a6-82f6964ba87b",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "小洋",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "eaddca8a-43d8-4030-8577-0976b83823da",
+      "mention_id": "4cc9a6b4-efa5-4bbe-8087-a1c10f2982d3",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "興極",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "82963d41-b381-4ac9-b62f-90517c1ef2cb",
+      "mention_id": "ec616a18-385d-4c03-9320-1e3ec293923b",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "本人",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "25180d02-6572-4cbd-8973-fd9347968b55",
+      "mention_id": "eb6fff46-682f-4b08-abe8-8d95b30388d8",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "定教",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "aad66d5d-793d-48d5-94b6-0bcf3d1f7232",
+      "mention_id": "efec0d79-bb29-4ddf-8514-4d001c2d4906",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "弗勞倫斯惟事未果成蓋但丁嘗以政治之",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "611a5d45-cdfd-4125-8982-8be89173a17b",
+      "mention_id": "9e76126b-b7f1-401e-af7d-f42afcc64434",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "但丁之第一人安氏當為帝子時已好誦",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9b415cac-1988-4b27-8d0d-0a6a12f77bce",
+      "mention_id": "9ce44b3a-7083-4338-a2e9-6740d0dd9dc6",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "羅此家及雕刻家也一名薄卡西著作家",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1dedddd2-80ad-42b6-91ae-25c4edf8b1e9",
+      "mention_id": "fa0fd4da-f2b0-4989-a0e6-1d775e9474b3",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "弗勞倫斯惟事未果成善但丁嘗以政治之",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1b67f627-bd2f-4487-82fc-3be10473d69c",
+      "mention_id": "2749d3af-2510-4560-a529-3c497919c57c",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "但丁之著作而爲隨傳於衆人者也故但丁",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "67b0d9bf-b129-4b6c-b22d-96e9766b4fdd",
+      "mention_id": "bbaab329-1719-4e6d-a62a-ada2421bf87c",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "上書教王",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "36ede0c8-8c38-48cb-8c1b-ec27221a82b0",
+      "mention_id": "348e53c9-0380-4e63-a645-99e21ea6598b",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "其作此",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "c52b1873-a1d9-49e8-9718-b8e45e86ba48",
+      "mention_id": "3325ce0a-6dbd-44a5-be94-541a249512cb",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "魯捨角大受當比生術界之殷待後重千白",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "61a6871b-9edc-40af-b11e-374d10d02a23",
+      "mention_id": "712d0141-31ac-4cbe-a3c4-9fb8e9d4a7a4",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "歐洲藝術界最近之發現",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9336749e-6277-4e18-bd1d-53a5b42d6902",
+      "mention_id": "b832116c-5cd8-4b3b-a7a3-3e507920cfe3",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "閘北",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "8c3127cc-b4e6-4793-8702-4730f7265c5f",
+      "mention_id": "7d4aee07-0b1c-455e-bae7-bf08979d7bed",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "Hans Holbein德人也",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "3d6faa8a-0a9b-4f24-949a-738f784d57c8",
+      "mention_id": "6c9086b2-b985-4956-ba7f-8b2f2399e5b8",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "詩人游地獄即根據但丁神曲所攝製",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "4817492d-cc9a-440a-b719-94bc8a1d63f5",
+      "mention_id": "5a1008b3-f47b-4b43-8d0b-36f0579803da",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "子西",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "b6f34aa3-052a-49b9-829f-2f0754e50d1f",
+      "mention_id": "a5d2b260-8e49-4043-aae7-0a3b43383927",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "爹爹",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "37922d6e-fac6-40c5-8dc2-f8e98ef4a430",
+      "mention_id": "e69ac1da-2aba-4751-9e70-887936c7c865",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "中虹",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1fd09814-77b9-4377-b937-b1557f873bf4",
+      "mention_id": "3f73df3c-3f96-4cf5-9f27-634efe97b727",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "大東",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "13b7a8b7-637a-47ba-bf02-5295ad7dd2f9",
+      "mention_id": "b56729e1-f04f-4f08-88fc-9eb8dbe5b150",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "院戲影大國中",
+      "entity_type": "school",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "3347fe4e-2b43-46de-bb7a-b0aceacfa989",
+      "mention_id": "df93a0cb-aaf0-4bd1-81cf-534faf622bfe",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "樓一小百靈",
+      "entity_type": "school",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "cb05309a-d3e4-43e5-b130-764fb2b28d56",
+      "mention_id": "3d5cbd3d-a712-4e61-b903-e012af769870",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "頭圍",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9fbb4a31-e721-4cac-87e8-a135c3a7e1cf",
+      "mention_id": "e04e796a-5f20-4472-82d1-b0eee3b5a36a",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "申平白客爾少片",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "12d3abf2-50b0-410c-afa8-1f4af9af6b48",
+      "mention_id": "1dcd397f-7ac7-4dc1-a638-89c7deba161e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "地方",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "ededb870-022d-48af-aa4e-ede512f6e6e5",
+      "mention_id": "7141458d-8d8c-4280-a36d-190714fe7c92",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "地方",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "eb19f3ce-e553-4f3a-9f4c-3d9ab8659718",
+      "mention_id": "671d627c-1716-4871-9001-d8763238ade4",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "爾平在英時所作之",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "583da9eb-d337-412a-bd4b-a47a01b03472",
+      "mention_id": "66e4ed62-907b-4f74-925e-5165f7ab733e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "巧爾門逆來",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "7328a35b-7454-457d-bc1f-ff94d8b6cb03",
+      "mention_id": "10690e12-1f64-4441-8882-321c95ddfc1a",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "Cholin",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "b88621b7-2f2c-4a2a-ab28-f2f050a448dc",
+      "mention_id": "d89700d1-d3ed-4949-b9c9-033956f4b49f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "作家也二人俱好",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "e95e4930-477e-4fee-a1ca-d226210fa54c",
+      "mention_id": "0453eb83-b96d-49c9-89dd-d52764f95914",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "本大二十共",
+      "entity_type": "school",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1879bc97-9297-47ba-adc1-332c2a71c59c",
+      "mention_id": "ca7cf11b-9b65-46f3-b9b7-2c1d0e1428dd",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "BIRTH OF A NATION",
+      "entity_type": "event",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "e4af09c4-0dd1-4db9-ab19-0b44afd06eb0",
+      "mention_id": "913206af-9ed1-42a9-95d2-d55574e55090",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "一人造象牙近日市間出售之盒裝象牙",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9f2e37c4-79f7-4a39-b8ea-94279233acfb",
+      "mention_id": "d77d4cc0-fd78-40dc-abad-125bd8906b0f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "樹膠",
+      "entity_type": "product",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "78bd355c-9526-4936-b6fa-ca118e188f73",
+      "mention_id": "754655d4-a7a8-4c9c-8201-f77c9d44a06f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "六二中電",
+      "entity_type": "school",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "8cb46d9e-6693-4e25-9ee8-5236cdc54d59",
+      "mention_id": "ce0feafb-fc67-45ab-97e3-43e063ac0681",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "五路四",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "b363d094-946a-482c-a80f-f72bd016d1fd",
+      "mention_id": "77989643-40d5-4787-9a7d-38b6c008a6cc",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "楚石",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "ce162a87-b688-41a5-9167-e21b2cd090b1",
+      "mention_id": "6bb6c682-1fe4-4dcd-8ad9-b8b824a080b3",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "大田",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9be0b901-f39e-418e-995c-0d30a71b4e2a",
+      "mention_id": "5e65b25a-26f5-4297-8826-83d2371aa455",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "莆田石",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "b33eec82-c34d-46c8-8103-d496601ecca6",
+      "mention_id": "dadfeda1-e2b4-41a4-8f94-406457f327d7",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "萊州石",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "6331eab5-66ef-4dc7-a90a-3a5c40179c9a",
+      "mention_id": "1979967b-d6d3-449d-af38-0809e8ada6c2",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "大王",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "6f46b4fd-d426-4e2a-b085-ef8256c5d34b",
+      "mention_id": "8623ca2c-4b86-42b1-8db0-285daed1ba14",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "全寶",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "3bbde15b-de13-4805-8c36-e18c6b5a8d8f",
+      "mention_id": "4753fa5d-da83-4830-88aa-e1f18941a65e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "村其堅緻量輕故人喜用之為印",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "202e47ef-9fb3-471e-bb4f-80465a111b94",
+      "mention_id": "f0636483-ee31-4571-ae0b-66f5a513bc59",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "湖南產之色黑如淡而有光質軟",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9e4301f1-3965-4637-9a44-9f6d4bfa546a",
+      "mention_id": "21b90dc4-7f34-454f-ba42-1dbe8edc6856",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "湖南產之色黑如漆而有光質軟",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "571fc085-0274-4d4e-8d0f-e8351b0e7a3a",
+      "mention_id": "2e882c8e-b354-4972-8002-8f86456b370d",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "X",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "f0ffb557-817f-4824-993e-774e8d127fc0",
+      "mention_id": "6c78d876-d885-4e91-b526-97b98150399d",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "日本",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "112425e2-4e11-4c45-81ec-127bd170e543",
+      "mention_id": "d4dc3d10-6ea7-4f84-bb93-8b43fa469489",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "板之神",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1bdf4072-d279-4b7e-9b50-c37d6c687cd4",
+      "mention_id": "ec678ce1-0567-4b05-bfc0-c7670572660f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "日本其色白",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "7b049c6b-f842-4e94-a731-af87180f5c90",
+      "mention_id": "fad529e7-f52a-46b2-b0e5-6105608a96a9",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "我",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "8cb8046c-14fb-41e5-99b6-353d3826e59f",
+      "mention_id": "02605555-a24b-4fa7-937f-c534f3a6bd8f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "家不取也",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "95e7c531-5abb-4224-847e-d4938d36d735",
+      "mention_id": "6af1183c-bc37-4b72-b8be-05abb88ae943",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "岩叔",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "159effc1-7429-474d-89ee-8930aeea58b3",
+      "mention_id": "b8b20d6b-7729-4158-be8f-ffa263ec7d68",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "曹放捉",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "f40898f4-f1fc-408f-a2d1-1607ad5aeb31",
+      "mention_id": "5de045a7-d8ec-48fc-9748-60fda26f51c4",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "河南路拋球塲",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "dc3ef135-e342-4d05-958a-a59fca9faf5b",
+      "mention_id": "e2ad5dd1-cc61-473d-a84f-0c3640d40fbe",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "路九",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "28946fdc-ec5c-43e9-868c-4fc242e0c55b",
+      "mention_id": "0b12d16a-ed46-4d14-bc05-60c3cbc88868",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "我國尙未有",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "d17dd7ff-91cb-4f2b-93c1-fd61aa252c7b",
+      "mention_id": "768c6638-0b37-450f-a5a8-bdaf9c5cc7af",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "印產山東萊州",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "f5c7bf03-73c9-4bd5-a815-ef176a189401",
+      "mention_id": "ee92b6dc-f8d2-4798-b26d-bb51aa1a726f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "華益書局出售",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "ec436b70-1ef5-48b3-be9a-c5c83b6402bd",
+      "mention_id": "ef98841e-1def-43d6-bca3-21bb92e1d7cd",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "羊",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "cbc16772-36ad-4ab3-8687-6669ea743e35",
+      "mention_id": "d5c084d8-1235-4af5-bc9a-f0ca2e5ae290",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "十路西",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "db700429-f2b5-4a3a-b1ad-0cb1600dff2d",
+      "mention_id": "7794fcb3-6f5c-48ab-bf0a-85bf4ba715a0",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "中新網上H戲",
+      "entity_type": "publication",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "0441e11a-3712-487f-8496-b5ada95fa2c6",
+      "mention_id": "1ecbe97a-8d49-45a4-a2e5-efb68d6fdf0f",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "卡鸿路",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "3f1b0fb3-56ab-4611-8fae-0bf5d429ba7e",
+      "mention_id": "c182caac-ff56-479d-aff2-d13ca02e3f0c",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "路口",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "96e43b2d-a3ef-455b-b7c9-378a3e7f652e",
+      "mention_id": "afd7bf4e-a67f-4a7a-a70f-f5f785f678fa",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "富紳雅十淑女名媛豈是貪便宜",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "cea74362-b5ac-486a-9248-9a48ad796fa0",
+      "mention_id": "ee0a06b4-2155-4c34-aad5-0fb07719a58e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "世界",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "d0c72ebf-ab34-46d2-a745-3e9abf0c789a",
+      "mention_id": "c9fb652c-018b-44ad-aafd-f1cd46a39c45",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "THE WOMAN",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "db6a868d-0ec2-467f-87e7-ec0379cb1820",
+      "mention_id": "1bd995e8-2efc-425f-b7fe-223eeea5b890",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "福艷童",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "5804d9c4-0d13-41b1-828d-016babdc7b58",
+      "mention_id": "5c5f7271-00e0-4969-b8cd-4fefdb49012e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "宣精密",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "6a928ea9-3cef-476f-ada4-ab76013bd663",
+      "mention_id": "816ed285-f38b-4719-8fe1-826b74f6da88",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "秋堂",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "7c44ebf0-9713-4542-9fb1-344d54b90de6",
+      "mention_id": "76543390-f6e5-4606-8242-34b4bb02005a",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "北二",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "da5e0a91-d45a-491b-8afe-0e3c35085792",
+      "mention_id": "0e5f5a3f-f564-48c5-b8f4-1724f295e4ef",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "虹口",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "30c734c2-66d0-4beb-b4a8-597f29462d43",
+      "mention_id": "19a9b4d2-ccc4-4e2b-88be-dd390e36af29",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "Tom",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "637a5bb7-0461-474a-a02d-630f0e575807",
+      "mention_id": "6a7a8cfc-be5f-4c72-9106-178649cd077a",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "You",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "cf231a04-f487-4da1-a779-ac6e30890141",
+      "mention_id": "bf816599-1bd8-4098-ac55-31d7c065122a",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "會社",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "a5098b44-879d-49da-b844-a9645b98fd58",
+      "mention_id": "0f20b0ad-a68b-4fc1-a2a2-583899de27f6",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "院戲大",
+      "entity_type": "school",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "1a19a206-48e2-4be6-bf3e-4fd842cc943e",
+      "mention_id": "6f04d471-e963-4199-b7ee-61011089a641",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "小洋",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "f3beb89c-11a4-40ec-829e-2e7744a63c27",
+      "mention_id": "84b7f849-6cbe-4a19-bc16-2e53837ccce4",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "世新",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "3b588462-5913-4954-9e1b-efe71f820e06",
+      "mention_id": "f07222ed-4945-4e42-a3f0-3880a7daa8bc",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "橋洲",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "7fe413b7-f904-46b5-b26f-8b53dbd006ee",
+      "mention_id": "ae6ddf04-77f2-40ed-a9e2-7cda6b272859",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "爱多亞",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "30c929cf-3038-42eb-9c5b-8a2f7b0d164d",
+      "mention_id": "4c9e9275-17b5-45af-bb55-cce2a17fa18e",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "IHE",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "b60f02d5-9ecc-4229-8ce9-4601daa42a3c",
+      "mention_id": "1dfae329-1c57-4bea-a292-84a7c6c2ae63",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "上イ西門拉電之",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "4b8658d6-921a-41d8-858a-55e57881ec9f",
+      "mention_id": "d9bf7cd3-4e89-4245-b408-1d4f0a6361f3",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "海甯",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "9817f96c-0137-4734-9301-8835d1df1226",
+      "mention_id": "91c13ad1-d06d-49b2-acb2-806b1b2eff78",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "海寧",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "ebebaf37-8c2b-4cf2-b666-89e1164286f8",
+      "mention_id": "dc0b18a8-f5f3-4a7f-a72f-4cca836977eb",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "寶興",
+      "entity_type": "organization",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "42749bbd-174e-4349-90e1-4de9ad178ffb",
+      "mention_id": "ca18bc12-2e7a-4996-a208-26d1d777dc39",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "閘北",
+      "entity_type": "place",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "20f1bcac-eef2-4503-8758-5dbd42f620d9",
+      "mention_id": "d641ab29-6c00-48c2-90f1-bf523eeeda4c",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "人任旁廳由自部北在",
+      "entity_type": "person",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    },
+    {
+      "link_id": "43df0237-d058-49fe-b1e0-7ffdcc8a19a1",
+      "mention_id": "2d66c56f-e75b-4dca-b3be-503d2693a9b6",
+      "entity_id": null,
+      "authority_uri": null,
+      "canonical_name": "二九七",
+      "entity_type": "date",
+      "score": 1.0,
+      "features": {
+        "reason": "explicit_nil_or_new_entity_option",
+        "best_catalog_score": 0.0
+      },
+      "nil_candidate": true,
+      "run_id": "0068cb42-bb17-4e0e-a3e0-740aad7defe3"
+    }
+  ],
+  "warnings": [
+    "Entity links are candidates only. NIL is always retained and no mention is force-linked.",
+    "The reviewed entity catalog is empty; all generated candidates are NIL/new-entity options."
+  ]
+}

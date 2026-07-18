@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "research_cutoff": "2026-07-18",
+  "candidates": [
+    {
+      "id": "gliner-x-large",
+      "model": "knowledgator/gliner-x-large",
+      "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
+      "license": "Apache-2.0",
+      "role": "primary multilingual open-span challenger",
+      "evidence": "Official model card reports zh_pud F1 0.6794; no historical, Traditional-Chinese, or OCR benchmark."
+    },
+    {
+      "id": "sikubert",
+      "model": "SIKU-BERT/sikubert",
+      "revision": "fc656de2d6bde33919102dd3abe31c843f42226a",
+      "license": "Apache-2.0",
+      "role": "historical-Chinese supervised encoder",
+      "evidence": "Pretrained on Siku Quanshu; requires a project-trained token/span head and Shen Bao validation."
+    },
+    {
+      "id": "nuextract3",
+      "model": "numind/NuExtract3",
+      "revision": "2e9fca82ee641e6bb6e1f5d905241e994be27a07",
+      "license": "Apache-2.0",
+      "role": "schema-constrained difficult-case and relation challenger",
+      "evidence": "Multimodal schema extraction with verbatim strings; no disclosed historical-Chinese NER result."
+    },
+    {
+      "id": "qwen3.5-9b",
+      "model": "Qwen/Qwen3.5-9B",
+      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "license": "Apache-2.0",
+      "role": "general multimodal JSON-schema control",
+      "evidence": "Chinese-capable control with substantially higher compute; no historical NER evidence."
+    },
+    {
+      "id": "gliner-multi-v2.1",
+      "model": "urchade/gliner_multi-v2.1",
+      "revision": "443d26d654e0324125a96bebd8e796c14ff2efe6",
+      "license": "Apache-2.0",
+      "role": "existing technical-smoke baseline",
+      "evidence": "Produced noisy candidate spans on one lossy Shen Bao page and has not passed review."
+    }
+  ],
+  "excluded_from_primary_benchmark": [
+    {
+      "model": "fastino/gliner2-multi-v1",
+      "reason": "Published language list does not include Chinese."
+    },
+    {
+      "model": "gliner-community/gliner_large-v2.5",
+      "reason": "May remain a control, but no published Chinese evaluation supports prioritizing it over GLiNER-X."
+    }
+  ]
+}

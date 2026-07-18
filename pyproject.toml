@@ -37,7 +37,15 @@ wic-ingest = "wic_history.repository:main"
 wic-search = "wic_history.search:main"
 wic-ner = "wic_history.ner_pipeline:main"
 wic-embed = "wic_history.embedding_pipeline:main"
+wic-graph = "wic_history.graph:main"
+wic-api = "wic_history.api:main"
+wic-link = "wic_history.link_pipeline:main"
+wic-relations = "wic_history.relation_pipeline:main"
+wic-rag-export = "wic_history.rag_experiment:main"
 
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+wic_history = ["static/*"]

@@ -1,0 +1,160 @@
+{
+  "schema_version": "ocr_targeted_comparison.v1",
+  "created_at": "2026-07-18",
+  "status": "candidate_only_not_historian_gold",
+  "source": {
+    "volume": 219,
+    "page": 308,
+    "render_width": 6176,
+    "render_height": 8960,
+    "render_mode": "L",
+    "corrected_render_png_sha256": "4a87398f84cb9cc80ee0f06232dc6cd020a1d582b25ef9d423f596c2c2478754",
+    "corrected_render_pixel_sha256": "7f6fc9023a41b756f0729a2ad67905cb5b317ecd565e5346d73cabd7d8a41328"
+  },
+  "hunyuan": {
+    "model": "tencent/HunyuanOCR",
+    "model_revision": "de8f10ad2f00a0cefd790b526de8a65dcfdb3205",
+    "family_version": "1.5",
+    "task": "structured_parse",
+    "prompt": "提取图中的文字。",
+    "decoding": "greedy",
+    "repeat_count_per_crop": 3,
+    "all_repeats_identical": true,
+    "runtime": {
+      "device": "Apple M4 Pro MPS",
+      "torch": "2.13.0",
+      "transformers": "5.13.0",
+      "accelerate": "1.14.0"
+    }
+  },
+  "cases": [
+    {
+      "id": "C01",
+      "path": "suite-v219-p0308/C01_central_theatre.png",
+      "png_sha256": "e4bc1c4c72288ff9c1fbd7171eaccb13810300506f4c3de35237193a09f3047a",
+      "crop_box_ltrb_half_open": [3050, 600, 4520, 1010],
+      "hunyuan_raw": "中央大戲院",
+      "paddle_raw": [
+        {"text": "院默大央中", "confidence": 0.822}
+      ],
+      "adjudication": "Hunyuan exact: 中央大戲院"
+    },
+    {
+      "id": "C02",
+      "path": "suite-v219-p0308/C02_carlton_theatre.png",
+      "png_sha256": "1747793d505fb7f624382ded71f7dabf576cbd973d51d2cdb9664bf7def7792c",
+      "crop_box_ltrb_half_open": [70, 520, 1580, 930],
+      "hunyuan_raw": "卡爾登影戲院",
+      "paddle_raw": [
+        {"text": "院戲影登爾卡", "confidence": 0.996}
+      ],
+      "adjudication": "Both support 卡爾登影戲院; Paddle is image-coordinate RTL order"
+    },
+    {
+      "id": "C03",
+      "path": "suite-v219-p0308/C03_odeon_theatre.png",
+      "png_sha256": "482926e09cda3cfbfaae65d51a5ae4b6c0bb566ca71772e8ff2d37dd8057e35c",
+      "crop_box_ltrb_half_open": [4460, 540, 6050, 980],
+      "hunyuan_raw": "奧迪安大戲院",
+      "paddle_raw": [
+        {"text": "院戲大安迪奧", "confidence": 0.943}
+      ],
+      "adjudication": "Both support 奧迪安大戲院; Paddle is image-coordinate RTL order"
+    },
+    {
+      "id": "C04",
+      "path": "suite-v219-p0308/C04_date_rtl.png",
+      "png_sha256": "d3e0fcb178fa0b6bfde77ab230b2a82933513cb4ae9973205b02317d5d7d22f5",
+      "crop_box_ltrb_half_open": [3160, 430, 4450, 620],
+      "hunyuan_raw": "二月十五日期",
+      "paddle_raw": [
+        {"text": "期星日五十月二", "confidence": 0.998}
+      ],
+      "adjudication": "Hunyuan omitted 星; supported logical reading is 二月十五日星期"
+    },
+    {
+      "id": "C05",
+      "path": "suite-v219-p0308/C05_small_rtl.png",
+      "png_sha256": "917a514ae1f7c73bfb82061550059c2c9f19aaecdc994f29044db026187db767",
+      "crop_box_ltrb_half_open": [3100, 1080, 4460, 1230],
+      "hunyuan_raw": "片新换更日期星及四期星逢每院本意注，",
+      "paddle_raw": [
+        {"text": "片新换更日期星及四期星逢每院本意注", "confidence": 0.966}
+      ],
+      "adjudication": "Supported logical reading is 注意本院每逢星期四及星期日更換新片; both models simplify 換 in raw output"
+    },
+    {
+      "id": "C06",
+      "path": "suite-v219-p0308/C06_latin_ltr.png",
+      "png_sha256": "958420a8453d4128e0af89df14ad9545382a5ff16fa414d3cc27f7572c328bb7",
+      "crop_box_ltrb_half_open": [1580, 1800, 3050, 2070],
+      "hunyuan_raw": "(ERNST LUBITSCH)\n# KISS ME AGAIN",
+      "paddle_raw": [
+        {"text": "(ERNST LUBTTSCH)", "confidence": 0.952},
+        {"text": "KISS ME AGAIN", "confidence": 0.963}
+      ],
+      "adjudication": "Hunyuan glyphs exact but inserts Markdown heading marker"
+    },
+    {
+      "id": "C07",
+      "path": "suite-v219-p0308/C07_vertical_disagreement.png",
+      "review_path": "suite-v219-p0308/C07_main-4x.png",
+      "png_sha256": "737bcc3cac0a77395d6a20ae446e076c5be12c8e900f507c6ee5d96f7561b0ee",
+      "crop_box_ltrb_half_open": [4940, 1280, 5130, 2310],
+      "hunyuan_raw": "茶餘酒後。對着嬌兒慈母。愛能情人。說用齊市",
+      "paddle_raw": [
+        {"text": "水。也可資", "confidence": 0.316},
+        {"text": "茶餘酒後對者婚兒無母愛解仙人說無得東", "confidence": 0.562}
+      ],
+      "adjudication": "Crop and context support 茶餘酒後。對着嬌兒慈母。愛能解人意。; Hunyuan's 愛能情人 is wrong and the ending remains unresolved",
+      "needs_human_review": true
+    },
+    {
+      "id": "C08",
+      "path": "suite-v219-p0308/C08_vertical_degraded.png",
+      "review_path": "suite-v219-p0308/C08_main-4x.png",
+      "png_sha256": "cb0d2b3c3022adfe09629a6eb39db4977f23f53e7f9c99aad1cdb6753c4cf70e",
+      "crop_box_ltrb_half_open": [5800, 1280, 5960, 2310],
+      "hunyuan_raw": "觀這片。不僅悅且娛心。還可增長見識。因為高",
+      "paddle_raw": [
+        {"text": "觀治片下僅悅目娛小可地辰見論因爲", "confidence": 0.442}
+      ],
+      "adjudication": "Mostly strong Hunyuan recovery, but crop and idiom favor 悅目 over 悅且; ending is incomplete",
+      "needs_human_review": true
+    },
+    {
+      "id": "C09",
+      "path": "suite-v219-p0308/C09_vertical_clean.png",
+      "review_path": "suite-v219-p0308/C09_right-4x.png",
+      "png_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
+      "crop_box_ltrb_half_open": [2780, 3180, 3030, 4470],
+      "hunyuan_raw": "較上次更受歡迎、英皇時召霍臨宮中、與之談話、並請\n 其作畫、居約六七年、彼離英而遊歷、先至比利士之白\n 魯捨爾、大受當地藝術界之殷待、後重至白塞爾、少居",
+      "paddle_raw": [
+        {"text": "故起", "confidence": 0.158},
+        {"text": "魯捨爾大受當地然術界之般待後重至白寒爾少居", "confidence": 0.841},
+        {"text": "其作畫居約六七年彼離英而遊歷先至比利七之白", "confidence": 0.907},
+        {"text": "較上次更受歡迎英皇時召雷臨宮中與之談話並", "confidence": 0.901}
+      ],
+      "adjudication": "Hunyuan is better overall; crop and grammar strongly favor 彼 rather than its 霍 in 英皇時召彼臨宮中",
+      "needs_human_review": true
+    },
+    {
+      "id": "C10",
+      "path": "suite-v219-p0308/C10_dense_small.png",
+      "png_sha256": "c39b76e3eeaa6cf0db1c4a25e8f4710573b549d6544198fa2a4cfd16e35ebc70",
+      "crop_box_ltrb_half_open": [3190, 1780, 4470, 1930],
+      "hunyuan_raw": "風雨之君手築遠部幟橋·起傑·哀\n 備關鍵，可以鎖是朱人過歌而\n 銷聽的這風雨裏搖來重要的映也要應本劇的一片·長·此珠·奏不分一人世家人搭配\n 千萬不深得范氏",
+      "paddle_summary": "three incoherent lines with confidence approximately 0.60 to 0.66",
+      "adjudication": "Reject both; Hunyuan output is not safely grounded"
+    },
+    {
+      "id": "C11",
+      "path": "suite-v219-p0308/C11_blank.png",
+      "png_sha256": "ae03edb16d3cb3aa0000c9dda6e7c2967c10438aec5dd9dbbd047174e42debf9",
+      "crop_box_ltrb_half_open": [500, 8580, 2000, 8900],
+      "hunyuan_raw": "图中没有文字",
+      "paddle_raw": [],
+      "adjudication": "Correct abstention content; response is Simplified Chinese"
+    }
+  ]
+}

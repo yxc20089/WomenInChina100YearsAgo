@@ -50,6 +50,52 @@ def make_pdf(path: Path, *, composite: bool = False) -> None:
     document.close()
 
 
+def make_image_mask_pdf(path: Path) -> bytes:
+    """Create one full-page PDF stencil whose extracted bits invert when painted."""
+    import fitz
+
+    mask_bytes = bytes(
+        [
+            0b11110000,
+            0b11110000,
+            0b00001111,
+            0b00001111,
+            0b10101010,
+            0b01010101,
+            0b11111111,
+            0b00000000,
+        ]
+    )
+    document = fitz.open()
+    page = document.new_page(width=8, height=8)
+    image_xref = document.get_new_xref()
+    document.update_object(
+        image_xref,
+        "<< /Type /XObject /Subtype /Image /Width 8 /Height 8 "
+        "/ImageMask true /BitsPerComponent 1 >>",
+    )
+    document.update_stream(image_xref, mask_bytes, compress=True)
+    resource_kind, resource_value = document.xref_get_key(page.xref, "Resources")
+    if resource_kind != "xref":
+        raise AssertionError("test PDF page lacks an indirect resource dictionary")
+    resource_xref = int(resource_value.split()[0])
+    document.update_object(
+        resource_xref,
+        f"<< /XObject << /Im1 {image_xref} 0 R >> >>",
+    )
+    contents_xref = document.get_new_xref()
+    document.update_object(contents_xref, "<< >>")
+    document.update_stream(
+        contents_xref,
+        b"0 g q 8 0 0 8 0 0 cm /Im1 Do Q",
+        compress=True,
+    )
+    document.xref_set_key(page.xref, "Contents", f"{contents_xref} 0 R")
+    document.save(path)
+    document.close()
+    return mask_bytes
+
+
 class GoldRenderTests(unittest.TestCase):
     def test_selection_requires_complete_named_review(self):
         annotations = {
@@ -107,6 +153,40 @@ class GoldRenderTests(unittest.TestCase):
             self.assertEqual(len(result["decoded_pixel_sha256"]), 64)
             with Image.open(output) as image:
                 self.assertEqual(image.size, (20, 30))
+
+    def test_applies_pdf_imagemask_paint_semantics_at_native_resolution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "mask.pdf"
+            output = root / "page.png"
+            make_image_mask_pdf(source)
+
+            result = extract_pdf_page(source, 1, output, 1)
+
+            self.assertEqual(
+                result["render_method"],
+                "native_resolution_pdf_imagemask_composite",
+            )
+            self.assertEqual(
+                result["pixel_encoding_transform"],
+                "source_codec_decode_then_pdf_imagemask_paint_then_lossless_png_reencode",
+            )
+            self.assertTrue(result["source_image_is_mask"])
+            self.assertEqual(len(result["source_mask_decoded_pixel_sha256"]), 64)
+            self.assertEqual((result["render_width"], result["render_height"]), (8, 8))
+
+            import fitz
+
+            with fitz.open(source) as document:
+                xref = document[0].get_images(full=True)[0][0]
+                extracted = Image.open(io.BytesIO(document.extract_image(xref)["image"]))
+                extracted_pixels = bytes(extracted.convert("L").get_flattened_data())
+            with Image.open(output) as painted:
+                painted_pixels = bytes(painted.convert("L").get_flattened_data())
+            self.assertEqual(
+                painted_pixels,
+                bytes(255 - value for value in extracted_pixels),
+            )
 
     def test_refuses_composited_pdf_page(self):
         with tempfile.TemporaryDirectory() as directory:

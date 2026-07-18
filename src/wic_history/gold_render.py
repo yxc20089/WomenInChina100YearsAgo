@@ -146,6 +146,22 @@ def _pixel_sha256(image: Image.Image) -> str:
     return digest.hexdigest()
 
 
+def _decoded_image_metadata(image_bytes: bytes) -> dict[str, Any]:
+    """Hash decoded pixels without conflating a PDF mask with its painted page."""
+    with Image.open(BytesIO(image_bytes)) as source_image:
+        source_image.load()
+        if source_image.mode not in {"1", "L", "LA", "RGB", "RGBA"}:
+            source_image = source_image.convert(
+                "RGBA" if "A" in source_image.mode else "RGB"
+            )
+        return {
+            "pixel_sha256": _pixel_sha256(source_image),
+            "width": source_image.width,
+            "height": source_image.height,
+            "mode": source_image.mode,
+        }
+
+
 def _save_decoded_as_png(image_bytes: bytes, output_path: Path) -> dict[str, Any]:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(BytesIO(image_bytes)) as source_image:
@@ -232,7 +248,45 @@ def extract_pdf_page(
             raise ValueError("embedded raster is not one unrotated full-page placement")
         image_record = next(image for image in images if image[0] == xref)
         extracted = document.extract_image(xref)
-        saved = _save_decoded_as_png(extracted["image"], output_path)
+        image_mask_value = document.xref_get_key(xref, "ImageMask")
+        is_image_mask = image_mask_value == ("bool", "true")
+        if is_image_mask != (display_items[0][0] == "fill-imgmask"):
+            raise ValueError("PDF image-mask metadata disagrees with page display list")
+
+        if is_image_mask:
+            # An ImageMask is a stencil, not a self-contained visible raster.
+            # extract_image() returns its mask samples and drops the current PDF
+            # paint colour. Render the otherwise single-image page at the exact
+            # embedded raster dimensions to apply those paint semantics without
+            # changing geometry. This is essential for 1-bit newspaper scans,
+            # whose extracted mask samples can be the exact inverse of the page.
+            source_mask = _decoded_image_metadata(extracted["image"])
+            scale_x = extracted["width"] / page.rect.width
+            scale_y = extracted["height"] / page.rect.height
+            pixmap = page.get_pixmap(
+                matrix=fitz.Matrix(scale_x, scale_y),
+                colorspace=fitz.csGRAY,
+                alpha=False,
+            )
+            if (
+                pixmap.width != extracted["width"]
+                or pixmap.height != extracted["height"]
+            ):
+                raise ValueError(
+                    "native-resolution PDF image-mask composite changed dimensions"
+                )
+            saved = _save_decoded_as_png(pixmap.tobytes("png"), output_path)
+            render_method = "native_resolution_pdf_imagemask_composite"
+            pixel_encoding_transform = (
+                "source_codec_decode_then_pdf_imagemask_paint_then_lossless_png_reencode"
+            )
+        else:
+            source_mask = None
+            saved = _save_decoded_as_png(extracted["image"], output_path)
+            render_method = "direct_embedded_raster_decode"
+            pixel_encoding_transform = (
+                "source_codec_decode_then_lossless_png_reencode"
+            )
         if (
             saved["render_width"] != extracted["width"]
             or saved["render_height"] != extracted["height"]
@@ -240,10 +294,14 @@ def extract_pdf_page(
             raise ValueError("extracted PNG dimensions disagree with PDF image metadata")
         return {
             **saved,
-            "render_method": "direct_embedded_raster_decode",
+            "render_method": render_method,
             "geometric_transform": "none",
-            "pixel_encoding_transform": "source_codec_decode_then_lossless_png_reencode",
-            "renderer": "PyMuPDF/extract_image + Pillow/PNG",
+            "pixel_encoding_transform": pixel_encoding_transform,
+            "renderer": (
+                "PyMuPDF/native-resolution ImageMask composite + Pillow/PNG"
+                if is_image_mask
+                else "PyMuPDF/extract_image + Pillow/PNG"
+            ),
             "renderer_version": fitz.version[0],
             "source_image_xref": xref,
             "source_image_extension": extracted["ext"],
@@ -251,6 +309,10 @@ def extract_pdf_page(
             "source_image_height": extracted["height"],
             "source_image_bits_per_component": image_record[4],
             "source_image_filter": image_record[8],
+            "source_image_is_mask": is_image_mask,
+            "source_mask_decoded_pixel_sha256": (
+                source_mask["pixel_sha256"] if source_mask is not None else None
+            ),
         }
 
 

@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "run_finished_at": "2026-07-18T15:56:11Z",
+  "status": "candidate_only_not_historian_gold",
+  "case_id": "v219-p0308-central-theatre-heading",
+  "source": {
+    "uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+    "sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+    "volume_number": 219,
+    "publication_year": 1925,
+    "page_number": 308,
+    "pdf_image_xref": 615,
+    "pdf_image_filter": "JBIG2Decode",
+    "pdf_image_is_mask": true
+  },
+  "corrected_render": {
+    "method": "native_resolution_pdf_imagemask_composite",
+    "geometric_transform": "none",
+    "pixel_encoding_transform": "source_codec_decode_then_pdf_imagemask_paint_then_lossless_png_reencode",
+    "source_mask_decoded_pixel_sha256": "daf77230bb838141be07e92b2a47eb9509f0cf41b481036503cd7405f7f20cc9",
+    "render_sha256": "4a87398f84cb9cc80ee0f06232dc6cd020a1d582b25ef9d423f596c2c2478754",
+    "render_pixel_sha256": "7f6fc9023a41b756f0729a2ad67905cb5b317ecd565e5346d73cabd7d8a41328",
+    "width": 6176,
+    "height": 8960,
+    "mode": "L",
+    "verification": "pixel-identical to Poppler 300-DPI grayscale render"
+  },
+  "crop": {
+    "path": "artifacts/ocr-challenger/crops/v219-p0308.central-theatre.corrected.png",
+    "half_open_box": [3050, 600, 4520, 1010],
+    "width": 1470,
+    "height": 410,
+    "mode": "L",
+    "sha256": "e4bc1c4c72288ff9c1fbd7171eaccb13810300506f4c3de35237193a09f3047a",
+    "pixel_sha256": "e0b11e8aac0afb3c7fb633c3b6c355e10f3a9b2a665f559df12419accc739cc2"
+  },
+  "hunyuanocr_1_5": {
+    "model_id": "tencent/HunyuanOCR",
+    "model_revision": "de8f10ad2f00a0cefd790b526de8a65dcfdb3205",
+    "model_safetensors_sha256": "632a1e082c4dd5a3284cf1ffcdba2fdaa06f435762c58c2f34aff0f3bd6c0249",
+    "toolkit_revision": "a1ce1099db98edceb153710536af23edf4391cf0",
+    "task_type": "structured_parse",
+    "prompt": "提取图中的文字。",
+    "device": "Apple Metal MPS",
+    "dtype": "bfloat16",
+    "attention_implementation": "eager",
+    "torch_version": "2.13.0",
+    "torchvision_version": "0.28.0",
+    "transformers_version": "5.13.0",
+    "accelerate_version": "1.14.0",
+    "generation": {
+      "do_sample": false,
+      "max_new_tokens": 128,
+      "repetition_penalty": 1.08,
+      "use_cache": true,
+      "skip_special_tokens": true,
+      "clean_up_tokenization_spaces": false
+    },
+    "raw_outputs": ["中央大戲院", "中央大戲院", "中央大戲院"],
+    "raw_output_sha256": "1017a1aaca2e0588910e7139fc22963e8f03653966587bae65d409113ed5602b",
+    "latency_seconds": [1.420, 1.055, 1.052],
+    "semantic_repeat_match": true
+  },
+  "paddleocr_v6": {
+    "toolkit_version": "3.7.0",
+    "detector": "PP-OCRv6_medium_det",
+    "recognizer": "PP-OCRv6_medium_rec",
+    "language": "ch",
+    "raw_output": "院默大央中",
+    "confidence": 0.8221566081047058,
+    "deterministic_rtl_reversal": "中央大默院"
+  },
+  "interpretation": {
+    "provisional_visual_transcription": "中央大戲院",
+    "gold_status": "unadjudicated",
+    "conclusion": "HunyuanOCR-1.5 is the first tested OCR model to recover all five Traditional Chinese glyphs and historical right-to-left order on this corrected crop. No model output may overwrite immutable OCR evidence or enter the reviewed graph without the reconstruction and review stages."
+  },
+  "official_sources": [
+    "https://github.com/Tencent-Hunyuan/HunyuanOCR/tree/a1ce1099db98edceb153710536af23edf4391cf0",
+    "https://huggingface.co/tencent/HunyuanOCR/tree/de8f10ad2f00a0cefd790b526de8a65dcfdb3205"
+  ]
+}

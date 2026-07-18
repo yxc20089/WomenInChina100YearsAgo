@@ -7,12 +7,13 @@ name = "women-in-china-history"
 version = "0.1.0"
 description = "Evidence-first processing tools for the Women in China 100 Years Ago project"
 requires-python = ">=3.11"
-dependencies = ["boto3>=1.34,<2", "PyMuPDF>=1.26,<2"]
+dependencies = ["boto3>=1.34,<2", "Pillow>=11,<13", "PyMuPDF>=1.26,<2"]
 
 [project.scripts]
 wic-corpus = "wic_history.corpus_manifest:main"
 wic-sample = "wic_history.benchmark_sample:main"
 wic-render = "wic_history.render_samples:main"
+wic-review = "wic_history.review_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

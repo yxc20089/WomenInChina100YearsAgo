@@ -7,6 +7,9 @@ import csv
 import hashlib
 import json
 import os
+import re
+import shutil
+import subprocess
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -130,6 +133,118 @@ def render_pdf_pages(
     return results
 
 
+def djvulibre_version(ddjvu_path: str) -> str:
+    completed = subprocess.run(
+        [ddjvu_path, "--help"], capture_output=True, text=True, check=False
+    )
+    output = completed.stdout + completed.stderr
+    match = re.search(r"DjVuLibre-([0-9.]+)", output)
+    return match.group(1) if match else "unknown"
+
+
+def render_djvu_pages(
+    source_path: Path,
+    candidates: Sequence[dict[str, str]],
+    output_root: Path,
+    expected_page_count: int,
+    dpi: int,
+    jpeg_quality: int,
+) -> list[dict[str, Any]]:
+    """Render selected DjVu pages with the external DjVuLibre decoder."""
+    from PIL import Image
+
+    ddjvu_path = shutil.which("ddjvu")
+    djvused_path = shutil.which("djvused")
+    if not ddjvu_path or not djvused_path:
+        raise RuntimeError("DjVuLibre ddjvu and djvused executables are required")
+
+    count_result = subprocess.run(
+        [djvused_path, str(source_path), "-e", "n"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    actual_page_count = int(count_result.stdout.strip())
+    if actual_page_count != expected_page_count:
+        raise ValueError(
+            f"page_count_mismatch:manifest={expected_page_count}:document={actual_page_count}"
+        )
+
+    version = djvulibre_version(ddjvu_path)
+    volume = int(candidates[0]["volume_number"])
+    volume_dir = output_root / "images" / f"v{volume:03d}"
+    volume_dir.mkdir(parents=True, exist_ok=True)
+    results: list[dict[str, Any]] = []
+
+    for candidate in sorted(candidates, key=lambda row: int(row["page_number"])):
+        page_number = int(candidate["page_number"])
+        if not 1 <= page_number <= actual_page_count:
+            raise ValueError(f"page_out_of_range:{page_number}")
+        output_path = volume_dir / f"p{page_number:04d}.jpg"
+        temporary_path = volume_dir / f"p{page_number:04d}.pgm.part"
+        if temporary_path.exists():
+            temporary_path.unlink()
+        try:
+            completed = subprocess.run(
+                [
+                    ddjvu_path,
+                    "-format=pgm",
+                    f"-scale={dpi}",
+                    f"-page={page_number}",
+                    str(source_path),
+                    str(temporary_path),
+                ],
+                capture_output=True,
+                check=False,
+            )
+            if completed.returncode:
+                stderr = completed.stderr.decode("utf-8", errors="replace").strip()
+                results.append(
+                    {
+                        "schema_version": RENDER_SCHEMA_VERSION,
+                        "sample_id": candidate["sample_id"],
+                        "source_uri": candidate["source_uri"],
+                        "volume_number": volume,
+                        "publication_year": int(candidate["publication_year"]),
+                        "page_number": page_number,
+                        "status": "render_error",
+                        "issue": f"ddjvu_exit_{completed.returncode}:{stderr[-500:]}",
+                        "renderer": "DjVuLibre/ddjvu",
+                        "renderer_version": version,
+                    }
+                )
+                continue
+            with Image.open(temporary_path) as image:
+                grayscale = image.convert("L")
+                grayscale.save(output_path, format="JPEG", quality=jpeg_quality)
+                width, height = grayscale.size
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
+
+        results.append(
+            {
+                "schema_version": RENDER_SCHEMA_VERSION,
+                "sample_id": candidate["sample_id"],
+                "source_uri": candidate["source_uri"],
+                "volume_number": volume,
+                "publication_year": int(candidate["publication_year"]),
+                "page_number": page_number,
+                "render_path": str(output_path),
+                "render_sha256": sha256_file(output_path),
+                "render_width": width,
+                "render_height": height,
+                "render_dpi": dpi,
+                "render_format": "image/jpeg",
+                "jpeg_quality": jpeg_quality,
+                "renderer": "DjVuLibre/ddjvu",
+                "renderer_version": version,
+                "status": "rendered",
+            }
+        )
+    return results
+
+
 def render_plan(
     client: Any,
     bucket: str,
@@ -154,7 +269,7 @@ def render_plan(
     ):
         record = manifest_by_key[source_key]
         extension = record["extension"]
-        if extension != ".pdf":
+        if extension not in {".pdf", ".djvu"}:
             for candidate in source_candidates:
                 results.append(
                     {
@@ -172,13 +287,9 @@ def render_plan(
 
         try:
             source_path, cache_status = cache_source(client, bucket, record, cache_dir)
-            rendered = render_pdf_pages(
-                source_path,
-                source_candidates,
-                output_dir,
-                int(record["page_count"]),
-                dpi,
-                jpeg_quality,
+            render_function = render_pdf_pages if extension == ".pdf" else render_djvu_pages
+            rendered = render_function(
+                source_path, source_candidates, output_dir, int(record["page_count"]), dpi, jpeg_quality
             )
             for result in rendered:
                 result["source_cache_status"] = cache_status

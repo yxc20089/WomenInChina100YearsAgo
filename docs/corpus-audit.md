@@ -66,9 +66,10 @@ The five bundled DjVu directory counts are:
 
 Rendering status:
 
-- 450 pages from the nine PDF strata have been rendered, hashed and recorded in `artifacts/benchmark-pages/render_manifest.jsonl`;
-- the screening derivatives occupy 807,563,185 bytes;
-- 50 pages from DjVu volume 93 are explicitly marked `unsupported_renderer` pending a pinned DjVuLibre-compatible renderer;
+- 495 pages across all ten PDF/DjVu strata have been rendered, hashed and recorded in `artifacts/benchmark-pages/render_manifest.jsonl`;
+- the screening derivatives occupy 876,137,252 bytes;
+- five selected pages in DjVu volume 93 fail reproducibly because source pages 659–752 contain an illegal IFF chunk and cannot be decoded by DjVuLibre;
+- DjVu derivatives record the installed `ddjvu` executable's reported version;
 - source PDFs are cached outside the repository under `/tmp/wic-source-cache` and may be safely regenerated from S3.
 
 After rendering, reviewers must assign page genre and quality labels, then select 150–250 pages with deliberate coverage of vertical/mixed layout, advertisements, classifieds, photographs/captions, tables, rare glyphs, bleed-through, skew, gutters and cropping.
@@ -82,3 +83,5 @@ After rendering, reviewers must assign page genre and quality labels, then selec
 5. Write transcription/layout annotation guidelines before producing ground truth.
 
 Screening renders use 120-DPI grayscale JPEG at quality 72 to limit local storage. This is not an OCR input format; selected gold pages will be rendered losslessly at their source resolution.
+
+Run `PYTHONPATH=src python -m wic_history.review_server` and open `http://127.0.0.1:8765` to assign genre, layout, scan quality, women relevance and gold-set status. Reviews are written atomically to `artifacts/benchmark-review/annotations.json`.

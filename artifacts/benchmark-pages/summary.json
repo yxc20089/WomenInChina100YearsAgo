@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-18T05:14:19.210041+00:00",
+  "generated_at": "2026-07-18T05:19:29.102088+00:00",
   "candidate_count": 500,
   "updated_candidate_count": 50,
   "status_counts": {
-    "rendered": 450,
-    "unsupported_renderer": 50
+    "render_error": 5,
+    "rendered": 495
   },
-  "rendered_bytes": 807563185,
+  "rendered_bytes": 876137252,
   "note": "JPEGs are screening derivatives, not authoritative evidence images."
 }

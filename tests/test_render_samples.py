@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wic_history.render_samples import render_pdf_pages, sha256_file, write_results
+from wic_history.render_samples import djvulibre_version, render_pdf_pages, sha256_file, write_results
 
 
 class RenderSampleTests(unittest.TestCase):
@@ -52,6 +52,14 @@ class RenderSampleTests(unittest.TestCase):
             summary = write_results(root, [second])
             self.assertEqual(summary["candidate_count"], 2)
             self.assertEqual(summary["updated_candidate_count"], 1)
+
+    def test_detects_installed_djvulibre_version(self):
+        import shutil
+
+        ddjvu = shutil.which("ddjvu")
+        if not ddjvu:
+            self.skipTest("DjVuLibre is not installed")
+        self.assertRegex(djvulibre_version(ddjvu), r"^\d+\.\d+\.\d+$")
 
 
 if __name__ == "__main__":

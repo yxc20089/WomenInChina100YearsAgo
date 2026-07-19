@@ -1,0 +1,61 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T06:48:54.058533+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-BF16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "layout_parse",
+    "prompt": "提取文档图片中所有内容用markdown格式表示，表格用html格式表达，文档中公式用latex格式表示，请按照阅读顺序组织进行全文解析，并输出版式分析信息。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1,
+    "seed": 42,
+    "max_tokens": 512,
+    "client_concurrency": 1,
+    "cache_prompt": false
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-2240.png",
+      "image_sha256": "e0ceb96bccb4fd2d3a79e312979fcb7b9175f3fc39847713b60abf2d0f326fa0",
+      "result": {
+        "elapsed_seconds": 12.298603584000375,
+        "finish_reason": "length",
+        "content": "[{\"layout_type\": \"header\", \"bbox\": \"(61,50, 133, 62),(953, 50),(953,65),(953,65)\", \"text\": \"（四）日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十 十 日 十",
+        "content_sha256": "bc2694f52273e3053272bfca98c3cc1a0b9755d72b4882ee8f293aa07db09542",
+        "usage": {
+          "completion_tokens": 512,
+          "prompt_tokens": 3476,
+          "total_tokens": 3988,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 3476,
+          "prompt_ms": 8514.891,
+          "prompt_per_token_ms": 2.449623417721519,
+          "prompt_per_second": 408.2260125232373,
+          "predicted_n": 512,
+          "predicted_ms": 3713.118,
+          "predicted_per_token_ms": 7.25218359375,
+          "predicted_per_second": 137.8895041848926
+        },
+        "response_id": "chatcmpl-nhp7Ui8R70GfoxoPrOM4BAWCScv7r50z"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 12.307178332994226,
+  "all_requests_stopped": false
+}

@@ -40,8 +40,9 @@ Useful upstream evidence:
 
 ## llama.cpp / Metal status
 
-Metal execution is now locally demonstrated, but the exact HunyuanOCR 1.5
-GGUF path is **experimental and not production-qualified**.
+BF16 language-model execution on Metal is locally demonstrated. Runtime and
+hardware do not decide OCR accuracy; qualification is based on the fixed
+historical crops, negative controls, and page outputs below.
 
 The run used:
 
@@ -53,16 +54,20 @@ The run used:
 - build: Metal and embedded Metal library enabled, Accelerate enabled, and
   OpenMP disabled to avoid the local Anaconda CMake/AppleClang OpenMP linker
   mismatch;
-- F16 language GGUF SHA-256
-  `f3b4e8e2c7db5c7346b9f28059f7813a7c9b1ff3273434cf79be468a82c551ed`;
+- BF16 language GGUF SHA-256
+  `1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42`;
 - F16 vision-projector GGUF SHA-256
   `4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2`.
+
+The projector remains F16 because the current Hunyuan llama.cpp path requires
+it for Metal's unsupported BF16 `IM2COL` operation. This is BF16 language
+inference with an F16 vision projector, not an all-BF16 graph.
 
 Verbose server logs proved hardware placement: the server selected the Apple
 M4 Pro Metal device, offloaded all 25/25 language layers, allocated the KV
 cache on `MTL0`, and reported `CLIP using MTL0 backend` for the vision encoder.
-At 32,768 context it projected about 4.2 GiB of Metal memory. This is real GPU
-acceleration rather than CPU execution in a Metal-capable binary.
+This is real GPU acceleration rather than CPU execution in a Metal-capable
+binary.
 
 An uncached control on C09 produced byte-identical text on CPU and Metal. CPU
 took 2.712 seconds and Metal 0.848 seconds, a 3.2x end-to-end speedup. Prompt
@@ -76,6 +81,9 @@ and
 
 The crop-level path is promising:
 
+- C01 through C09 were byte-identical between the F16 and BF16 language GGUF
+  runs, so changing the language tensor dtype did not repair or cause the
+  consequential crop errors;
 - all ten text-bearing fixed crops stopped normally;
 - C01 returned `中央大戲院`;
 - C07 and C08 reproduced the already known model errors `愛能情人` and
@@ -86,7 +94,7 @@ The crop-level path is promising:
 - the official `spotting_json` prompt returned parseable boxes and text for
   C01/C07/C08/C09.
 
-The parity and layout gates nevertheless failed:
+The negative-control and whole-page layout gates nevertheless failed:
 
 - the blank C11 control deterministically repeated `“我”说` until the
   2,048-token limit, whereas the reference Transformers run abstained with
@@ -94,14 +102,48 @@ The parity and layout gates nevertheless failed:
 - crop-level `layout_parse` returned boxes without the requested full text;
 - the 6,176 x 8,960 lossless page requires 16,524 prompt tokens, exceeding
   Tencent's documented `--ctx-size 10240` example;
-- at 32,768 context the full page fit in memory but took 307.3 seconds, hit the
-  4,096-token generation limit, and degenerated into repeated layout boxes.
+- with BF16, four independent 32,768-token slots, and prompt caching disabled,
+  the full page fit in memory but took 261.3 seconds, hit the 4,096-token
+  generation limit, and degenerated into repeated layout boxes. Visual/prompt
+  prefill consumed 205.6 seconds for 16,524 tokens; generation consumed 55.1
+  seconds;
+- a 1,544 x 2,240 page proxy reduced prompt prefill to 8.5 seconds and 3,476
+  tokens, but still repeated the date/header until the 512-token cap. Resizing
+  fixes visual-token cost, not whole-page layout quality.
 
 See the immutable raw runs in
 [`fixed-suite-structured-parse.json`](../../artifacts/ocr-challenger/llamacpp-metal/fixed-suite-structured-parse.json),
 [`exact-crops-spotting-json.json`](../../artifacts/ocr-challenger/llamacpp-metal/exact-crops-spotting-json.json),
+[`bf16-fixed-suite-structured-parse.json`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-fixed-suite-structured-parse.json),
+[`bf16-no-cache-full-page-layout-parse.json`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-no-cache-full-page-layout-parse.json),
 and
-[`full-page-layout-parse.json`](../../artifacts/ocr-challenger/llamacpp-metal/full-page-layout-parse.json).
+[`bf16-no-cache-layout-proxy-2240.json`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-no-cache-layout-proxy-2240.json).
+
+### Concurrent serving and isolation
+
+The production-shaped crop server uses four slots, continuous batching, split
+per-sequence KV buffers (`--no-kv-unified`), and 10,240 tokens per crop slot.
+The client sends a complete one-image request every time and explicitly sets
+`cache_prompt=false`. Thus old per-slot KV prefixes are not reused; recorded
+timings reported `cache_n=0` for every request.
+
+A 16-request mixed-image burst produced exactly one stable output hash for each
+of four source crops, all 16 outputs matched sequential execution, and every
+request stopped normally. Sequential execution took 13.65 seconds (1.17
+requests/s); four-way execution took 9.35 seconds (1.71 requests/s), a 1.46x
+throughput gain on this M4 Pro. Individual latency rises under GPU contention,
+so four slots are a batch-ingestion setting rather than a latency claim.
+
+This build already uses the split-KV high-throughput design merged in
+[llama.cpp PR #14363](https://github.com/ggml-org/llama.cpp/pull/14363). That
+change removes cross-sequence attention for independent requests. It improves
+multi-request decoding but does not accelerate the vision encoder for one
+large page.
+
+Raw load-test artifacts are
+[`bf16-no-cache-sequential16.json`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-no-cache-sequential16.json)
+and
+[`bf16-no-cache-concurrency4-isolation16.json`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-no-cache-concurrency4-isolation16.json).
 
 ### Conversion blocker
 
@@ -114,8 +156,9 @@ Repeating conversion with Tencent's required Transformers 5.13.0 recognized
 `HunYuanVLForConditionalGeneration`, normalized the checkpoint's `xdrope`
 configuration to dynamic RoPE, and failed llama.cpp's own assertion:
 `HunYuan dynamic RoPE scaling assumptions changed`. No 5.13 GGUF was produced.
-That unresolved conversion incompatibility, together with the observed parity
-failures, prevents promotion of this backend.
+That unresolved conversion incompatibility remains a provenance risk. The
+observed whole-page and blank-input failures are separate output-quality
+risks; neither should be described as a CUDA-versus-Metal accuracy effect.
 
 References:
 
@@ -128,9 +171,10 @@ LM Studio and Ollama could package a qualified GGUF pair, but neither resolves
 the current 1.5 conversion or parity failure. They are front ends, not
 independent accuracy or acceleration backends.
 
-## CUDA recommendation
+## CUDA reference
 
-Keep one official CUDA/BF16 environment as the reproducibility reference.
+Keep one official CUDA/BF16 environment as a cross-backend reproducibility
+reference, not as an assumption that CUDA has better OCR quality.
 Tencent documents H20-class NVIDIA execution with at least 24 GB VRAM for its
 vLLM and native Transformers paths. The practical choices are:
 
@@ -146,13 +190,18 @@ See Tencent's [inference selection guide](https://github.com/Tencent-Hunyuan/Hun
 
 For now:
 
-1. keep native Transformers MPS for local crop-level development;
-2. keep official CUDA BF16 as the batch and production reference;
-3. use this GGUF/Metal build only for reproducible research and upstream
-   debugging, not ingestion;
-4. require an upstream-reviewed 1.5 conversion plus clean blank, fixed-crop,
-   spotting, and full-page layout gates before promotion;
-5. do not try DFlash until the base llama.cpp path passes parity, because
-   speculative decoding cannot establish base-model correctness;
-6. never merge OCR text based on backend speed: retain source image/crop, raw
+1. use the BF16 Metal server with four independent slots as the qualified
+   execution candidate for padded crop-level `spotting_json` requests;
+2. explicitly disable prompt-prefix caching for reproducible, history-free OCR
+   requests;
+3. do not use whole-page Hunyuan `layout_parse`: it fails at both source and
+   proxy resolution;
+4. retain the immutable lossless page, use a downsampled proxy only for
+   confidence-bearing ruling-line/column proposals, and map padded crop boxes
+   back to source pixels before Hunyuan OCR;
+5. keep official CUDA BF16 only as a cross-backend reference and keep the GGUF
+   conversion caveat attached to every run;
+6. do not try DFlash until the crop pipeline is frozen, because speculative
+   decoding cannot establish OCR correctness;
+7. never merge OCR text based on backend speed: retain source image/crop, raw
    transcript, prompt, model revision, runtime, and normalization separately.

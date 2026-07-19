@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import concurrent.futures
 import hashlib
 import json
 import mimetypes
@@ -56,6 +57,7 @@ def call_server(
     image_path: Path,
     prompt: str,
     max_tokens: int,
+    cache_prompt: bool,
 ) -> dict[str, Any]:
     body = {
         "model": model,
@@ -75,6 +77,10 @@ def call_server(
         "repetition_penalty": 1,
         "seed": 42,
         "stream": False,
+        # llama-server otherwise reuses a matching KV prefix from an earlier
+        # request assigned to the same slot. That is not conversation state,
+        # but disabling it makes OCR quality comparisons reproducible.
+        "cache_prompt": cache_prompt,
     }
     request_bytes = json.dumps(body, ensure_ascii=False).encode("utf-8")
     request = Request(
@@ -125,6 +131,18 @@ def main() -> int:
         default="spotting_json",
     )
     parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="number of simultaneous requests; server must expose at least this many slots",
+    )
+    parser.add_argument(
+        "--cache-prompt",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="allow llama-server to reuse a matching per-slot KV prefix (default: disabled)",
+    )
     parser.add_argument("--model-gguf", type=Path, required=True)
     parser.add_argument("--mmproj-gguf", type=Path, required=True)
     parser.add_argument("--llama-server", type=Path, required=True)
@@ -137,6 +155,8 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.concurrency < 1:
+        parser.error("--concurrency must be at least 1")
 
     paths = [path.resolve() for path in args.images]
     for path in paths:
@@ -145,16 +165,26 @@ def main() -> int:
     prompts = load_prompts(args.config.resolve())
     prompt = prompts[args.task]
 
-    results = []
-    for path in paths:
-        print(f"[{args.task}] {path.name}", flush=True)
-        result = call_server(
+    def run_one(path: Path) -> dict[str, Any]:
+        return call_server(
             args.endpoint,
             args.model,
             path,
             prompt,
             args.max_tokens,
+            args.cache_prompt,
         )
+
+    batch_started = time.perf_counter()
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=args.concurrency
+    ) as executor:
+        request_results = list(executor.map(run_one, paths))
+    batch_elapsed = time.perf_counter() - batch_started
+
+    results = []
+    for path, result in zip(paths, request_results, strict=True):
+        print(f"[{args.task}] {path.name}", flush=True)
         print(result["content"], flush=True)
         print(f"[elapsed] {result['elapsed_seconds']:.3f}s", flush=True)
         results.append(
@@ -188,8 +218,11 @@ def main() -> int:
             "repetition_penalty": 1,
             "seed": 42,
             "max_tokens": args.max_tokens,
+            "client_concurrency": args.concurrency,
+            "cache_prompt": args.cache_prompt,
         },
         "results": results,
+        "batch_elapsed_seconds": batch_elapsed,
         "all_requests_stopped": all(
             item["result"]["finish_reason"] == "stop" for item in results
         ),

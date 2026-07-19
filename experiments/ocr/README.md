@@ -1,20 +1,34 @@
 # Historical-Chinese OCR and layout benchmark
 
-The selected learned OCR/layout model is HunyuanOCR 1.5, using its paired
-official `spotting_json` and `layout_parse` tasks. The production reference is
-the official CUDA/BF16 path. Earlier Paddle/PP-OCR artifacts remain comparison
-evidence; they are not an inference fallback or authority in the selected
-pipeline.
+The selected learned OCR model is HunyuanOCR 1.5. BF16 llama.cpp/Metal is the
+locally qualified candidate for source-derived crop `spotting_json` requests;
+four independent slots increase batch throughput without sharing request
+history. Whole-page `layout_parse` failed at source and proxy resolution, so it
+is not an ingestion authority. Earlier Paddle/PP-OCR artifacts remain
+comparison evidence, not an inference fallback.
 
-The Apple Silicon llama.cpp/Metal path is locally accelerated but remains an
-experiment because its current 1.5 conversion and parity gates fail. Run the
-provenance-capturing client only against an explicitly launched test server:
+Launch a crop server with four split-KV slots. `--ctx-size` is the total across
+slots, so 40,960 provides 10,240 tokens per request:
+
+```bash
+.cache/hunyuan-llamacpp/llama.cpp/build/bin/llama-server \
+  --model .cache/hunyuan-llamacpp/gguf/hyocr-bf16.gguf \
+  --mmproj .cache/hunyuan-llamacpp/gguf/mmproj-hyocr-f16.gguf \
+  --alias HYVL-BF16 --host 127.0.0.1 --port 18080 \
+  --ctx-size 40960 --parallel 4 --no-kv-unified \
+  --cache-ram 0 --n-gpu-layers 99 --no-webui
+```
+
+Run the provenance-capturing client with concurrent, cache-free requests:
 
 ```bash
 .venv/bin/python experiments/ocr/llamacpp_hunyuan_smoke.py \
   --task spotting_json \
+  --model HYVL-BF16 \
+  --concurrency 4 \
+  --no-cache-prompt \
   --acceleration metal \
-  --model-gguf .cache/hunyuan-llamacpp/gguf/hyocr-f16.gguf \
+  --model-gguf .cache/hunyuan-llamacpp/gguf/hyocr-bf16.gguf \
   --mmproj-gguf .cache/hunyuan-llamacpp/gguf/mmproj-hyocr-f16.gguf \
   --llama-server .cache/hunyuan-llamacpp/llama.cpp/build/bin/llama-server \
   --output artifacts/ocr-challenger/llamacpp-metal/smoke.json \
@@ -22,7 +36,8 @@ provenance-capturing client only against an explicitly launched test server:
 ```
 
 The client records image/model hashes, exact project prompt, decoding
-parameters, finish reason, usage, timings, runtime build, and raw output. See
+parameters, concurrency, prompt-cache policy, finish reason, usage, timings,
+runtime build, and raw output. See
 [`hunyuanocr-1.5-hardware.md`](hunyuanocr-1.5-hardware.md) for the verified
 Metal placement, CPU control, conversion blocker, and deployment decision.
 

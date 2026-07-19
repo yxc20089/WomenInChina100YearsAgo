@@ -1,0 +1,361 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T06:51:36.818293+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-BF16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "structured_parse",
+    "prompt": "提取图中的文字。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1,
+    "seed": 42,
+    "max_tokens": 2048,
+    "client_concurrency": 1,
+    "cache_prompt": false
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C01_central_theatre.png",
+      "image_sha256": "e4bc1c4c72288ff9c1fbd7171eaccb13810300506f4c3de35237193a09f3047a",
+      "result": {
+        "elapsed_seconds": 0.7598528329981491,
+        "finish_reason": "stop",
+        "content": "中央大戲院",
+        "content_sha256": "1017a1aaca2e0588910e7139fc22963e8f03653966587bae65d409113ed5602b",
+        "usage": {
+          "completion_tokens": 6,
+          "prompt_tokens": 621,
+          "total_tokens": 627,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 621,
+          "prompt_ms": 705.024,
+          "prompt_per_token_ms": 1.135304347826087,
+          "prompt_per_second": 880.8210784313725,
+          "predicted_n": 6,
+          "predicted_ms": 30.881,
+          "predicted_per_token_ms": 5.146833333333333,
+          "predicted_per_second": 194.29422622324404
+        },
+        "response_id": "chatcmpl-62iMhhNyarWuxsDonXM2dIPN98vRDNkG"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C02_carlton_theatre.png",
+      "image_sha256": "1747793d505fb7f624382ded71f7dabf576cbd973d51d2cdb9664bf7def7792c",
+      "result": {
+        "elapsed_seconds": 0.779702416039072,
+        "finish_reason": "stop",
+        "content": "卡爾登影戲院",
+        "content_sha256": "fb6423244e873be1af1392bfcf1e1c13c04510fdb56c7754b44e6c259d420d71",
+        "usage": {
+          "completion_tokens": 9,
+          "prompt_tokens": 634,
+          "total_tokens": 643,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 634,
+          "prompt_ms": 720.794,
+          "prompt_per_token_ms": 1.1368990536277601,
+          "prompt_per_second": 879.5855681373596,
+          "predicted_n": 9,
+          "predicted_ms": 48.643,
+          "predicted_per_token_ms": 5.4047777777777775,
+          "predicted_per_second": 185.02148304997635
+        },
+        "response_id": "chatcmpl-SJK9ctuc44kRQjPhzcEgDfYzXxTSS5dA"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C03_odeon_theatre.png",
+      "image_sha256": "482926e09cda3cfbfaae65d51a5ae4b6c0bb566ca71772e8ff2d37dd8057e35c",
+      "result": {
+        "elapsed_seconds": 0.9840397500083782,
+        "finish_reason": "stop",
+        "content": "奧迪安大戲院  \n北四川路大人里電南話三五二一號",
+        "content_sha256": "583517d6cc75e48ce81dc8cb5184ae8fcba575fab04bbded9105aad39c1abda6",
+        "usage": {
+          "completion_tokens": 22,
+          "prompt_tokens": 724,
+          "total_tokens": 746,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 724,
+          "prompt_ms": 846.831,
+          "prompt_per_token_ms": 1.1696560773480664,
+          "prompt_per_second": 854.9521687326043,
+          "predicted_n": 22,
+          "predicted_ms": 128.404,
+          "predicted_per_token_ms": 5.836545454545455,
+          "predicted_per_second": 171.33422634808886
+        },
+        "response_id": "chatcmpl-f7Ejasc4gImqpk8zFJ8psIOtqp2JdPnU"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C04_date_rtl.png",
+      "image_sha256": "d3e0fcb178fa0b6bfde77ab230b2a82933513cb4ae9973205b02317d5d7d22f5",
+      "result": {
+        "elapsed_seconds": 0.32996658398769796,
+        "finish_reason": "stop",
+        "content": "二月十五日期",
+        "content_sha256": "99d2b588339ae049dedca0e500db4490ee4d3bac90f95f9d4de8ee5fb11f1130",
+        "usage": {
+          "completion_tokens": 4,
+          "prompt_tokens": 311,
+          "total_tokens": 315,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 311,
+          "prompt_ms": 307.7,
+          "prompt_per_token_ms": 0.9893890675241157,
+          "prompt_per_second": 1010.724731881703,
+          "predicted_n": 4,
+          "predicted_ms": 18.09,
+          "predicted_per_token_ms": 4.5225,
+          "predicted_per_second": 221.1166390270868
+        },
+        "response_id": "chatcmpl-ok7m7010fJdtw6Tx6FIq6826aHc0uSll"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C05_small_rtl.png",
+      "image_sha256": "917a514ae1f7c73bfb82061550059c2c9f19aaecdc994f29044db026187db767",
+      "result": {
+        "elapsed_seconds": 0.4110009580035694,
+        "finish_reason": "stop",
+        "content": "片新换更日期星及四期星逢每院本意注，",
+        "content_sha256": "edc6676de6943e7d15d0f41aa025faa33ab291893670d50881d1d178f240b3a4",
+        "usage": {
+          "completion_tokens": 18,
+          "prompt_tokens": 310,
+          "total_tokens": 328,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 310,
+          "prompt_ms": 306.534,
+          "prompt_per_token_ms": 0.9888193548387096,
+          "prompt_per_second": 1011.3070654478786,
+          "predicted_n": 18,
+          "predicted_ms": 99.635,
+          "predicted_per_token_ms": 5.535277777777778,
+          "predicted_per_second": 180.65940683494753
+        },
+        "response_id": "chatcmpl-b794x2pYElYXfnwZDjpTDa0oQHIRb9Lf"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C06_latin_ltr.png",
+      "image_sha256": "958420a8453d4128e0af89df14ad9545382a5ff16fa414d3cc27f7572c328bb7",
+      "result": {
+        "elapsed_seconds": 0.4767572080017999,
+        "finish_reason": "stop",
+        "content": "(ERNST LUBITSCH)\nKISS ME AGAIN",
+        "content_sha256": "7c97b6163042f26afe7f0e003e901613ed8ad3f9afb577e97ba37175c52ce3d9",
+        "usage": {
+          "completion_tokens": 15,
+          "prompt_tokens": 386,
+          "total_tokens": 401,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 386,
+          "prompt_ms": 387.979,
+          "prompt_per_token_ms": 1.0051269430051812,
+          "prompt_per_second": 994.8992084623136,
+          "predicted_n": 15,
+          "predicted_ms": 83.152,
+          "predicted_per_token_ms": 5.543466666666666,
+          "predicted_per_second": 180.3925341543198
+        },
+        "response_id": "chatcmpl-skQ5YwWAehZN1Fb19ZM9dmwUJp0SNAGM"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C07_vertical_disagreement.png",
+      "image_sha256": "737bcc3cac0a77395d6a20ae446e076c5be12c8e900f507c6ee5d96f7561b0ee",
+      "result": {
+        "elapsed_seconds": 0.42997550003929064,
+        "finish_reason": "stop",
+        "content": "茶餘酒後。對着嬌兒慈母。愛能情人。說用齊市。",
+        "content_sha256": "a65c8cd9f742625467adc9d48323f9c59df33d97b2d45cc67315fa15b474369d",
+        "usage": {
+          "completion_tokens": 25,
+          "prompt_tokens": 314,
+          "total_tokens": 339,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 314,
+          "prompt_ms": 283.661,
+          "prompt_per_token_ms": 0.9033789808917198,
+          "prompt_per_second": 1106.9551330637628,
+          "predicted_n": 25,
+          "predicted_ms": 141.978,
+          "predicted_per_token_ms": 5.67912,
+          "predicted_per_second": 176.08361858879545
+        },
+        "response_id": "chatcmpl-izBd1dtzO1uoPbFRzdPwa9hRnexrwmMX"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C08_vertical_degraded.png",
+      "image_sha256": "cb0d2b3c3022adfe09629a6eb39db4977f23f53e7f9c99aad1cdb6753c4cf70e",
+      "result": {
+        "elapsed_seconds": 0.44986129202879965,
+        "finish_reason": "stop",
+        "content": "觀這片。不僅悅且娛心。還可增長見識。因爲",
+        "content_sha256": "83aa78af5eba1c7bcb70ca3f9eea724492e9086bc7f0748c4b49a9e81a662e1b",
+        "usage": {
+          "completion_tokens": 25,
+          "prompt_tokens": 338,
+          "total_tokens": 363,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 338,
+          "prompt_ms": 306.122,
+          "prompt_per_token_ms": 0.9056863905325444,
+          "prompt_per_second": 1104.1349527312639,
+          "predicted_n": 25,
+          "predicted_ms": 139.666,
+          "predicted_per_token_ms": 5.58664,
+          "predicted_per_second": 178.99846777311586
+        },
+        "response_id": "chatcmpl-506ZQBEtfHzxnOpCWHk5SfOLKC92WOLq"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png",
+      "image_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
+      "result": {
+        "elapsed_seconds": 0.8361027089995332,
+        "finish_reason": "stop",
+        "content": "較上次更受歡迎、英皇時召霍臨宮中、與之談話、並請\n 其作畫、居約六七年、彼離英而遊歷、先至比利士之白\n 魯捨爾、大受當地藝術界之般待、後重至白塞爾、少居",
+        "content_sha256": "0c268f523a28b05ec2ebf815146802b61fb7a925d33672cdbe6d9a0455508be2",
+        "usage": {
+          "completion_tokens": 83,
+          "prompt_tokens": 370,
+          "total_tokens": 453,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 370,
+          "prompt_ms": 341.407,
+          "prompt_per_token_ms": 0.9227216216216215,
+          "prompt_per_second": 1083.7504796328137,
+          "predicted_n": 83,
+          "predicted_ms": 489.098,
+          "predicted_per_token_ms": 5.892746987951807,
+          "predicted_per_second": 169.70014189385358
+        },
+        "response_id": "chatcmpl-VoFTT8vWGaAFUEgRgeJKqzMtNf9EEq7B"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C10_dense_small.png",
+      "image_sha256": "c39b76e3eeaa6cf0db1c4a25e8f4710573b549d6544198fa2a4cfd16e35ebc70",
+      "result": {
+        "elapsed_seconds": 0.9835817090352066,
+        "finish_reason": "stop",
+        "content": "風雨之\n君手篎\n溼·部幟\n構·起哀\n驪馬收\n備關以\n是·可以\n過朱\n前歌\n人說\n錦服的\n一山\n是·可以\n這風雨的\n裏\n重的重要的映\n一\n也 要 的 不 劇 的\n一\n片·片·片\n長··此\n不珠··\n一 珠 一\n千人深得搭配不配\n氏",
+        "content_sha256": "683d3c98f5b1f3c8d093b6686f86e9c9bc7b7879c0350620d1391973c9b7a7a2",
+        "usage": {
+          "completion_tokens": 115,
+          "prompt_tokens": 298,
+          "total_tokens": 413,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 298,
+          "prompt_ms": 297.338,
+          "prompt_per_token_ms": 0.997778523489933,
+          "prompt_per_second": 1002.2264224552529,
+          "predicted_n": 115,
+          "predicted_ms": 681.767,
+          "predicted_per_token_ms": 5.928408695652174,
+          "predicted_per_second": 168.67932886161987
+        },
+        "response_id": "chatcmpl-0v224oTF5N99BVhhvM5FN87bBdZYOTsA"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C11_blank.png",
+      "image_sha256": "ae03edb16d3cb3aa0000c9dda6e7c2967c10438aec5dd9dbbd047174e42debf9",
+      "result": {
+        "elapsed_seconds": 13.594450832984876,
+        "finish_reason": "length",
+        "content": "“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说：“我”说",
+        "content_sha256": "60f2133b63c7202e90fc33c46731d02249578359c775355c62d11b5d299a059b",
+        "usage": {
+          "completion_tokens": 2048,
+          "prompt_tokens": 490,
+          "total_tokens": 2538,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 490,
+          "prompt_ms": 520.404,
+          "prompt_per_token_ms": 1.0620489795918366,
+          "prompt_per_second": 941.5761600602609,
+          "predicted_n": 2048,
+          "predicted_ms": 13069.791,
+          "predicted_per_token_ms": 6.38173388671875,
+          "predicted_per_second": 156.6972264514406
+        },
+        "response_id": "chatcmpl-xQN3zkmNHgXwWgjPGARj1NZhxOygHAFs"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 20.04266979196109,
+  "all_requests_stopped": false
+}

@@ -1,0 +1,384 @@
+{
+ "schema_version": "boundary-hough-v1",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "created_at": "2026-07-19T18:56:32.707320+00:00",
+ "page_image": {
+  "path": "artifacts/lossless-pilot/images/v219/p0308.png",
+  "sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e"
+ },
+ "parameters": {
+  "work_scale": 4,
+  "ink_threshold": 128,
+  "hough_threshold": 90,
+  "min_seg_src_px": 280,
+  "max_gap_src_px": 60,
+  "max_angle_deg": 4.0,
+  "max_text_support": 0.45,
+  "max_image_support": 0.3,
+  "join_perp_src_px": 28,
+  "join_gap_src_px": 220,
+  "min_rule_src_px": 560,
+  "endpoint_extend_src_px": 80,
+  "min_cell_dim_src_px": 180
+ },
+ "segments": {
+  "raw": 5326,
+  "rejected_by_support": 1892,
+  "h_kept": 83,
+  "v_kept": 107
+ },
+ "rules": {
+  "horizontal": 15,
+  "vertical": 23
+ },
+ "cells": {
+  "count": 31,
+  "list": [
+   {
+    "cell_id": 0,
+    "bbox_source_xyxy": [
+     4,
+     20,
+     6172,
+     8956
+    ],
+    "area_fraction": 0.15902,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell00_6168x8936.png"
+   },
+   {
+    "cell_id": 1,
+    "bbox_source_xyxy": [
+     132,
+     612,
+     1576,
+     2976
+    ],
+    "area_fraction": 0.06144,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell01_1444x2364.png"
+   },
+   {
+    "cell_id": 2,
+    "bbox_source_xyxy": [
+     1596,
+     612,
+     3032,
+     2976
+    ],
+    "area_fraction": 0.05906,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell02_1436x2364.png"
+   },
+   {
+    "cell_id": 3,
+    "bbox_source_xyxy": [
+     3052,
+     612,
+     4500,
+     2976
+    ],
+    "area_fraction": 0.06186,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell03_1448x2364.png"
+   },
+   {
+    "cell_id": 4,
+    "bbox_source_xyxy": [
+     4520,
+     612,
+     5748,
+     2976
+    ],
+    "area_fraction": 0.05117,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell04_1228x2364.png"
+   },
+   {
+    "cell_id": 5,
+    "bbox_source_xyxy": [
+     5768,
+     612,
+     5956,
+     2976
+    ],
+    "area_fraction": 0.00803,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell05_188x2364.png"
+   },
+   {
+    "cell_id": 6,
+    "bbox_source_xyxy": [
+     236,
+     2996,
+     1556,
+     3192
+    ],
+    "area_fraction": 0.00468,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell06_1320x196.png"
+   },
+   {
+    "cell_id": 7,
+    "bbox_source_xyxy": [
+     1916,
+     2996,
+     3032,
+     3192
+    ],
+    "area_fraction": 0.00395,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell07_1116x196.png"
+   },
+   {
+    "cell_id": 8,
+    "bbox_source_xyxy": [
+     3052,
+     2996,
+     4500,
+     3192
+    ],
+    "area_fraction": 0.00513,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell08_1448x196.png"
+   },
+   {
+    "cell_id": 9,
+    "bbox_source_xyxy": [
+     4776,
+     2996,
+     5748,
+     3192
+    ],
+    "area_fraction": 0.00344,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell09_972x196.png"
+   },
+   {
+    "cell_id": 10,
+    "bbox_source_xyxy": [
+     5768,
+     2996,
+     5956,
+     3192
+    ],
+    "area_fraction": 0.00067,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell10_188x196.png"
+   },
+   {
+    "cell_id": 11,
+    "bbox_source_xyxy": [
+     236,
+     3216,
+     1556,
+     5792
+    ],
+    "area_fraction": 0.06144,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell11_1320x2576.png"
+   },
+   {
+    "cell_id": 12,
+    "bbox_source_xyxy": [
+     1916,
+     3216,
+     3032,
+     4484
+    ],
+    "area_fraction": 0.02557,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell12_1116x1268.png"
+   },
+   {
+    "cell_id": 13,
+    "bbox_source_xyxy": [
+     3052,
+     3216,
+     4500,
+     4484
+    ],
+    "area_fraction": 0.03318,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell13_1448x1268.png"
+   },
+   {
+    "cell_id": 14,
+    "bbox_source_xyxy": [
+     4520,
+     3216,
+     5956,
+     4484
+    ],
+    "area_fraction": 0.03248,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell14_1436x1268.png"
+   },
+   {
+    "cell_id": 15,
+    "bbox_source_xyxy": [
+     1576,
+     4504,
+     1896,
+     5792
+    ],
+    "area_fraction": 0.00706,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell15_320x1288.png"
+   },
+   {
+    "cell_id": 16,
+    "bbox_source_xyxy": [
+     1916,
+     4504,
+     3024,
+     5792
+    ],
+    "area_fraction": 0.02578,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell16_1108x1288.png"
+   },
+   {
+    "cell_id": 17,
+    "bbox_source_xyxy": [
+     3056,
+     4504,
+     4684,
+     5792
+    ],
+    "area_fraction": 0.03787,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell17_1628x1288.png"
+   },
+   {
+    "cell_id": 18,
+    "bbox_source_xyxy": [
+     4704,
+     4504,
+     5956,
+     5792
+    ],
+    "area_fraction": 0.02913,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell18_1252x1288.png"
+   },
+   {
+    "cell_id": 19,
+    "bbox_source_xyxy": [
+     236,
+     5844,
+     1556,
+     7012
+    ],
+    "area_fraction": 0.02786,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell19_1320x1168.png"
+   },
+   {
+    "cell_id": 20,
+    "bbox_source_xyxy": [
+     1576,
+     5844,
+     1896,
+     7012
+    ],
+    "area_fraction": 0.00675,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell20_320x1168.png"
+   },
+   {
+    "cell_id": 21,
+    "bbox_source_xyxy": [
+     1916,
+     5844,
+     2944,
+     7012
+    ],
+    "area_fraction": 0.02145,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell21_1028x1168.png"
+   },
+   {
+    "cell_id": 22,
+    "bbox_source_xyxy": [
+     3056,
+     5844,
+     4512,
+     6452
+    ],
+    "area_fraction": 0.016,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell22_1456x608.png"
+   },
+   {
+    "cell_id": 23,
+    "bbox_source_xyxy": [
+     4704,
+     5844,
+     5740,
+     7012
+    ],
+    "area_fraction": 0.02168,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell23_1036x1168.png"
+   },
+   {
+    "cell_id": 24,
+    "bbox_source_xyxy": [
+     5760,
+     5844,
+     5956,
+     7012
+    ],
+    "area_fraction": 0.00408,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell24_196x1168.png"
+   },
+   {
+    "cell_id": 25,
+    "bbox_source_xyxy": [
+     3056,
+     6472,
+     4512,
+     7012
+    ],
+    "area_fraction": 0.01421,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell25_1456x540.png"
+   },
+   {
+    "cell_id": 26,
+    "bbox_source_xyxy": [
+     3056,
+     7032,
+     4512,
+     7724
+    ],
+    "area_fraction": 0.01809,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell26_1456x692.png"
+   },
+   {
+    "cell_id": 27,
+    "bbox_source_xyxy": [
+     4704,
+     7032,
+     5740,
+     8364
+    ],
+    "area_fraction": 0.02493,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell27_1036x1332.png"
+   },
+   {
+    "cell_id": 28,
+    "bbox_source_xyxy": [
+     236,
+     7128,
+     1556,
+     8296
+    ],
+    "area_fraction": 0.02786,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell28_1320x1168.png"
+   },
+   {
+    "cell_id": 29,
+    "bbox_source_xyxy": [
+     1576,
+     7128,
+     2944,
+     8296
+    ],
+    "area_fraction": 0.02852,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell29_1368x1168.png"
+   },
+   {
+    "cell_id": 30,
+    "bbox_source_xyxy": [
+     3056,
+     7744,
+     4512,
+     8364
+    ],
+    "area_fraction": 0.01615,
+    "crop_path": "artifacts/ocr-challenger/region-proposal/hough-cells-p0308/cell30_1456x620.png"
+   }
+  ]
+ },
+ "overlay": {
+  "path": "artifacts/ocr-challenger/region-proposal/p0308-hough-overlay2.png"
+ }
+}

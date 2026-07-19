@@ -1,0 +1,381 @@
+{
+ "schema_version": "user-gold-blocks-v1",
+ "status": "operator_reference_labeling",
+ "source": "/Users/berta/Desktop/blocks screenshots, template-matched to 2240 proxy",
+ "blocks": [
+  {
+   "block_id": 0,
+   "file": "4.23.20\u202fPM",
+   "match_score": 0.844,
+   "bbox_source_xyxy": [
+    88,
+    552,
+    1604,
+    1924
+   ],
+   "bbox_proxy_xyxy": [
+    22,
+    138,
+    401,
+    481
+   ]
+  },
+  {
+   "block_id": 1,
+   "file": "4.23.26\u202fPM",
+   "match_score": 0.905,
+   "bbox_source_xyxy": [
+    152,
+    1896,
+    1596,
+    2760
+   ],
+   "bbox_proxy_xyxy": [
+    38,
+    474,
+    399,
+    690
+   ]
+  },
+  {
+   "block_id": 2,
+   "file": "4.23.33\u202fPM",
+   "match_score": 0.838,
+   "bbox_source_xyxy": [
+    160,
+    2728,
+    1584,
+    3332
+   ],
+   "bbox_proxy_xyxy": [
+    40,
+    682,
+    396,
+    833
+   ]
+  },
+  {
+   "block_id": 3,
+   "file": "4.23.39\u202fPM",
+   "match_score": 0.874,
+   "bbox_source_xyxy": [
+    140,
+    3312,
+    1568,
+    3884
+   ],
+   "bbox_proxy_xyxy": [
+    35,
+    828,
+    392,
+    971
+   ]
+  },
+  {
+   "block_id": 4,
+   "file": "4.23.52\u202fPM",
+   "match_score": 0.837,
+   "bbox_source_xyxy": [
+    112,
+    3868,
+    1560,
+    4528
+   ],
+   "bbox_proxy_xyxy": [
+    28,
+    967,
+    390,
+    1132
+   ]
+  },
+  {
+   "block_id": 5,
+   "file": "4.23.58\u202fPM",
+   "match_score": 0.822,
+   "bbox_source_xyxy": [
+    104,
+    4476,
+    1560,
+    5164
+   ],
+   "bbox_proxy_xyxy": [
+    26,
+    1119,
+    390,
+    1291
+   ]
+  },
+  {
+   "block_id": 6,
+   "file": "4.24.05\u202fPM",
+   "match_score": 0.878,
+   "bbox_source_xyxy": [
+    132,
+    5152,
+    1568,
+    5792
+   ],
+   "bbox_proxy_xyxy": [
+    33,
+    1288,
+    392,
+    1448
+   ]
+  },
+  {
+   "block_id": 7,
+   "file": "4.24.12\u202fPM",
+   "match_score": 0.794,
+   "bbox_source_xyxy": [
+    1520,
+    560,
+    3032,
+    2600
+   ],
+   "bbox_proxy_xyxy": [
+    380,
+    140,
+    758,
+    650
+   ]
+  },
+  {
+   "block_id": 8,
+   "file": "4.24.18\u202fPM",
+   "match_score": 0.83,
+   "bbox_source_xyxy": [
+    1532,
+    2512,
+    3044,
+    3204
+   ],
+   "bbox_proxy_xyxy": [
+    383,
+    628,
+    761,
+    801
+   ]
+  },
+  {
+   "block_id": 9,
+   "file": "4.24.25\u202fPM",
+   "match_score": 0.736,
+   "bbox_source_xyxy": [
+    1572,
+    3192,
+    2436,
+    5812
+   ],
+   "bbox_proxy_xyxy": [
+    393,
+    798,
+    609,
+    1453
+   ]
+  },
+  {
+   "block_id": 10,
+   "file": "4.24.46\u202fPM",
+   "match_score": 0.407,
+   "bbox_source_xyxy": [
+    2396,
+    3164,
+    5952,
+    5804
+   ],
+   "bbox_proxy_xyxy": [
+    599,
+    791,
+    1488,
+    1451
+   ]
+  },
+  {
+   "block_id": 11,
+   "file": "4.24.57\u202fPM",
+   "match_score": 0.719,
+   "bbox_source_xyxy": [
+    3016,
+    636,
+    4504,
+    3204
+   ],
+   "bbox_proxy_xyxy": [
+    754,
+    159,
+    1126,
+    801
+   ]
+  },
+  {
+   "block_id": 12,
+   "file": "4.25.03\u202fPM",
+   "match_score": 0.804,
+   "bbox_source_xyxy": [
+    4536,
+    608,
+    5952,
+    2344
+   ],
+   "bbox_proxy_xyxy": [
+    1134,
+    152,
+    1488,
+    586
+   ]
+  },
+  {
+   "block_id": 13,
+   "file": "4.25.08\u202fPM",
+   "match_score": 0.844,
+   "bbox_source_xyxy": [
+    4504,
+    2324,
+    5952,
+    3192
+   ],
+   "bbox_proxy_xyxy": [
+    1126,
+    581,
+    1488,
+    798
+   ]
+  },
+  {
+   "block_id": 14,
+   "file": "4.25.21\u202fPM",
+   "match_score": 0.672,
+   "bbox_source_xyxy": [
+    104,
+    5796,
+    3056,
+    7076
+   ],
+   "bbox_proxy_xyxy": [
+    26,
+    1449,
+    764,
+    1769
+   ]
+  },
+  {
+   "block_id": 15,
+   "file": "4.25.24\u202fPM",
+   "match_score": 0.833,
+   "bbox_source_xyxy": [
+    108,
+    7040,
+    3044,
+    8372
+   ],
+   "bbox_proxy_xyxy": [
+    27,
+    1760,
+    761,
+    2093
+   ]
+  },
+  {
+   "block_id": 16,
+   "file": "4.25.34\u202fPM",
+   "match_score": 0.817,
+   "bbox_source_xyxy": [
+    3024,
+    5772,
+    4512,
+    6472
+   ],
+   "bbox_proxy_xyxy": [
+    756,
+    1443,
+    1128,
+    1618
+   ]
+  },
+  {
+   "block_id": 17,
+   "file": "4.25.39\u202fPM",
+   "match_score": 0.787,
+   "bbox_source_xyxy": [
+    2996,
+    6428,
+    4520,
+    7752
+   ],
+   "bbox_proxy_xyxy": [
+    749,
+    1607,
+    1130,
+    1938
+   ]
+  },
+  {
+   "block_id": 18,
+   "file": "4.25.43\u202fPM",
+   "match_score": 0.834,
+   "bbox_source_xyxy": [
+    3028,
+    7700,
+    4524,
+    8372
+   ],
+   "bbox_proxy_xyxy": [
+    757,
+    1925,
+    1131,
+    2093
+   ]
+  },
+  {
+   "block_id": 19,
+   "file": "4.25.47\u202fPM",
+   "match_score": 0.893,
+   "bbox_source_xyxy": [
+    4488,
+    5776,
+    5976,
+    6620
+   ],
+   "bbox_proxy_xyxy": [
+    1122,
+    1444,
+    1494,
+    1655
+   ]
+  },
+  {
+   "block_id": 20,
+   "file": "4.25.53\u202fPM",
+   "match_score": 0.786,
+   "bbox_source_xyxy": [
+    4488,
+    6568,
+    5964,
+    7492
+   ],
+   "bbox_proxy_xyxy": [
+    1122,
+    1642,
+    1491,
+    1873
+   ]
+  },
+  {
+   "block_id": 21,
+   "file": "4.25.58\u202fPM",
+   "match_score": 0.873,
+   "bbox_source_xyxy": [
+    4560,
+    7468,
+    5988,
+    8388
+   ],
+   "bbox_proxy_xyxy": [
+    1140,
+    1867,
+    1497,
+    2097
+   ]
+  }
+ ]
+}

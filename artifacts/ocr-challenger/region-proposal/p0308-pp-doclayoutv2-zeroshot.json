@@ -1,0 +1,854 @@
+{
+ "schema_version": "paddle-layout-zeroshot-v1",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "created_at": "2026-07-19T17:30:17.923630+00:00",
+ "model": {
+  "name": "PP-DocLayoutV2",
+  "runtime": "paddleocr 3.7.0 / paddlepaddle 3.3.1 cpu",
+  "weights_sha256": {
+   "config.json": "e1a25a0cbdc59c3668bc96467ecca6b9747eca29ff26d90282f452adc89df21f",
+   "inference.json": "91457e49ff891231d3f10bf17f393cc7545b588cc3453869ce4c179cea194e9b",
+   "inference.pdiparams": "45404a84c9fdf91d7bbc94bd47ac4c03649bda84167de04c62bff4726657869a",
+   "inference.yml": "93100e0fb2cd76b9d246a853deea85e191d8333b2cfca7be76e82e4c4ebfa819"
+  }
+ },
+ "input": {
+  "path": "artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-2240.normal-polarity.png",
+  "sha256": "7ea968112adf723d3d4e4f769a749ceca64762f105d518e95c4df9c97ccf1f90",
+  "note": "normal-polarity 2240 proxy; original-polarity A/B recorded 59 vs 61 boxes for plus-L"
+ },
+ "detections_proxy_coords": [
+  {
+   "cls": "header",
+   "conf": 0.889,
+   "proxy_xyxy": [
+    87,
+    114,
+    1432,
+    143
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.504,
+   "proxy_xyxy": [
+    416,
+    175,
+    743,
+    228
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.619,
+   "proxy_xyxy": [
+    40,
+    217,
+    378,
+    348
+   ]
+  },
+  {
+   "cls": "image",
+   "conf": 0.59,
+   "proxy_xyxy": [
+    793,
+    169,
+    1118,
+    244
+   ]
+  },
+  {
+   "cls": "text",
+   "conf": 0.527,
+   "proxy_xyxy": [
+    772,
+    248,
+    1116,
+    350
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.784,
+   "proxy_xyxy": [
+    1275,
+    338,
+    1358,
+    579
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.799,
+   "proxy_xyxy": [
+    772,
+    356,
+    1113,
+    436
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.678,
+   "proxy_xyxy": [
+    1451,
+    586,
+    1472,
+    634
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.509,
+   "proxy_xyxy": [
+    1141,
+    334,
+    1172,
+    448
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.61,
+   "proxy_xyxy": [
+    1391,
+    636,
+    1434,
+    714
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.652,
+   "proxy_xyxy": [
+    1180,
+    450,
+    1213,
+    583
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.503,
+   "proxy_xyxy": [
+    1139,
+    451,
+    1172,
+    586
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.769,
+   "proxy_xyxy": [
+    806,
+    445,
+    933,
+    599
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.599,
+   "proxy_xyxy": [
+    770,
+    454,
+    808,
+    588
+   ]
+  },
+  {
+   "cls": "image",
+   "conf": 0.857,
+   "proxy_xyxy": [
+    412,
+    499,
+    744,
+    635
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.829,
+   "proxy_xyxy": [
+    1443,
+    662,
+    1484,
+    781
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.557,
+   "proxy_xyxy": [
+    1201,
+    636,
+    1387,
+    716
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.606,
+   "proxy_xyxy": [
+    1212,
+    742,
+    1424,
+    794
+   ]
+  },
+  {
+   "cls": "text",
+   "conf": 0.553,
+   "proxy_xyxy": [
+    1251,
+    717,
+    1381,
+    739
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.513,
+   "proxy_xyxy": [
+    802,
+    641,
+    1085,
+    689
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.967,
+   "proxy_xyxy": [
+    1246,
+    804,
+    1441,
+    1120
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.634,
+   "proxy_xyxy": [
+    1082,
+    636,
+    1117,
+    792
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.708,
+   "proxy_xyxy": [
+    771,
+    635,
+    799,
+    696
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.574,
+   "proxy_xyxy": [
+    40,
+    583,
+    80,
+    677
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.713,
+   "proxy_xyxy": [
+    868,
+    698,
+    1071,
+    777
+   ]
+  },
+  {
+   "cls": "text",
+   "conf": 0.763,
+   "proxy_xyxy": [
+    895,
+    780,
+    1041,
+    796
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.724,
+   "proxy_xyxy": [
+    823,
+    704,
+    865,
+    794
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.627,
+   "proxy_xyxy": [
+    777,
+    700,
+    830,
+    795
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.842,
+   "proxy_xyxy": [
+    737,
+    702,
+    756,
+    793
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.546,
+   "proxy_xyxy": [
+    404,
+    688,
+    442,
+    794
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.542,
+   "proxy_xyxy": [
+    431,
+    646,
+    727,
+    795
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.919,
+   "proxy_xyxy": [
+    1085,
+    805,
+    1171,
+    1123
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.964,
+   "proxy_xyxy": [
+    666,
+    805,
+    999,
+    1121
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.518,
+   "proxy_xyxy": [
+    186,
+    688,
+    228,
+    824
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.962,
+   "proxy_xyxy": [
+    999,
+    803,
+    1086,
+    1120
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.526,
+   "proxy_xyxy": [
+    230,
+    686,
+    266,
+    821
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.843,
+   "proxy_xyxy": [
+    614,
+    809,
+    668,
+    1122
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.644,
+   "proxy_xyxy": [
+    41,
+    685,
+    145,
+    824
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.611,
+   "proxy_xyxy": [
+    145,
+    687,
+    183,
+    826
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.592,
+   "proxy_xyxy": [
+    352,
+    1021,
+    385,
+    1117
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.517,
+   "proxy_xyxy": [
+    1364,
+    1129,
+    1442,
+    1439
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.61,
+   "proxy_xyxy": [
+    1242,
+    1186,
+    1294,
+    1440
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.513,
+   "proxy_xyxy": [
+    1188,
+    1191,
+    1244,
+    1440
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.536,
+   "proxy_xyxy": [
+    1123,
+    1190,
+    1187,
+    1440
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.633,
+   "proxy_xyxy": [
+    935,
+    1137,
+    968,
+    1437
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.681,
+   "proxy_xyxy": [
+    798,
+    1127,
+    831,
+    1438
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.841,
+   "proxy_xyxy": [
+    751,
+    1129,
+    792,
+    1440
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.582,
+   "proxy_xyxy": [
+    673,
+    1126,
+    747,
+    1440
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.775,
+   "proxy_xyxy": [
+    636,
+    1129,
+    667,
+    1442
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.607,
+   "proxy_xyxy": [
+    400,
+    1131,
+    417,
+    1177
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.894,
+   "proxy_xyxy": [
+    437,
+    1254,
+    603,
+    1443
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.693,
+   "proxy_xyxy": [
+    397,
+    1266,
+    437,
+    1427
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.637,
+   "proxy_xyxy": [
+    86,
+    1359,
+    127,
+    1442
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.668,
+   "proxy_xyxy": [
+    1066,
+    1453,
+    1118,
+    1613
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.635,
+   "proxy_xyxy": [
+    832,
+    1454,
+    1062,
+    1613
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.724,
+   "proxy_xyxy": [
+    664,
+    1492,
+    725,
+    1726
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.523,
+   "proxy_xyxy": [
+    866,
+    1673,
+    889,
+    1763
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.807,
+   "proxy_xyxy": [
+    498,
+    1491,
+    527,
+    1684
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.816,
+   "proxy_xyxy": [
+    573,
+    1608,
+    600,
+    1706
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.704,
+   "proxy_xyxy": [
+    460,
+    1468,
+    495,
+    1745
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.56,
+   "proxy_xyxy": [
+    406,
+    1468,
+    450,
+    1745
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.646,
+   "proxy_xyxy": [
+    287,
+    1474,
+    355,
+    1745
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.735,
+   "proxy_xyxy": [
+    207,
+    1472,
+    279,
+    1745
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.702,
+   "proxy_xyxy": [
+    1102,
+    1672,
+    1119,
+    1761
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.913,
+   "proxy_xyxy": [
+    65,
+    1476,
+    205,
+    1745
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.689,
+   "proxy_xyxy": [
+    1448,
+    1712,
+    1484,
+    1870
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.536,
+   "proxy_xyxy": [
+    1186,
+    1717,
+    1425,
+    1809
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.65,
+   "proxy_xyxy": [
+    1138,
+    1711,
+    1164,
+    1871
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.535,
+   "proxy_xyxy": [
+    1063,
+    1757,
+    1120,
+    1927
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.545,
+   "proxy_xyxy": [
+    977,
+    1751,
+    1017,
+    1919
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.51,
+   "proxy_xyxy": [
+    1017,
+    1752,
+    1063,
+    1923
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.621,
+   "proxy_xyxy": [
+    900,
+    1781,
+    935,
+    1921
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.534,
+   "proxy_xyxy": [
+    1078,
+    1938,
+    1121,
+    2077
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.586,
+   "proxy_xyxy": [
+    856,
+    1782,
+    903,
+    1924
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.67,
+   "proxy_xyxy": [
+    887,
+    1937,
+    1095,
+    2083
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.59,
+   "proxy_xyxy": [
+    62,
+    1788,
+    688,
+    1882
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.538,
+   "proxy_xyxy": [
+    774,
+    1937,
+    882,
+    2085
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.842,
+   "proxy_xyxy": [
+    684,
+    1927,
+    716,
+    2028
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.784,
+   "proxy_xyxy": [
+    634,
+    1926,
+    670,
+    2063
+   ]
+  },
+  {
+   "cls": "doc_title",
+   "conf": 0.618,
+   "proxy_xyxy": [
+    185,
+    1935,
+    606,
+    2023
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.703,
+   "proxy_xyxy": [
+    126,
+    1926,
+    164,
+    2059
+   ]
+  },
+  {
+   "cls": "vertical_text",
+   "conf": 0.831,
+   "proxy_xyxy": [
+    80,
+    1925,
+    116,
+    2026
+   ]
+  },
+  {
+   "cls": "footer",
+   "conf": 0.827,
+   "proxy_xyxy": [
+    1325,
+    2156,
+    1458,
+    2186
+   ]
+  }
+ ],
+ "source_scale_factor": 4
+}

@@ -1,0 +1,437 @@
+{
+ "schema_version": "boundary-lines-v1",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "created_at": "2026-07-19T18:46:05.335972+00:00",
+ "page_image": {
+  "path": "artifacts/lossless-pilot/images/v219/p0308.png",
+  "sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e"
+ },
+ "parameters": {
+  "work_scale": 4,
+  "ink_threshold": 128,
+  "close_src_px": 160,
+  "min_len_src_px": 600,
+  "max_thick_src_px": 64,
+  "min_aspect": 8.0,
+  "endpoint_extend_src_px": 72,
+  "min_cell_area_frac": 0.0006
+ },
+ "lines": {
+  "horizontal": 24,
+  "vertical": 17,
+  "horizontal_boxes_workscale": [
+   [
+    0,
+    0,
+    1544,
+    5
+   ],
+   [
+    343,
+    639,
+    530,
+    640
+   ],
+   [
+    0,
+    641,
+    203,
+    649
+   ],
+   [
+    33,
+    653,
+    294,
+    657
+   ],
+   [
+    32,
+    658,
+    221,
+    671
+   ],
+   [
+    378,
+    772,
+    535,
+    773
+   ],
+   [
+    0,
+    781,
+    1495,
+    803
+   ],
+   [
+    29,
+    936,
+    271,
+    942
+   ],
+   [
+    292,
+    1102,
+    484,
+    1104
+   ],
+   [
+    513,
+    1170,
+    669,
+    1171
+   ],
+   [
+    641,
+    1446,
+    1495,
+    1449
+   ],
+   [
+    26,
+    1449,
+    575,
+    1452
+   ],
+   [
+    1148,
+    1452,
+    1495,
+    1455
+   ],
+   [
+    26,
+    1776,
+    862,
+    1785
+   ],
+   [
+    26,
+    1887,
+    226,
+    1889
+   ],
+   [
+    714,
+    1932,
+    1134,
+    1934
+   ],
+   [
+    648,
+    1934,
+    800,
+    1935
+   ],
+   [
+    610,
+    1938,
+    764,
+    1939
+   ],
+   [
+    0,
+    1942,
+    156,
+    1943
+   ],
+   [
+    0,
+    2005,
+    182,
+    2008
+   ],
+   [
+    0,
+    2010,
+    163,
+    2012
+   ],
+   [
+    0,
+    2072,
+    872,
+    2081
+   ],
+   [
+    31,
+    2089,
+    1495,
+    2097
+   ],
+   [
+    454,
+    2098,
+    779,
+    2101
+   ]
+  ],
+  "vertical_boxes_workscale": [
+   [
+    395,
+    143,
+    398,
+    830
+   ],
+   [
+    404,
+    147,
+    410,
+    645
+   ],
+   [
+    1486,
+    146,
+    1496,
+    2096
+   ],
+   [
+    759,
+    149,
+    761,
+    626
+   ],
+   [
+    23,
+    151,
+    38,
+    2095
+   ],
+   [
+    1149,
+    375,
+    1150,
+    580
+   ],
+   [
+    7,
+    433,
+    9,
+    691
+   ],
+   [
+    1209,
+    456,
+    1210,
+    628
+   ],
+   [
+    46,
+    593,
+    49,
+    831
+   ],
+   [
+    410,
+    705,
+    420,
+    881
+   ],
+   [
+    1,
+    718,
+    2,
+    868
+   ],
+   [
+    603,
+    779,
+    609,
+    1465
+   ],
+   [
+    732,
+    1415,
+    746,
+    2099
+   ],
+   [
+    1129,
+    1448,
+    1132,
+    2099
+   ],
+   [
+    579,
+    1586,
+    581,
+    1836
+   ],
+   [
+    1472,
+    1652,
+    1482,
+    1930
+   ],
+   [
+    760,
+    1699,
+    763,
+    2099
+   ]
+  ]
+ },
+ "cells": {
+  "count": 9,
+  "list": [
+   {
+    "cell_id": 0,
+    "bbox_source_xyxy": [
+     4,
+     20,
+     6172,
+     8956
+    ],
+    "area_fraction": 0.42179
+   },
+   {
+    "cell_id": 1,
+    "bbox_source_xyxy": [
+     4,
+     2588,
+     116,
+     3120
+    ],
+    "area_fraction": 0.00087
+   },
+   {
+    "cell_id": 2,
+    "bbox_source_xyxy": [
+     4,
+     3176,
+     112,
+     7764
+    ],
+    "area_fraction": 0.00728
+   },
+   {
+    "cell_id": 3,
+    "bbox_source_xyxy": [
+     128,
+     3204,
+     5956,
+     7104
+    ],
+    "area_fraction": 0.33281
+   },
+   {
+    "cell_id": 4,
+    "bbox_source_xyxy": [
+     2960,
+     5796,
+     4520,
+     7724
+    ],
+    "area_fraction": 0.0527
+   },
+   {
+    "cell_id": 5,
+    "bbox_source_xyxy": [
+     4528,
+     5820,
+     5960,
+     8364
+    ],
+    "area_fraction": 0.06446
+   },
+   {
+    "cell_id": 6,
+    "bbox_source_xyxy": [
+     128,
+     7132,
+     2952,
+     8292
+    ],
+    "area_fraction": 0.0572
+   },
+   {
+    "cell_id": 7,
+    "bbox_source_xyxy": [
+     3052,
+     7740,
+     4516,
+     8360
+    ],
+    "area_fraction": 0.01605
+   },
+   {
+    "cell_id": 8,
+    "bbox_source_xyxy": [
+     128,
+     8320,
+     2948,
+     8360
+    ],
+    "area_fraction": 0.00146
+   }
+  ]
+ },
+ "blocks": {
+  "count": 6,
+  "list": [
+   {
+    "cell_id": 0,
+    "bbox_source_xyxy": [
+     160,
+     456,
+     5936,
+     8744
+    ],
+    "member_detections": 35
+   },
+   {
+    "cell_id": 3,
+    "bbox_source_xyxy": [
+     260,
+     3212,
+     5768,
+     6980
+    ],
+    "member_detections": 27
+   },
+   {
+    "cell_id": 4,
+    "bbox_source_xyxy": [
+     3328,
+     5812,
+     4480,
+     7708
+    ],
+    "member_detections": 9
+   },
+   {
+    "cell_id": 5,
+    "bbox_source_xyxy": [
+     4552,
+     6844,
+     5936,
+     7484
+    ],
+    "member_detections": 3
+   },
+   {
+    "cell_id": 6,
+    "bbox_source_xyxy": [
+     248,
+     7152,
+     2864,
+     8252
+    ],
+    "member_detections": 6
+   },
+   {
+    "cell_id": 7,
+    "bbox_source_xyxy": [
+     3096,
+     7748,
+     4484,
+     8340
+    ],
+    "member_detections": 3
+   }
+  ]
+ },
+ "overlay": {
+  "path": "artifacts/ocr-challenger/region-proposal/p0308-boundary-overlay4.png"
+ }
+}

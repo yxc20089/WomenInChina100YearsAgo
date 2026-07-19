@@ -1,0 +1,681 @@
+{
+ "schema_version": "rlsa-blocks-v1",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "created_at": "2026-07-19T20:38:48.430141+00:00",
+ "page_image": {
+  "path": "artifacts/lossless-pilot/images/v219/p0308.png",
+  "sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e"
+ },
+ "parameters": {
+  "scale": 4,
+  "line_len_src_px": 800,
+  "close_src_px_chosen": 32,
+  "min_dim_src_px": 160,
+  "min_ink_fraction": 0.02
+ },
+ "score_vs_gold": {
+  "gold_matched": 3,
+  "gold_total": 22,
+  "spurious": 62,
+  "detected": 65
+ },
+ "blocks": {
+  "count": 65,
+  "list": [
+   {
+    "block_id": 0,
+    "bbox_source_xyxy": [
+     28,
+     600,
+     1508,
+     1564
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block00_1480x964.png"
+   },
+   {
+    "block_id": 1,
+    "bbox_source_xyxy": [
+     4556,
+     600,
+     5996,
+     6184
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block01_1440x5584.png"
+   },
+   {
+    "block_id": 2,
+    "bbox_source_xyxy": [
+     3100,
+     636,
+     4468,
+     1756
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block02_1368x1120.png"
+   },
+   {
+    "block_id": 3,
+    "bbox_source_xyxy": [
+     1636,
+     672,
+     3068,
+     2792
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block03_1432x2120.png"
+   },
+   {
+    "block_id": 4,
+    "bbox_source_xyxy": [
+     1692,
+     708,
+     2308,
+     924
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block04_616x216.png"
+   },
+   {
+    "block_id": 5,
+    "bbox_source_xyxy": [
+     1636,
+     720,
+     1856,
+     1292
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block05_220x572.png"
+   },
+   {
+    "block_id": 6,
+    "bbox_source_xyxy": [
+     1236,
+     884,
+     1468,
+     1100
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block06_232x216.png"
+   },
+   {
+    "block_id": 7,
+    "bbox_source_xyxy": [
+     4580,
+     920,
+     5908,
+     1996
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block07_1328x1076.png"
+   },
+   {
+    "block_id": 8,
+    "bbox_source_xyxy": [
+     1884,
+     940,
+     2312,
+     1136
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block08_428x196.png"
+   },
+   {
+    "block_id": 9,
+    "bbox_source_xyxy": [
+     872,
+     1128,
+     1504,
+     1504
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block09_632x376.png"
+   },
+   {
+    "block_id": 10,
+    "bbox_source_xyxy": [
+     512,
+     1136,
+     1160,
+     1392
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block10_648x256.png"
+   },
+   {
+    "block_id": 11,
+    "bbox_source_xyxy": [
+     4572,
+     1352,
+     5220,
+     2536
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block11_648x1184.png"
+   },
+   {
+    "block_id": 12,
+    "bbox_source_xyxy": [
+     5120,
+     1352,
+     5660,
+     2516
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block12_540x1164.png"
+   },
+   {
+    "block_id": 13,
+    "bbox_source_xyxy": [
+     5108,
+     1364,
+     5440,
+     1616
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block13_332x252.png"
+   },
+   {
+    "block_id": 14,
+    "bbox_source_xyxy": [
+     4116,
+     1432,
+     4448,
+     1752
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block14_332x320.png"
+   },
+   {
+    "block_id": 15,
+    "bbox_source_xyxy": [
+     184,
+     1436,
+     1552,
+     2756
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block15_1368x1320.png"
+   },
+   {
+    "block_id": 16,
+    "bbox_source_xyxy": [
+     3460,
+     1436,
+     4120,
+     1732
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block16_660x296.png"
+   },
+   {
+    "block_id": 17,
+    "bbox_source_xyxy": [
+     68,
+     1508,
+     2448,
+     5776
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block17_2380x4268.png"
+   },
+   {
+    "block_id": 18,
+    "bbox_source_xyxy": [
+     3100,
+     1544,
+     4548,
+     3172
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block18_1448x1628.png"
+   },
+   {
+    "block_id": 19,
+    "bbox_source_xyxy": [
+     5120,
+     1628,
+     5444,
+     2096
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block19_324x468.png"
+   },
+   {
+    "block_id": 20,
+    "bbox_source_xyxy": [
+     172,
+     2340,
+     648,
+     2708
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block20_476x368.png"
+   },
+   {
+    "block_id": 21,
+    "bbox_source_xyxy": [
+     3100,
+     2424,
+     4464,
+     3168
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block21_1364x744.png"
+   },
+   {
+    "block_id": 22,
+    "bbox_source_xyxy": [
+     992,
+     2516,
+     1204,
+     2720
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block22_212x204.png"
+   },
+   {
+    "block_id": 23,
+    "bbox_source_xyxy": [
+     5208,
+     2548,
+     5384,
+     2848
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block23_176x300.png"
+   },
+   {
+    "block_id": 24,
+    "bbox_source_xyxy": [
+     136,
+     2564,
+     5920,
+     7064
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block24_5784x4500.png"
+   },
+   {
+    "block_id": 25,
+    "bbox_source_xyxy": [
+     2248,
+     2816,
+     2412,
+     3084
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block25_164x268.png"
+   },
+   {
+    "block_id": 26,
+    "bbox_source_xyxy": [
+     2760,
+     2816,
+     2924,
+     3064
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block26_164x248.png"
+   },
+   {
+    "block_id": 27,
+    "bbox_source_xyxy": [
+     4868,
+     2988,
+     5668,
+     3176
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block27_800x188.png"
+   },
+   {
+    "block_id": 28,
+    "bbox_source_xyxy": [
+     2148,
+     3992,
+     2400,
+     4356
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block28_252x364.png"
+   },
+   {
+    "block_id": 29,
+    "bbox_source_xyxy": [
+     1828,
+     4432,
+     2416,
+     5004
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block29_588x572.png"
+   },
+   {
+    "block_id": 30,
+    "bbox_source_xyxy": [
+     1372,
+     5436,
+     1532,
+     5768
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block30_160x332.png"
+   },
+   {
+    "block_id": 31,
+    "bbox_source_xyxy": [
+     356,
+     5452,
+     588,
+     5760
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block31_232x308.png"
+   },
+   {
+    "block_id": 32,
+    "bbox_source_xyxy": [
+     1156,
+     5456,
+     1332,
+     5760
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block32_176x304.png"
+   },
+   {
+    "block_id": 33,
+    "bbox_source_xyxy": [
+     2304,
+     5812,
+     4532,
+     8360
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block33_2228x2548.png"
+   },
+   {
+    "block_id": 34,
+    "bbox_source_xyxy": [
+     2672,
+     5996,
+     2892,
+     6196
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block34_220x200.png"
+   },
+   {
+    "block_id": 35,
+    "bbox_source_xyxy": [
+     5636,
+     6292,
+     5864,
+     6516
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block35_228x224.png"
+   },
+   {
+    "block_id": 36,
+    "bbox_source_xyxy": [
+     4640,
+     6300,
+     4856,
+     6512
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block36_216x212.png"
+   },
+   {
+    "block_id": 37,
+    "bbox_source_xyxy": [
+     5316,
+     6304,
+     5516,
+     6512
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block37_200x208.png"
+   },
+   {
+    "block_id": 38,
+    "bbox_source_xyxy": [
+     4980,
+     6308,
+     5192,
+     6600
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block38_212x292.png"
+   },
+   {
+    "block_id": 39,
+    "bbox_source_xyxy": [
+     2676,
+     6340,
+     2892,
+     6544
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block39_216x204.png"
+   },
+   {
+    "block_id": 40,
+    "bbox_source_xyxy": [
+     2288,
+     6356,
+     2520,
+     6812
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block40_232x456.png"
+   },
+   {
+    "block_id": 41,
+    "bbox_source_xyxy": [
+     2676,
+     6668,
+     2904,
+     6900
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block41_228x232.png"
+   },
+   {
+    "block_id": 42,
+    "bbox_source_xyxy": [
+     3084,
+     6696,
+     3252,
+     6876
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block42_168x180.png"
+   },
+   {
+    "block_id": 43,
+    "bbox_source_xyxy": [
+     3876,
+     6772,
+     4104,
+     6984
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block43_228x212.png"
+   },
+   {
+    "block_id": 44,
+    "bbox_source_xyxy": [
+     4176,
+     6772,
+     4396,
+     6988
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block44_220x216.png"
+   },
+   {
+    "block_id": 45,
+    "bbox_source_xyxy": [
+     3592,
+     6780,
+     3816,
+     6988
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block45_224x208.png"
+   },
+   {
+    "block_id": 46,
+    "bbox_source_xyxy": [
+     4564,
+     6860,
+     5992,
+     8280
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block46_1428x1420.png"
+   },
+   {
+    "block_id": 47,
+    "bbox_source_xyxy": [
+     4128,
+     7020,
+     4480,
+     7700
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block47_352x680.png"
+   },
+   {
+    "block_id": 48,
+    "bbox_source_xyxy": [
+     172,
+     7096,
+     1376,
+     8344
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block48_1204x1248.png"
+   },
+   {
+    "block_id": 49,
+    "bbox_source_xyxy": [
+     3764,
+     7144,
+     4224,
+     7336
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block49_460x192.png"
+   },
+   {
+    "block_id": 50,
+    "bbox_source_xyxy": [
+     1384,
+     7164,
+     1868,
+     7540
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block50_484x376.png"
+   },
+   {
+    "block_id": 51,
+    "bbox_source_xyxy": [
+     1880,
+     7180,
+     2928,
+     7704
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block51_1048x524.png"
+   },
+   {
+    "block_id": 52,
+    "bbox_source_xyxy": [
+     3916,
+     7372,
+     4084,
+     7632
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block52_168x260.png"
+   },
+   {
+    "block_id": 53,
+    "bbox_source_xyxy": [
+     828,
+     7748,
+     1384,
+     8252
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block53_556x504.png"
+   },
+   {
+    "block_id": 54,
+    "bbox_source_xyxy": [
+     1920,
+     7756,
+     2424,
+     8092
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block54_504x336.png"
+   },
+   {
+    "block_id": 55,
+    "bbox_source_xyxy": [
+     1372,
+     7764,
+     1892,
+     8084
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block55_520x320.png"
+   },
+   {
+    "block_id": 56,
+    "bbox_source_xyxy": [
+     4492,
+     7788,
+     4796,
+     8320
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block56_304x532.png"
+   },
+   {
+    "block_id": 57,
+    "bbox_source_xyxy": [
+     5700,
+     7820,
+     5932,
+     8040
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block57_232x220.png"
+   },
+   {
+    "block_id": 58,
+    "bbox_source_xyxy": [
+     5140,
+     7824,
+     5364,
+     8028
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block58_224x204.png"
+   },
+   {
+    "block_id": 59,
+    "bbox_source_xyxy": [
+     4852,
+     7828,
+     5076,
+     8032
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block59_224x204.png"
+   },
+   {
+    "block_id": 60,
+    "bbox_source_xyxy": [
+     5432,
+     7828,
+     5640,
+     8032
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block60_208x204.png"
+   },
+   {
+    "block_id": 61,
+    "bbox_source_xyxy": [
+     2248,
+     8012,
+     2668,
+     8260
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block61_420x248.png"
+   },
+   {
+    "block_id": 62,
+    "bbox_source_xyxy": [
+     4568,
+     8064,
+     5244,
+     8340
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block62_676x276.png"
+   },
+   {
+    "block_id": 63,
+    "bbox_source_xyxy": [
+     5276,
+     8068,
+     5720,
+     8340
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block63_444x272.png"
+   },
+   {
+    "block_id": 64,
+    "bbox_source_xyxy": [
+     1400,
+     8092,
+     2076,
+     8252
+    ],
+    "crop_path": "artifacts/ocr-challenger/region-proposal/rlsa-blocks-p0308/block64_676x160.png"
+   }
+  ]
+ },
+ "overlay": {
+  "path": "artifacts/ocr-challenger/region-proposal/p0308-rlsa-overlay.png"
+ }
+}

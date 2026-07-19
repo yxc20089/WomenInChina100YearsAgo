@@ -47,8 +47,12 @@ def classify_full(m, frame_zone=False):
     if m["straightness_std"] is None or m["straightness_std"] > 4.0:
         return ("rejected_crooked", f"resid {m['straightness_std']}")
     # object-level continuity (operator definition): a rule's interior gaps
-    # are print damage of a few px; fill near 1.0 by construction
-    if m["fill"] < 0.95:
+    # are print damage of a few px; fill near 1.0 by construction. Hairline
+    # rules (<=6px) lose proportionally more ink to the same damage: the
+    # p0308 zhabei boundary measures 0.947 while every thicker gold rule
+    # sits at 0.96-1.0, so the floor is class-dependent.
+    fill_floor = 0.93 if (m["median_thickness"] or 99) <= 6 else 0.95
+    if m["fill"] < fill_floor:
         return ("rejected_discontinuous", f"fill {m['fill']:.2f}")
     if (m["max_gap"] or 0) > 12:
         return ("rejected_large_gap", f"gap {m['max_gap']}px")
@@ -71,12 +75,12 @@ def classify_full(m, frame_zone=False):
     return ("rejected_text_signature", f"u{u:.2f} p90 {p90:.0f}")
 
 
-def coverage(lo, hi, perp, axis, boxes):
+def coverage(lo, hi, perp, axis, boxes, pad=8):
     cov = 0
     for x1, y1, x2, y2 in boxes:
-        if axis == "h" and y1 - 8 <= perp <= y2 + 8:
+        if axis == "h" and y1 - pad <= perp <= y2 + pad:
             cov += max(0, min(hi, x2) - max(lo, x1))
-        if axis == "v" and x1 - 8 <= perp <= x2 + 8:
+        if axis == "v" and x1 - pad <= perp <= x2 + pad:
             cov += max(0, min(hi, y2) - max(lo, y1))
     return cov / max(1, hi - lo)
 
@@ -133,7 +137,84 @@ def walk(ink, axis, center_perp, col, direction,
     return last
 
 
-def detect(src, ink, mask_boxes):
+RULE_CLASSES = ("thin_rule", "medium_rule", "thick_band", "rough_rule")
+
+TITLE_BOXES = []  # doc_title boxes dilated by 120px, set by main()
+
+
+def title_contained(axis, perp, olo, ohi):
+    """A measured object floating entirely inside a title's neighborhood is
+    cartouche/ornament decoration, not a boundary: real boundary rules span
+    their whole block and poke out of any title box (p0308 zhongyang bottom
+    border [3116,4401] sits 90px below the V2 box, past coverage dilation)."""
+    for x1, y1, x2, y2 in TITLE_BOXES:
+        if axis == "h":
+            if x1 <= olo and ohi <= x2 and y1 <= perp <= y2:
+                return True
+        else:
+            if y1 <= olo and ohi <= y2 and x1 <= perp <= x2:
+                return True
+    return False
+
+
+def rescue_fragments(src, ink, fragments, accepted, counts, mask_boxes, image_boxes):
+    """Candidate-generation rescue: heavy page warp shatters a rule's Hough
+    chains into short fragments (the p0308 zhabei rule drifts ~40px over
+    1400px and died entirely as rejected_short). Collinear fragment clusters
+    are re-measured over their union span — measure_line's warp-corrected
+    trace follows what chaining could not. Full classification still applies,
+    so text-row fragment clusters die on fill/gap as usual."""
+    for axis in ("h", "v"):
+        frs = sorted(fragments[axis], key=lambda f: f[0])
+        used = [False] * len(frs)
+        for i, (P, sLO, sHI) in enumerate(frs):
+            if used[i]:
+                continue
+            cP, clo, chi = [P], sLO, sHI
+            for j in range(i + 1, len(frs)):
+                Pj, lj, hj = frs[j]
+                if used[j] or Pj - np.median(cP) > 60:
+                    continue
+                # generous span holes: middle fragments of a damaged rule
+                # often fail the fragment gate entirely; the cluster is only
+                # a hypothesis, re-measured strictly below
+                if lj - chi <= 1500 and clo - hj <= 1500:
+                    used[j] = True
+                    cP.append(Pj)
+                    clo, chi = min(clo, lj), max(chi, hj)
+            if chi - clo < 600:
+                continue
+            medP = int(np.median(cP))
+            dim = src.shape[0] if axis == "h" else src.shape[1]
+            best = None
+            for pos in range(medP - 40, medP + 81, 20):
+                m = measure_line(ink, axis, pos, clo, chi, band=60)
+                if not m or not m.get("present"):
+                    continue
+                cls, _why = classify_full(m, frame_zone=(pos < 250 or pos > dim - 250))
+                if cls in RULE_CLASSES and (best is None or m["length"] > best[2]["length"]):
+                    best = (pos, cls, m)
+            if best:
+                pos, cls, m = best
+                olo, ohi = clo + m["obj_offset_lo"], clo + m["obj_offset_hi"]
+                dup = any(abs(p - pos) <= 60 and min(hi, ohi) > max(lo, olo)
+                          for lo, hi, p, _cls in accepted[axis])
+                if (not dup and not title_contained(axis, pos, olo, ohi)
+                        and not masked(olo, ohi, pos, axis, mask_boxes, image_boxes)):
+                    counts["rescued_" + cls] += 1
+                    accepted[axis].append([olo, ohi, pos, cls])
+
+
+def masked(lo, hi, perp, axis, mask_boxes, image_boxes):
+    # note: a wide perpendicular pad on image boxes was tried against the
+    # cartouche ornament border and rejected — the p0308 kiss-me-again box
+    # sits in the identical geometric relation to a REAL boundary rule.
+    # Ornament-only regions are handled at cell level (merge_boxed_cells).
+    return (coverage(lo, hi, perp, axis, mask_boxes) > 0.4
+            or coverage(lo, hi, perp, axis, image_boxes) > 0.4)
+
+
+def detect(src, ink, mask_boxes, image_boxes):
     ink4 = ((src[::4, ::4] > 128).astype(np.uint8)) * 255
     segs = cv2.HoughLinesP(ink4, 1, math.pi / 180, 60, minLineLength=50, maxLineGap=18)
     segs = [] if segs is None else [x[0].tolist() for x in segs]
@@ -146,24 +227,34 @@ def detect(src, ink, mask_boxes):
             v_s.append([x1, y1, x2, y2])
     counts = Counter()
     accepted = {"h": [], "v": []}
+    fragments = {"h": [], "v": []}
     for axis, ch in (("h", chain_segments(h_s, "h", 7, 22, 60)),
                      ("v", chain_segments(v_s, "v", 7, 22, 60))):
         for lo, hi, perp, _ in ch:
             LO, HI, P = int(lo * 4), int(hi * 4), int(perp * 4)
-            if coverage(LO, HI, P, axis, mask_boxes) > 0.4:
+            if masked(LO, HI, P, axis, mask_boxes, image_boxes):
                 counts["masked"] += 1
                 continue
             m = measure_line(ink, axis, P, LO, HI, band=40)
             dim = src.shape[0] if axis == "h" else src.shape[1]
             cls, _why = classify_full(m, frame_zone=(P < 250 or P > dim - 250))
             counts[cls] += 1
-            if cls in ("thin_rule", "medium_rule", "thick_band", "rough_rule"):
+            if cls in RULE_CLASSES:
                 # seed = the measured continuous object, not the loose Hough span
                 sLO = LO + m["obj_offset_lo"]
                 sHI = LO + m["obj_offset_hi"]
+                if title_contained(axis, P, sLO, sHI):
+                    counts["masked_title_contained"] += 1
+                    continue
                 nlo = walk(ink, axis, P, sLO, -1)
                 nhi = walk(ink, axis, P, sHI, +1)
                 accepted[axis].append([nlo, nhi, P, cls])
+            elif (cls == "rejected_short" and m.get("present")
+                  and m["length"] >= 80 and (m["median_thickness"] or 99) <= 28
+                  and m["fill"] >= 0.7
+                  and m["straightness_std"] is not None and m["straightness_std"] <= 4.0):
+                fragments[axis].append((P, LO + m["obj_offset_lo"], LO + m["obj_offset_hi"]))
+    rescue_fragments(src, ink, fragments, accepted, counts, mask_boxes, image_boxes)
     return accepted, counts
 
 
@@ -230,7 +321,7 @@ def snap_all(accepted, snap=520, tol=60):
     return accepted
 
 
-def cells_from(accepted, shape, S=4, min_dim_src=180):
+def cells_from(accepted, shape, S=4, min_dim_src=180):  # noqa: C901
     sep = np.zeros((shape[0] // S, shape[1] // S), np.uint8)
     for lo, hi, p, _ in accepted["h"]:
         cv2.line(sep, (int(lo / S) - 6, int(p / S)), (int(hi / S) + 6, int(p / S)), 255, 3)
@@ -249,7 +340,72 @@ def cells_from(accepted, shape, S=4, min_dim_src=180):
         if w * h > 0.5 * lab.size:
             continue
         cells.append([int(x) * S, int(y) * S, int(x + w) * S, int(y + h) * S])
+    # crops share their boundary line: snap each cell edge onto the wall
+    # centerline it abuts, so adjacent crops meet with no padding between
+    for c in cells:
+        for lo, hi, p, _cls in accepted["v"]:
+            if min(c[3], hi) > max(c[1], lo):
+                if 0 < abs(c[0] - p) <= 20:
+                    c[0] = p
+                if 0 < abs(c[2] - p) <= 20:
+                    c[2] = p
+        for lo, hi, p, _cls in accepted["h"]:
+            if min(c[2], hi) > max(c[0], lo):
+                if 0 < abs(c[1] - p) <= 20:
+                    c[1] = p
+                if 0 < abs(c[3] - p) <= 20:
+                    c[3] = p
     # index in the paper's reading order: top-to-bottom bands, right-to-left
+    cells.sort(key=lambda c: (c[1] // 300, -c[0]))
+    return cells
+
+
+def merge_boxed_cells(cells, ink, boxes):
+    """A SMALL cell whose ink is dominated by title/image detections is a
+    title cartouche or standalone ornament, not a content region — its
+    printed border is real, but the crop belongs with the neighboring ad
+    body (p0308 zhongyang cartouche strip vs its body cell). Merge into the
+    neighbor sharing the longest wall. The size gate matters: display-glyph
+    ads (xinshijie, dashijie) are title-dominated WHOLE blocks and must
+    stay standalone."""
+    changed = True
+    while changed:
+        changed = False
+        for i, c in enumerate(cells):
+            if min(c[2] - c[0], c[3] - c[1]) >= 600:
+                continue
+            win = ink[c[1]:c[3]:4, c[0]:c[2]:4]
+            total = int(win.sum())
+            if not total:
+                continue
+            m = np.zeros_like(win)
+            for x1, y1, x2, y2 in boxes:
+                xa = max(0, int((x1 - 20 - c[0]) / 4))
+                ya = max(0, int((y1 - 20 - c[1]) / 4))
+                xb = max(0, int((x2 + 20 - c[0]) / 4))
+                yb = max(0, int((y2 + 20 - c[1]) / 4))
+                m[ya:yb, xa:xb] = True
+            if int((win & m).sum()) / total < 0.6:
+                continue
+            best = None
+            for j, o in enumerate(cells):
+                if j == i:
+                    continue
+                if c[0] == o[2] or c[2] == o[0]:
+                    sh = min(c[3], o[3]) - max(c[1], o[1])
+                    if sh > 0 and (best is None or sh > best[1]):
+                        best = (j, sh)
+                if c[1] == o[3] or c[3] == o[1]:
+                    sh = min(c[2], o[2]) - max(c[0], o[0])
+                    if sh > 0 and (best is None or sh > best[1]):
+                        best = (j, sh)
+            if best:
+                o = cells[best[0]]
+                o[0], o[1] = min(c[0], o[0]), min(c[1], o[1])
+                o[2], o[3] = max(c[2], o[2]), max(c[3], o[3])
+                del cells[i]
+                changed = True
+                break
     cells.sort(key=lambda c: (c[1] // 300, -c[0]))
     return cells
 
@@ -277,17 +433,28 @@ def main() -> int:
     src = cv2.imread(args.image, cv2.IMREAD_GRAYSCALE)
     ink = src > 128
     mask_boxes = []
+    image_boxes = []
     if args.detections:
         dets = json.loads(Path(args.detections).read_text())
         s = args.detections_scale
-        mask_boxes = [[v * s for v in d["proxy_xyxy"]] for d in dets
-                      if d["cls"] in ("image", "doc_title")]
+        for d in dets:
+            if d["cls"] == "image":
+                image_boxes.append([v * s for v in d["proxy_xyxy"]])
+            elif d["cls"] == "doc_title":
+                # ornamental cartouche borders hug their title box but extend
+                # beyond the detection; near overlaps use coverage (+40),
+                # floating ornament lines use containment (+120, see
+                # title_contained)
+                x1, y1, x2, y2 = (v * s for v in d["proxy_xyxy"])
+                mask_boxes.append([x1 - 40, y1 - 40, x2 + 40, y2 + 40])
+                TITLE_BOXES.append([x1 - 120, y1 - 120, x2 + 120, y2 + 120])
 
-    accepted, counts = detect(src, ink, mask_boxes)
+    accepted, counts = detect(src, ink, mask_boxes, image_boxes)
     for ax in accepted:
         accepted[ax] = merge(ink, accepted[ax], ax)
     accepted = snap_all(accepted)
     cells = cells_from(accepted, src.shape)
+    cells = merge_boxed_cells(cells, ink, image_boxes + mask_boxes)
     print(dict(counts))
     print(f"rules: {len(accepted['h'])} h + {len(accepted['v'])} v | cells: {len(cells)}")
 

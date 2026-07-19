@@ -1,0 +1,150 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T06:34:42.560458+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-BF16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "spotting_json",
+    "prompt": "检测并识别图中所有的文字行，请按从上到下、从左到右的阅读顺序进行识别。 输出格式为 JSON 数组，每个元素必须包含：\"box\": [xmin, ymin, xmax, ymax]（坐标需归一化到 [0, 1000] 范围内）；\"text\": \"识别出的文字内容\"。 注意：请直接输出 JSON 数组，不要包含任何多余的描述性文字。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1,
+    "seed": 42,
+    "max_tokens": 2048,
+    "client_concurrency": 4
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C01_central_theatre.png",
+      "image_sha256": "e4bc1c4c72288ff9c1fbd7171eaccb13810300506f4c3de35237193a09f3047a",
+      "result": {
+        "elapsed_seconds": 0.38142212497768924,
+        "finish_reason": "stop",
+        "content": "[{\"box\": [88, 264, 879, 864], \"text\": \"中央大戲院\"}]",
+        "content_sha256": "c9b7152949ddb6317d4e1f1067a52de602c455749fb7ad3317c7fb76303fa280",
+        "usage": {
+          "completion_tokens": 27,
+          "prompt_tokens": 707,
+          "total_tokens": 734,
+          "prompt_tokens_details": {
+            "cached_tokens": 616
+          }
+        },
+        "timings": {
+          "cache_n": 616,
+          "prompt_n": 91,
+          "prompt_ms": 46.891,
+          "prompt_per_token_ms": 0.5152857142857142,
+          "prompt_per_second": 1940.6709176601055,
+          "predicted_n": 27,
+          "predicted_ms": 202.714,
+          "predicted_per_token_ms": 7.5079259259259254,
+          "predicted_per_second": 133.19257673372337
+        },
+        "response_id": "chatcmpl-QsGDxGgqWRhUuXVWjfmgSoec4rqduiTK"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C07_vertical_disagreement.png",
+      "image_sha256": "737bcc3cac0a77395d6a20ae446e076c5be12c8e900f507c6ee5d96f7561b0ee",
+      "result": {
+        "elapsed_seconds": 0.9291767919785343,
+        "finish_reason": "stop",
+        "content": "[{\"box\": [399, 61, 686, 1000], \"text\": \"茶餘酒後。對着嬌兒慈母。愛能情人。說用齊市\"}, {\"box\": [0, 0, 179, 1000], \"text\": \"昔語來。更可子音許多資計了。\"}]",
+        "content_sha256": "319821b7ad217829a31ef57adbab60adf694c213434d05822730dace4c48ed27",
+        "usage": {
+          "completion_tokens": 81,
+          "prompt_tokens": 400,
+          "total_tokens": 481,
+          "prompt_tokens_details": {
+            "cached_tokens": 309
+          }
+        },
+        "timings": {
+          "cache_n": 309,
+          "prompt_n": 91,
+          "prompt_ms": 43.432,
+          "prompt_per_token_ms": 0.4772747252747253,
+          "prompt_per_second": 2095.2293240007366,
+          "predicted_n": 81,
+          "predicted_ms": 797.26,
+          "predicted_per_token_ms": 9.842716049382716,
+          "predicted_per_second": 101.5979730577227
+        },
+        "response_id": "chatcmpl-DSkMQVFMgeVBA768AfZh99XXP8LqzKTP"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C08_vertical_degraded.png",
+      "image_sha256": "cb0d2b3c3022adfe09629a6eb39db4977f23f53e7f9c99aad1cdb6753c4cf70e",
+      "result": {
+        "elapsed_seconds": 0.5036349169677123,
+        "finish_reason": "stop",
+        "content": "[{\"box\": [262, 56, 637, 999], \"text\": \"觀這片○不僅悅且娛心○還可增長見識○因為\"}]",
+        "content_sha256": "66ba1afe35b21a6787a46088228eb062dab333b327d271f3b9e2e35e0b55a4fd",
+        "usage": {
+          "completion_tokens": 46,
+          "prompt_tokens": 424,
+          "total_tokens": 470,
+          "prompt_tokens_details": {
+            "cached_tokens": 333
+          }
+        },
+        "timings": {
+          "cache_n": 333,
+          "prompt_n": 91,
+          "prompt_ms": 43.328,
+          "prompt_per_token_ms": 0.47613186813186814,
+          "prompt_per_second": 2100.258493353028,
+          "predicted_n": 46,
+          "predicted_ms": 371.794,
+          "predicted_per_token_ms": 8.082478260869564,
+          "predicted_per_second": 123.72442804348645
+        },
+        "response_id": "chatcmpl-6e6THwqTc9gsDMNWBBGVOWZh9Uk0sNKi"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png",
+      "image_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
+      "result": {
+        "elapsed_seconds": 1.2871624999679625,
+        "finish_reason": "stop",
+        "content": "[{\"box\": [707, 41, 952, 984], \"text\": \"較上次更受歡迎、英皇時召霍臨宮中、與之談話、並請\"}, {\"box\": [420, 41, 657, 984], \"text\": \"其作畫、居約六七年、彼離英而遊歷、先至比利士之白\"}, {\"box\": [147, 41, 366, 984], \"text\": \"魯捨爾、大受當地藝術界之般待、後重至白塞爾、少居\"}]",
+        "content_sha256": "314b0c8598a27d723acccb6b3f5c233c716ba01f6300f40f734712aec1cb716d",
+        "usage": {
+          "completion_tokens": 140,
+          "prompt_tokens": 456,
+          "total_tokens": 596,
+          "prompt_tokens_details": {
+            "cached_tokens": 365
+          }
+        },
+        "timings": {
+          "cache_n": 365,
+          "prompt_n": 91,
+          "prompt_ms": 46.716,
+          "prompt_per_token_ms": 0.5133626373626373,
+          "prompt_per_second": 1947.9407483517425,
+          "predicted_n": 140,
+          "predicted_ms": 1108.6,
+          "predicted_per_token_ms": 7.918571428571428,
+          "predicted_per_second": 126.28540501533467
+        },
+        "response_id": "chatcmpl-zSsqPOitcbg43AxuEc0HxamHpgMKytke"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 1.2915611249627545,
+  "all_requests_stopped": true
+}

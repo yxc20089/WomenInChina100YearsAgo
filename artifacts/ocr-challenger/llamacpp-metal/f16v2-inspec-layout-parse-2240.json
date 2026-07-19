@@ -1,0 +1,61 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T16:04:16.941919+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-F16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "f3b4e8e2c7db5c7346b9f28059f7813a7c9b1ff3273434cf79be468a82c551ed",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "layout_parse",
+    "prompt": "提取文档图片中所有内容用markdown格式表示，表格用html格式表达，文档中公式用latex格式表示，请按照阅读顺序组织进行全文解析，并输出版式分析信息。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1.08,
+    "seed": 42,
+    "max_tokens": 16384,
+    "client_concurrency": 1,
+    "cache_prompt": false
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-2240.normal-polarity.png",
+      "image_sha256": "7ea968112adf723d3d4e4f769a749ceca64762f105d518e95c4df9c97ccf1f90",
+      "result": {
+        "elapsed_seconds": 10.768909042002633,
+        "finish_reason": "stop",
+        "content": "[{\"layout_type\":\"paragraph\",\"bbox\":\"(23,74),(97,74),(197,875),(197,875)}]\n\n[{\"layout_type\":\"doc_title\",\"bbox\":\"(106,74),(493,875),(505,875),(505,875)}]\n\n[{\"layout_type\":\"paragraph\",\"bbox\":\"(905,74),(961,74),(961,875),(905,875)}]\n\n[{\"layout_type\":\"para_title\",\"bbox\":\"(905,875),(961,875),(961,937),(905,937)}]\n\n[{\"layout_type\":\"para_title\",\"bbox\":\"(905,937),(961,937),(961,977),(905),(961)}]\n\n[{\"layout_type\":\"para_title\",\"bbox\":\"(905,978),(961,978),(961,988),(905),(961)}]\n\n[{\"layout_type\":\"para_title\",\"bbox\":\"(905,989),(961,989),(961,1000),(905),(1000)}]",
+        "content_sha256": "9b8f1ee0a6cd63654f6f59b9bbe772ddea5792e53bf9b30a1487e635e66f498a",
+        "usage": {
+          "completion_tokens": 190,
+          "prompt_tokens": 3476,
+          "total_tokens": 3666,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 3476,
+          "prompt_ms": 9334.267,
+          "prompt_per_token_ms": 2.685347238204833,
+          "prompt_per_second": 372.3913189969818,
+          "predicted_n": 190,
+          "predicted_ms": 1367.957,
+          "predicted_per_token_ms": 7.199773684210527,
+          "predicted_per_second": 138.89325468563703
+        },
+        "response_id": "chatcmpl-0Z2lvq07P6dWta9cthoBHi9F6IOwqjmW"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 10.776495166996028,
+  "all_requests_stopped": true
+}

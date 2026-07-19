@@ -1,0 +1,61 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T07:23:38.662733+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-BF16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "layout",
+    "prompt": "只检测这张报纸中由边框或明显空白分隔的主要文章、广告或图片版块，不要识别或输出文字。请直接输出JSON数组，每个元素只包含\"type\"和\"box\":[xmin,ymin,xmax,ymax]，坐标归一化到0到1000。不要输出文字行或单个字符的框。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1.08,
+    "seed": 42,
+    "max_tokens": 1024,
+    "client_concurrency": 1,
+    "cache_prompt": false
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-1120.png",
+      "image_sha256": "9a5458c65ab6c274138c02dd2b7442f688b0b64903103c458cf86707e5f2fc2d",
+      "result": {
+        "elapsed_seconds": 7.37796887505101,
+        "finish_reason": "length",
+        "content": "[{\"box\": [61, 56, 121, 73], \"text\": \"(四)日\"}, {\"box\": [129, 56, 188, 73], \"text\": \"日\"}, {\"box\": [196, 56, 255, 73], \"text\": \"日\"}, {\"box\": [264, 56, 323, 73], \"text\": \"期\"}, {\"box\": [331, 56, 390, 73], \"text\": \"期\"}, {\"box\": [398, 56, 457, 73], \"text\": \"期\"}, {\"box\": [465, 56, 524, 73], \"text\": \"期\"}, {\"box\": [532, 56, 591, 73], \"text\": \"期\"}, {\"box\": [599, 56, 657, 73], \"text\": \"期\"}, {\"box\": [665, 56, 724, 73], \"text\": \"期\"}, {\"box\": [731, 56, 790, 73], \"text\": \"年\"}, {\"box\": [797, 56, 856, 73], \"text\": \"十\"}, {\"box\": [864, 56, 923, 73], \"text\": \"十\"}, {\"box\": [932, 56, 982, 73], \"text\": \"十\"}, {\"box\": [26, 71, 79, 100], \"text\": \"院戯\"}, {\"box\": [31, 100, 79, 125], \"text\": \"天四岐逢夜\"}, {\"box\": [31, 125, 79, 148], \"text\": \"片史\"}, {\"box\": [79, 71, 139, 100], \"text\": \"戯影\"}, {\"box\": [79, 100, 139, 125], \"text\": \"影趣\"}, {\"box\": [139, 71, 199, 100], \"text\": \"登爾\"}, {\"box\": [139, 100, 199, 125], \"text\": \"滑婚\"}, {\"box\": [199, 71, 259, 100], \"text\": \"三十\"}, {\"box\": [199, 100, 259, 125], \"text\": \"二十\"}, {\"box\": [259, 71, 328, 100], \"text\": \"卡\"}, {\"box\": [259, 100, 328, 125], \"text\": \"新\"}, {\"box\": [328, 71, 397, 100], \"text\": \"爾\"}, {\"box\": [328, 100, 397, 125], \"text\": \"最\"}, {\"box\": [397, 71, 466, 100], \"text\": \"離\"}, {\"box\": [397, 100, 466, 125], \"text\": \"新\"}, {\"box\": [466, 71, 536, 100], \"text\": \"卡\"}, {\"box\": [466, 100, 536, 125], \"text\": \"世\"}, {\"box\": [536, 71, 606, 100], \"text\": \"卡\"}, {\"box\": [536, 100, 606, 125], \"text\": \"公\"}, {\"box\": [606, 71, 676, 100], \"text\": \"線\"}, {\"box\": [606, 100, 676, 125], \"text\": \"旁\"}, {\"box\": [676, 71, 746, 100], \"text\": \"卡\"}, {\"box\": [676, 100, 746, 125], \"text\": \"司\"}, {\"box\": [746, 71, 815, 100], \"text\": \"戲\"}, {\"box\": [746, 100, 815, 125], \"text\": \"電\"}, {\"box\": [815, 71, 884, 100], \"text\": \"電\"}, {\"box\": [884, 71, 952, 100], \"text\": \"電\"}, {\"box\": [26, 100, 79, 125], \"text\": \"院\"}, {\"box\": [26, 125, 79, 148], \"text\": \"戲\"}, {\"box\": [26, 148, 79, 170], \"text\": \"戲\"}, {\"box\": [79, 100, 139, 125], \"text\": \"戲影\"}, {\"box\": [79, 125, 139, 148], \"text\": \"影趣\"}, {\"box\": [139, 100, 199, 125], \"text\": \"登爾\"}, {\"box\": [139, 125, 199, ",
+        "content_sha256": "9d7176ee5b64fc1a57cbddaa53c4c0c028df6b20972a8f1680a08fc0c6f83095",
+        "usage": {
+          "completion_tokens": 1024,
+          "prompt_tokens": 954,
+          "total_tokens": 1978,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 954,
+          "prompt_ms": 1075.242,
+          "prompt_per_token_ms": 1.1270880503144654,
+          "prompt_per_second": 887.2421278186679,
+          "predicted_n": 1024,
+          "predicted_ms": 6269.417,
+          "predicted_per_token_ms": 6.1224775390625,
+          "predicted_per_second": 163.33257143367555
+        },
+        "response_id": "chatcmpl-0bwPVJdnLkgIzsrhfZhCTxHgewyVrzsK"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 7.3828461250523105,
+  "all_requests_stopped": false
+}

@@ -1,10 +1,12 @@
 # Historical-Chinese OCR and layout benchmark
 
-The selected learned OCR model is HunyuanOCR 1.5. BF16 llama.cpp/Metal is the
-locally qualified candidate for source-derived crop `spotting_json` requests;
-four independent slots increase batch throughput without sharing request
-history. Whole-page `layout_parse` failed at source and proxy resolution, so it
-is not an ingestion authority. Earlier Paddle/PP-OCR artifacts remain
+The selected learned OCR model is HunyuanOCR 1.5. F16 llama.cpp/Metal — an
+officially documented deployment path with a byte-reproducible official-recipe
+conversion — is the locally qualified candidate for source-derived crop
+`spotting_json` requests; four independent slots increase batch throughput
+without sharing request history. Whole-page `layout_parse` failed at source,
+in-spec 4K proxy, and smaller proxy resolution even with a 16,384-token
+budget, so it is not an ingestion authority. Earlier Paddle/PP-OCR artifacts remain
 comparison evidence, not an inference fallback.
 
 Launch a crop server with four split-KV slots. `--ctx-size` is the total across
@@ -12,9 +14,9 @@ slots, so 40,960 provides 10,240 tokens per request:
 
 ```bash
 .cache/hunyuan-llamacpp/llama.cpp/build/bin/llama-server \
-  --model .cache/hunyuan-llamacpp/gguf/hyocr-bf16.gguf \
+  --model .cache/hunyuan-llamacpp/gguf/hyocr-f16.gguf \
   --mmproj .cache/hunyuan-llamacpp/gguf/mmproj-hyocr-f16.gguf \
-  --alias HYVL-BF16 --host 127.0.0.1 --port 18080 \
+  --alias HYVL-F16 --host 127.0.0.1 --port 18080 \
   --ctx-size 40960 --parallel 4 --no-kv-unified \
   --cache-ram 0 --n-gpu-layers 99 --no-webui
 ```
@@ -24,11 +26,11 @@ Run the provenance-capturing client with concurrent, cache-free requests:
 ```bash
 .venv/bin/python experiments/ocr/llamacpp_hunyuan_smoke.py \
   --task spotting_json \
-  --model HYVL-BF16 \
+  --model HYVL-F16 \
   --concurrency 4 \
   --no-cache-prompt \
   --acceleration metal \
-  --model-gguf .cache/hunyuan-llamacpp/gguf/hyocr-bf16.gguf \
+  --model-gguf .cache/hunyuan-llamacpp/gguf/hyocr-f16.gguf \
   --mmproj-gguf .cache/hunyuan-llamacpp/gguf/mmproj-hyocr-f16.gguf \
   --llama-server .cache/hunyuan-llamacpp/llama.cpp/build/bin/llama-server \
   --output artifacts/ocr-challenger/llamacpp-metal/smoke.json \
@@ -40,6 +42,47 @@ parameters, concurrency, prompt-cache policy, finish reason, usage, timings,
 runtime build, and raw output. See
 [`hunyuanocr-1.5-hardware.md`](hunyuanocr-1.5-hardware.md) for the verified
 Metal placement, CPU control, conversion blocker, and deployment decision.
+
+## Region proposals and crop validation
+
+Region discovery is decomposed instead of asked of the OCR model whole-page
+(which fails; see the hardware note). Two diagnostic tools produce reviewable
+proposals on one page:
+
+```bash
+.venv/bin/python experiments/ocr/region_crop_validation.py \
+  --artifact artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json \
+  --image artifacts/lossless-pilot/images/v219/p0308.png \
+  --model-gguf .cache/hunyuan-llamacpp/gguf/hyocr-f16.gguf \
+  --mmproj-gguf .cache/hunyuan-llamacpp/gguf/mmproj-hyocr-f16.gguf \
+  --output artifacts/ocr-challenger/region-proposal/p0308-ppocrv6-crop-validation.json
+.venv/bin/python experiments/ocr/region_cell_geometry.py \
+  --artifact artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json \
+  --image artifacts/lossless-pilot/images/v219/p0308.png \
+  --proxy artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-2240.normal-polarity.png \
+  --overlay-out artifacts/ocr-challenger/region-proposal/p0308-cell-overlay.png \
+  --output artifacts/ocr-challenger/region-proposal/p0308-cell-geometry.json
+```
+
+`region_crop_validation.py` sends every text-detection box (padded, polarity
+inverted) through the qualified crop-level `spotting_json` path and records
+validity and fuzzy agreement per crop. `region_cell_geometry.py` extracts
+ruling-line separators from text-free ink, decomposes cells, clusters
+detector boxes into within-cell column proposals, and emits
+`display_or_figure` proposals from large missed-ink components — the display
+glyphs and illustrations that line detectors under-segment.
+`display_crop_validation.py` runs those display/column proposals through the
+same crop path. Its p0308 result fixes two boundaries: transcription must stay
+at line/display-crop scale (oversized column crops reproduce the whole-page
+repetition failure), and near-blank sliver proposals can elicit fluent
+off-domain hallucination that passes JSON/termination gates (one top-edge
+sliver returned a mathematics exercise), so proposal shape/ink filters and a
+CJK-content plausibility gate are required before any crop output is trusted.
+All outputs are `diagnostic_not_qualified` proposals for human review and
+never assert semantic article boundaries. Line-detector boxes come from the committed
+PP-OCRv6 pilot; a learned proposal model would require the same explicit
+contract amendment, pinned revision, and gold detection benchmark as any
+other component.
 
 The gold policy is
 [`docs/annotation-guidelines.md`](../../docs/annotation-guidelines.md). The

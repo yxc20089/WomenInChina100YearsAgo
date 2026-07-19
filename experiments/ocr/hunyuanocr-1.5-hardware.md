@@ -40,6 +40,25 @@ Useful upstream evidence:
 
 ## llama.cpp / Metal status
 
+Update 2026-07-19: the `tencent/HunyuanOCR` model card documents llama.cpp as
+an official deployment path for CPU/consumer-GPU/laptop environments, with a
+DFlash-adapted fork for PC-side speculative decoding. Tencent ships no
+pre-converted GGUF files, so self-conversion is the official recipe. The
+conversion has been re-derived and is byte-reproducible: with the local
+checkpoint verified against the pinned revision (`model.safetensors` SHA-256
+`632a1e082c4dd5a3284cf1ffcdba2fdaa06f435762c58c2f34aff0f3bd6c0249` matches the
+Hugging Face LFS record) and llama.cpp master `571d0d54` under its own pinned
+converter requirements (`transformers==4.57.6`), `convert_hf_to_gguf.py
+--outtype f16` reproduced `hyocr-f16.gguf`
+(`f3b4e8e2c7db5c7346b9f28059f7813a7c9b1ff3273434cf79be468a82c551ed`) and
+`mmproj-hyocr-f16.gguf`
+(`4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2`)
+byte-identically to the pair behind every recorded run. The F16 pair is now
+the canonical local serving artifact; the BF16 language GGUF was removed after
+the recorded byte-identical crop results. A spot-check on the reconverted pair
+reproduced C09 and the blank C11 behavior byte-for-byte
+([`f16v2-regression-c09-c11.json`](../../artifacts/ocr-challenger/llamacpp-metal/f16v2-regression-c09-c11.json)).
+
 BF16 language-model execution on Metal is locally demonstrated. Runtime and
 hardware do not decide OCR accuracy; qualification is based on the fixed
 historical crops, negative controls, and page outputs below.
@@ -132,8 +151,33 @@ tests separated Hunyuan's three relevant task/runtime cases:
   2,048 tokens, and its `spotting_json` response on a 480 x 700 dense viewport
   was malformed and repetitive.
 
+A 2026-07-19 in-spec follow-up removed the resolution and budget confounds.
+The model card specifies a 4K maximum image resolution and a 128K context, so
+the 6,176 x 8,960 full-page run was out-of-specification input, and the
+512–4,096-token caps confounded several earlier truncation verdicts. With the
+reconverted F16 pair, a single 32,768-token slot, and a 16,384-token budget:
+
+- `layout_parse` on a 2,647 x 3,840 normal-polarity proxy consumed 10,126
+  prompt tokens and produced 584 well-formed items whose union covers about
+  88% of the page — far above the earlier 22% — but the items are mostly
+  full-width horizontal bands rather than column-aware regions, the tail
+  degenerated into repeated invalid boxes, and the run hit the 16,384-token
+  cap without terminating;
+- `spotting_json` on the same proxy returned full-height column boxes with
+  garbled repeated text and also hit the cap;
+- `layout_parse` on the 1,544 x 2,240 proxy with the same 16,384 budget
+  stopped normally after only 190 tokens with zero well-formed items, so its
+  earlier failure was never a budget problem.
+
+Raw runs:
+[`f16v2-inspec-layout-parse-3840.json`](../../artifacts/ocr-challenger/llamacpp-metal/f16v2-inspec-layout-parse-3840.json),
+[`f16v2-inspec-spotting-3840.json`](../../artifacts/ocr-challenger/llamacpp-metal/f16v2-inspec-spotting-3840.json),
+[`f16v2-inspec-layout-parse-2240.json`](../../artifacts/ocr-challenger/llamacpp-metal/f16v2-inspec-layout-parse-2240.json).
+
 These are coverage and output-contract failures, not evidence that a geometric
-detector should silently replace Hunyuan. Until a Hunyuan region run satisfies
+detector should silently replace Hunyuan. Strict JSON, termination,
+coordinate, and coverage gates fail at every in-spec configuration tested on
+this officially supported path. Until a Hunyuan region run satisfies
 strict JSON, coordinate, coverage, and visual-review gates, page ingestion must
 abstain at region discovery.
 
@@ -179,20 +223,22 @@ Raw load-test artifacts are
 and
 [`bf16-no-cache-concurrency4-isolation16.json`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-no-cache-concurrency4-isolation16.json).
 
-### Conversion blocker
+### Conversion reproducibility
 
-The runnable GGUF pair was emitted only when Transformers 5.6.2 did not know
-the `hunyuan_vl` class and llama.cpp fell back to the raw `config.json`.
-Conversion then preserved the checkpoint's XD-RoPE metadata, but this fallback
-is not a sufficiently reviewed production provenance path.
-
-Repeating conversion with Tencent's required Transformers 5.13.0 recognized
-`HunYuanVLForConditionalGeneration`, normalized the checkpoint's `xdrope`
-configuration to dynamic RoPE, and failed llama.cpp's own assertion:
-`HunYuan dynamic RoPE scaling assumptions changed`. No 5.13 GGUF was produced.
-That unresolved conversion incompatibility remains a provenance risk. The
-observed whole-page and blank-input failures are separate output-quality
-risks; neither should be described as a CUDA-versus-Metal accuracy effect.
+An earlier session described the runnable GGUF pair as an unreviewed
+Transformers-fallback artifact. That interpretation is retracted. llama.cpp's
+converter pins `transformers==4.57.6` in its own
+`requirements-convert_hf_to_gguf.txt`; under that supported configuration the
+converter reads the checkpoint's raw `config.json`, takes the `xdrope` branch
+added with upstream HunyuanOCR support, and emits a byte-reproducible GGUF.
+Installing Transformers 5.13 instead lets `AutoConfig` normalize `xdrope` to
+dynamic RoPE, which trips the converter's vanilla-Hunyuan assertion (`HunYuan
+dynamic RoPE scaling assumptions changed`); this was reproduced live on
+2026-07-19 and is a converter environment mismatch, not a provenance defect of
+the produced GGUF. The observed whole-page and blank-input failures are
+output-quality findings on an officially supported deployment path; they are
+not conversion artifacts, and they still should not be described as a
+CUDA-versus-Metal accuracy effect.
 
 References:
 
@@ -201,9 +247,9 @@ References:
 - [Metal conversion follow-up](https://github.com/ggml-org/llama.cpp/commit/7bfe60fdf929ae569b81bbbce7ff7be5a1f8e354)
 - [pre-1.5 GGUF repository](https://huggingface.co/ggml-org/HunyuanOCR-GGUF)
 
-LM Studio and Ollama could package a qualified GGUF pair, but neither resolves
-the current 1.5 conversion or parity failure. They are front ends, not
-independent accuracy or acceleration backends.
+LM Studio and Ollama could package the qualified GGUF pair, but they are front
+ends, not independent accuracy or acceleration backends; crop-level parity
+with native Transformers beyond the fixed suite remains unmeasured.
 
 ## CUDA reference
 
@@ -224,8 +270,11 @@ See Tencent's [inference selection guide](https://github.com/Tencent-Hunyuan/Hun
 
 For now:
 
-1. use the BF16 Metal server with four independent slots as the qualified
-   execution candidate for padded crop-level `spotting_json` requests;
+1. use the F16 Metal server (`hyocr-f16.gguf` + `mmproj-hyocr-f16.gguf`, the
+   byte-reproducible official-recipe conversion) with four independent slots as
+   the qualified execution candidate for padded crop-level `spotting_json`
+   requests; the BF16 language GGUF was removed after recorded byte-identical
+   crop results;
 2. explicitly disable prompt-prefix caching for reproducible, history-free OCR
    requests;
 3. do not use whole-page Hunyuan `layout_parse`: it fails at both source and
@@ -234,8 +283,9 @@ For now:
    overlapping viewports may bound input size but do not themselves claim
    semantic boundaries, and the current Hunyuan region path remains
    unqualified because the tested outputs fail coverage or coordinate gates;
-5. keep official CUDA BF16 only as a cross-backend reference and keep the GGUF
-   conversion caveat attached to every run;
+5. keep official CUDA BF16 only as a cross-backend reference; the GGUF
+   conversion itself is byte-reproducible under llama.cpp's pinned converter
+   requirements and is no longer an open caveat;
 6. do not try DFlash until the crop pipeline is frozen, because speculative
    decoding cannot establish OCR correctness;
 7. never merge OCR text based on backend speed: retain source image/crop, raw

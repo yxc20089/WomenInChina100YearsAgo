@@ -1,0 +1,151 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T07:20:53.862238+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-BF16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "layout",
+    "prompt": "按照阅读顺序解析图中的版式信息。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1.08,
+    "seed": 42,
+    "max_tokens": 2048,
+    "client_concurrency": 4,
+    "cache_prompt": false
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/quadrants1120/q00.png",
+      "image_sha256": "56c6f153f41a30a73837a8e631092b901851cba57b7bee63f31bf9c95524f974",
+      "result": {
+        "elapsed_seconds": 9.868659708008636,
+        "finish_reason": "stop",
+        "content": "[{\"layout_type\":\"header\",\"bbox\":\"(47,98),(936,98),(936,122),(47,122)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(47,128),(446,128),(446,180),(47,180)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,182),(434,182),(434,204),(64,204)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,204),(410,204),(410,230),(64,230)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(47,233),(446,233),(446,302),(47,302)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,300),(434,300),(434,324),(64,324)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,327),(434,327),(434,348),(64,348)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,348),(434,348),(434,369),(64,369)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(64,370),(446,370),(446,430),(64,430)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,432),(434,432),(434,454),(64,454)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,456),(434,456),(434,478),(64,478)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,480),(434,480),(434,502),(64,502)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,503),(434,503),(434,526),(64,526)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,527),(434,527),(434,549),(64,549)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(127,530),(454,530),(454,566),(127,566)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,570),(434,570),(434,593),(64,593)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,595),(434,595),(434,618),(64,618)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,619),(434,619),(434,641),(64,641)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,642),(434,642),(434,665),(64,665)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(123,686),(454,686),(454,722),(123,722)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,723),(434,723),(434,747),(64,747)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,749),(434,749),(434,772),(64,772)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(127,775),(454,775),(454,808),(127,808)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,813),(434,813),(434,837),(64,837)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,838),(434,838),(434,861),(64,861)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,863),(434,863),(434,887),(64,887)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,888),(434,888),(434,912),(64,912)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,913),(434,913),(434,937),(64,937)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,938),(434,938),(434,961),(64,961)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,962),(434,962),(434,985),(64,985)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,986),(434,986),(434,1000),(64,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(914,175),(999,175),(999,210),(914,210)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(914,211),(999,211),(999,230),(914,230)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(914,231),(999,231),(999,250),(914,250)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(914,251),(999,251),(999,270),(914,270)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(482,252),(999,252),(999,370),(482,370)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(485,380),(999,380),(999,422),(485,422)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(494,427),(999,427),(999,520),(494,520)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(514,537),(999,537),(999,580),(514,580)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(514,591),(999,591),(999,624),(514,624)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(514,627),(999,627),(999,659),(514,659)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(514,661),(999,661),(999,684),(514,684)\"},{\"layout_type\":\"figure\",\"bbox\":\"(514,685),(999,685),(999,1000),(514,1000)\"}]",
+        "content_sha256": "2fa67e2c7acda93324ddb88dce361adbd2ef600de07fafb552f4e1d6f4f16209",
+        "usage": {
+          "completion_tokens": 1131,
+          "prompt_tokens": 300,
+          "total_tokens": 1431,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 300,
+          "prompt_ms": 1057.99,
+          "prompt_per_token_ms": 3.5266333333333333,
+          "prompt_per_second": 283.55655535496555,
+          "predicted_n": 1131,
+          "predicted_ms": 8717.461,
+          "predicted_per_token_ms": 7.707746242263483,
+          "predicted_per_second": 129.73961110924387
+        },
+        "response_id": "chatcmpl-bfEowgJcngX6EYLmTTFqYld9uySTmavv"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/quadrants1120/q01.png",
+      "image_sha256": "15f1a29aaf7400c244d3f8ac45c3796ac6279102ca8d19938981ae19b59335c4",
+      "result": {
+        "elapsed_seconds": 17.472683375002816,
+        "finish_reason": "length",
+        "content": "[{\"layout_type\":\"header\",\"bbox\":\"(0,100),(868,100),(868,115),(0,115)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(96,143),(495,143),(495,197),(96,197)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(96,297),(494,297),(494,366),(96,366)\"},{\"layout_type\":\"figure\",\"bbox\":\"(0,363),(51,363),(51,389),(0,389)\"},{\"layout_type\":\"figure_title\",\"bbox\":\"(0,390),(58,390),(58,414),(0,414)\"},{\"layout_type\":\"figure\",\"bbox\":\"(0,418),(58,418),(58,442),(0,442)\"},{\"layout_type\":\"figure_title\",\"bbox\":\"(0,443),(58,443),(58,464),(0,464)\"},{\"layout_type\":\"figure\",\"bbox\":\"(0,466),(58,466),(58,491),(0,491)\"},{\"layout_type\":\"figure_title\",\"bbox\":\"(0,493),(58,493),(58,514),(0,514)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(529,137),(927,137),(927,188),(529,188)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,192),(927,192),(927,254),(529,254)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,255),(927,255),(927,314),(529,314)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,314),(927,314),(927,391),(529,391)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,391),(927,391),(927,486),(529,486)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(557,491),(884,491),(884,519),(557,519)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(135,534),(452,534),(452,572),(135,572)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,537),(867,537),(867,603),(529,603)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,603),(867,603),(867,629),(529,629)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,630),(577,630),(577,648),(529,648)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,648),(577,648),(577,666),(529,666)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,666),(577,666),(577,684),(529,684)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,684),(577,684),(577,702),(529,702)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,702),(577,702),(577,720),(529,720)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,720),(577,720),(577,738),(529,738)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,738),(577,738),(577,756),(529,756)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,756),(577,756),(577,774),(529,774)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,774),(577,774),(577,792),(529,792)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,792),(577,792),(577,810),(529,810)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,810),(577,810),(577,828),(529,828)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,828),(577,828),(577,846),(529,846)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,846),(577,846),(577,864),(529,864)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,864),(577,864),(577,882),(529,882)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,882),(577,882),(577,900),(529,900)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,900),(577,900),(577,918),(529,918)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,918),(577,918),(577,936),(529,936)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,936),(577,936),(577,954),(529,954)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,954),(577,954),(577,972),(529,972)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,972),(577,972),(577,990),(529,990)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,990),(577,990),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(529,1000),(577,1000),(577,1000),(529,1000)\"},{\"layout_type\":\"",
+        "content_sha256": "4deb1b03b94b20a5793408ce105f16ab22731e169dda3246c2997a17d8837943",
+        "usage": {
+          "completion_tokens": 2048,
+          "prompt_tokens": 300,
+          "total_tokens": 2348,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 300,
+          "prompt_ms": 1058.19,
+          "prompt_per_token_ms": 3.5273000000000003,
+          "prompt_per_second": 283.5029626059592,
+          "predicted_n": 2048,
+          "predicted_ms": 16321.043,
+          "predicted_per_token_ms": 7.96925927734375,
+          "predicted_per_second": 125.48217659864018
+        },
+        "response_id": "chatcmpl-xBElrssRLN7Tg7YbWMCnErBA1eIRdoqz"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/quadrants1120/q10.png",
+      "image_sha256": "e3d2dbb891e2f5eff54f474127b445bdceb509d4675758ae55c393cb9fcbb31b",
+      "result": {
+        "elapsed_seconds": 17.471898167044856,
+        "finish_reason": "length",
+        "content": "[{\"layout_type\":\"header\",\"bbox\":\"(202,6),(231,6),(231,32),(202,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(238,6),(267,6),(267,32),(238,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(275,6),(304,6),(304,32),(275,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(311,6),(340,6),(340,32),(311,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(347,6),(377,6),(377,32),(347,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(383,6),(414,6),(414,32),(383,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(419,6),(449,6),(449,32),(419,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(455,6),(486,6),(486,32),(455,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(491,6),(523,6),(523,32),(491,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(527,6),(559,6),(559,32),(527,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(563,6),(595,6),(595,32),(563,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(599,6),(631,6),(631,32),(599,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(635,6),(667,6),(667,32),(635,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(671,6),(703,6),(703,32),(671,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(707,6),(738,6),(738,32),(707,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(742,6),(773,6),(773,32),(742,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(778,6),(809,6),(809,32),(778,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(814,6),(845,6),(845,32),(814,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(850,6),(881,6),(881,32),(850,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(886,6),(917,6),(917,32),(886,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(922,6),(953,6),(953,32),(922,32)\"},{\"layout_type\":\"header\",\"bbox\":\"(957,6),(988,6),(988,32),(957,32)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(42,210),(445,210),(445,298),(42,298)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,300),(100,300),(100,336),(42,336)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,337),(100,337),(100,372),(42,372)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,373),(100,373),(100,409),(42,409)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,409),(100,409),(100,444),(42,444)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,445),(100,445),(100,480),(42,480)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,480),(100,480),(100,516),(42,516)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,517),(100,517),(100,551),(42,551)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,551),(100,551),(100,586),(42,586)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,587),(100,587),(100,621),(42,621)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,621),(100,621),(100,656),(42,656)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,656),(100,656),(100,694),(42,694)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,694),(100,694),(100,729),(42,729)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,729),(100,729),(100,764),(42,764)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(42,764),(100,764),(100,799),(42,799)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(571,2),(695,2),(695,79),(571,79)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,138),(545,138),(545,175),(476,175)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,176),(545,176),(545,212),(476,212)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,212),(545,212),(545,248),(476,248)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,248),(545,248),(545,284),(476,284)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,284),(545,284),(545,320),(476,320)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,320),(545,320),(545,356),(476,356)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,356),(545,356),(545,392),(476,392)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,392),(545,392),(545,427),(476,427)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,427),(545,427),(545,462),(476,462)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,462),(545,462),(545,497),(476,497)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,497),(545,497),(545,532),(476,532)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,532),(545,532),(545,568),(476,568)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,568),(545,568),(545,594),(476,594)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,594),(545,594),(545,619),(476,619)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,619),(545,619),(545,644),(476,644)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,644),(545,644),(545,670),(476,670)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,670),(545,670),(545,696),(476,696)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,696),(545,696),(545,722),(476,722)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,722),(545,722),(545,748),(476,748)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,748),(545,748),(545,774),(476,774)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,774),(545,774),(545,800),(476,800)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,800),(545,800),(545,826),(476,826)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,826),(545,826),(545,852),(476,852)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,852),(545,852),(545,878),(476,878)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,878),(545,878),(545,904),(476,904)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,904),(545,904),(545,930),(476,930)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,930),(545,930),(545,956),(476,956)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,956),(545,956),(545,982),(476,982)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,982),(545,982),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(476,1000),(545,1000),(545,1000),(476,1000)\"},{\"layout",
+        "content_sha256": "192fffeaa8251917bc46bc38bf00bc4975685d48b8e3ab73b88c5d69ae3d6b6a",
+        "usage": {
+          "completion_tokens": 2048,
+          "prompt_tokens": 300,
+          "total_tokens": 2348,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 300,
+          "prompt_ms": 1058.093,
+          "prompt_per_token_ms": 3.526976666666667,
+          "prompt_per_second": 283.52895255899057,
+          "predicted_n": 2048,
+          "predicted_ms": 16321.063,
+          "predicted_per_token_ms": 7.96926904296875,
+          "predicted_per_second": 125.48202283147856
+        },
+        "response_id": "chatcmpl-6zHNIzLdVFXc72f9zrUIvy5awr9O6D11"
+      }
+    },
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/quadrants1120/q11.png",
+      "image_sha256": "2ba97626aaf005e498312245671d4399bf38f1ffe2b7e55abb1696ec6ef71fa4",
+      "result": {
+        "elapsed_seconds": 17.470783833006863,
+        "finish_reason": "length",
+        "content": "[{\"layout_type\":\"header\",\"bbox\":\"(0,0),(56,0),(56,69),(0,69)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,70),(56,70),(56,100),(0,100)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,100),(56,100),(56,130),(0,130)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,130),(56,130),(56,160),(0,160)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,160),(56,160),(56,190),(0,190)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,190),(56,190),(56,220),(0,220)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,220),(56,220),(56,250),(0,250)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,250),(56,250),(56,280),(0,280)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,280),(56,280),(56,310),(0,310)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,310),(56,310),(56,340),(0,340)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,340),(56,340),(56,370),(0,370)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,370),(56,370),(56,400),(0,400)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,400),(56,400),(56,430),(0,430)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,430),(56,430),(56,460),(0,460)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,460),(56,460),(56,490),(0,490)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,490),(56,490),(56,520),(0,520)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,520),(56,520),(56,550),(0,550)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,550),(56,550),(56,580),(0,580)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,580),(56,580),(56,610),(0,610)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,610),(56,610),(56,640),(0,640)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,640),(56,640),(56,670),(0,670)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,670),(56,670),(56,700),(0,700)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,700),(56,700),(56,730),(0,730)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,730),(56,730),(56,760),(0,760)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,760),(56,760),(56,790),(0,790)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,790),(56,790),(56,820),(0,820)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,820),(56,820),(56,850),(0,850)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,850),(56,850),(56,880),(0,880)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,880),(56,880),(56,910),(0,910)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,910),(56,910),(56,940),(0,940)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(718,93),(903,93),(903,124),(718,124)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,126),(56,126),(56,156),(0,156)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,156),(56,156),(56,186),(0,186)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,186),(56,186),(56,215),(0,215)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,215),(56,215),(56,245),(0,245)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,245),(56,245),(56,275),(0,275)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,275),(56,275),(56,305),(0,305)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,305),(56,305),(56,335),(0,335)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,335),(56,335),(56,365),(0,365)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,365),(56,365),(56,395),(0,395)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,395),(56,395),(56,424),(0,424)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,424),(56,424),(56,454),(0,454)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,454),(56,454),(56,484),(0,484)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,484),(56,484),(56,514),(0,514)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,514),(56,514),(56,544),(0,544)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,544),(56,544),(56,574),(0,574)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,574),(56,574),(56,604),(0,604)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,604),(56,604),(56,634),(0,634)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,634),(56,634),(56,664),(0,664)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,664),(56,664),(56,694),(0,694)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,694),(56,694),(56,724),(0,724)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,724),(56,724),(56,753),(0,753)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,753),(56,753),(56,783),(0,783)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,783),(56,783),(56,813),(0,813)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,813),(56,813),(56,843),(0,843)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,843),(56,843),(56,873),(0,873)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,873),(56,873),(56,902),(0,902)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,902),(56,902),(56,932),(0,932)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,932),(56,932),(56,962),(0,962)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(542,347),(914,347),(914,518),(542,518)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,520),(56,520),(56,550),(0,550)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,550),(56,550),(56,580),(0,580)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,580),(56,580),(56,610),(0,610)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,610),(56,610),(56,640),(0,640)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,640),(56,640),(56,670),(0,670)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,670),(56,670),(56,700),(0,700)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,700),(56,700),(56,730),(0,730)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,730),(56,730),(56,760),(0,760)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,760),(56,760),(56,790),(0,790)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,790),(56,790),(56,820),(0,820)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,820),(56,820),(56,850),(0,850)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,850),(56,850),(56,880),(0,880)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,880),(56,880),(56,910),(0,910)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,910),(56,910),(56,940),(0,940)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(542,580),(914,580),(914,698),(542,698)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,700),(56,700),(56,730),(0,730)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,730),(56,730),(56,760),(0,760)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,760),(56,760),(56,790),(0,790)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(0,790),(56,790),(",
+        "content_sha256": "02d8ece41cffd79f285a1e182b6cba02e6198ea2dbae32fc84fc4d8a95d23ace",
+        "usage": {
+          "completion_tokens": 2048,
+          "prompt_tokens": 300,
+          "total_tokens": 2348,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 300,
+          "prompt_ms": 1058.296,
+          "prompt_per_token_ms": 3.5276533333333333,
+          "prompt_per_second": 283.47456666187907,
+          "predicted_n": 2048,
+          "predicted_ms": 16321.001,
+          "predicted_per_token_ms": 7.96923876953125,
+          "predicted_per_second": 125.48249951090622
+        },
+        "response_id": "chatcmpl-22x174ZVVYZRref6pYqXtjPctpgAGPqF"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 17.47858004196314,
+  "all_requests_stopped": false
+}

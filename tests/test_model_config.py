@@ -10,6 +10,41 @@ from wic_history.model_config import (
 )
 
 
+OPENROUTER_SEMANTIC_SECTION = """\
+[semantic]
+provider = "openrouter"
+base_url = "https://openrouter.ai/api/v1"
+served_model = "z-ai/glm-4.6v"
+model_name = "zai-org/GLM-4.6V"
+api_key_environment_variable = "OPENROUTER_API_KEY"
+model_revision_status = "not_available"
+weight_hash_status = "not_available"
+quantization_status = "not_disclosed_by_provider"
+thinking = false
+temperature = 0.0
+seed = 42
+context_length = 131072
+max_output_tokens = 4096
+timeout_seconds = 120.0
+structured_output = "openai_response_format_json_schema"
+
+"""
+
+
+def _write_openrouter_configuration(
+    tmp_path: Path, mutate=lambda section: section
+) -> Path:
+    source = Path("config/pipeline-models.toml").read_text(encoding="utf-8")
+    start = source.index("[semantic]")
+    end = source.index("[retrieval.passage_embedding]")
+    path = tmp_path / "openrouter-models.toml"
+    path.write_text(
+        source[:start] + mutate(OPENROUTER_SEMANTIC_SECTION) + source[end:],
+        encoding="utf-8",
+    )
+    return path
+
+
 def test_default_configuration_has_one_pinned_ocr_and_layout_model() -> None:
     source = Path("config/pipeline-models.toml").read_text(encoding="utf-8")
     configuration = load_pipeline_model_configuration()
@@ -65,6 +100,90 @@ def test_configuration_rejects_unpinned_revision_or_prompt(
     path = tmp_path / "models.toml"
     path.write_text(source.replace(old, new, 1), encoding="utf-8")
 
+    with pytest.raises(ValidationError):
+        load_pipeline_model_configuration(path)
+
+
+def test_openrouter_semantic_provider_records_unavailable_provenance(
+    tmp_path: Path,
+) -> None:
+    configuration = load_pipeline_model_configuration(
+        _write_openrouter_configuration(tmp_path)
+    )
+    semantic = configuration.semantic
+
+    assert semantic.provider == "openrouter"
+    assert semantic.base_url == "https://openrouter.ai/api/v1"
+    assert semantic.served_model == "z-ai/glm-4.6v"
+    assert semantic.api_key_environment_variable == "OPENROUTER_API_KEY"
+    # Hosted routing exposes no immutable revision or weight hashes; the
+    # configuration must say so explicitly instead of fabricating them.
+    identity = semantic.provenance_identity()
+    assert identity["model_revision"] == "not_available"
+    assert identity["weight_hashes"] == "not_available"
+    assert identity["quantization"] == "not_disclosed_by_provider"
+    assert not hasattr(semantic, "ollama_manifest_digest")
+    assert not hasattr(semantic, "runtime_executable")
+
+
+def test_ollama_semantic_identity_keeps_exact_local_provenance() -> None:
+    identity = load_pipeline_model_configuration().semantic.provenance_identity()
+
+    assert identity["provider"] == "ollama"
+    assert identity["served_model"] == "qwen3.5:4b"
+    assert identity["ollama_manifest_digest"].startswith("sha256:")
+    assert identity["model_blob_sha256"].startswith("sha256:")
+
+
+@pytest.mark.parametrize(
+    "old,new",
+    [
+        # Any endpoint other than the pinned HTTPS OpenRouter origin is refused.
+        (
+            'base_url = "https://openrouter.ai/api/v1"',
+            'base_url = "http://openrouter.ai/api/v1"',
+        ),
+        (
+            'base_url = "https://openrouter.ai/api/v1"',
+            'base_url = "https://models.example/v1"',
+        ),
+        # Claiming a pinned revision the provider cannot expose is fabrication.
+        (
+            'model_revision_status = "not_available"',
+            'model_revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"\n'
+            'model_revision_status = "not_available"',
+        ),
+        (
+            'weight_hash_status = "not_available"',
+            'weight_hash_status = "verified"',
+        ),
+        # The API key belongs in the environment, never in configuration.
+        (
+            'api_key_environment_variable = "OPENROUTER_API_KEY"',
+            'api_key = "sk-or-verysecret"\n'
+            'api_key_environment_variable = "OPENROUTER_API_KEY"',
+        ),
+    ],
+)
+def test_openrouter_semantic_rejects_unpinned_or_fabricated_fields(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    path = _write_openrouter_configuration(
+        tmp_path, mutate=lambda section: section.replace(old, new, 1)
+    )
+    with pytest.raises(ValidationError):
+        load_pipeline_model_configuration(path)
+
+
+def test_semantic_provider_field_admits_only_known_providers(
+    tmp_path: Path,
+) -> None:
+    path = _write_openrouter_configuration(
+        tmp_path,
+        mutate=lambda section: section.replace(
+            'provider = "openrouter"', 'provider = "openai"', 1
+        ),
+    )
     with pytest.raises(ValidationError):
         load_pipeline_model_configuration(path)
 

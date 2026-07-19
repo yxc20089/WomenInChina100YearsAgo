@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Generic, Literal, TypeVar
@@ -14,9 +15,16 @@ from uuid import UUID
 from pydantic import Field, ValidationError, model_validator
 
 from .evidence import EntityType, Polygon, StrictModel
-from .generation import OpenAICompatibleGenerator, TextCompletion
+from .generation import (
+    OpenAICompatibleGenerator,
+    TextCompletion,
+    _strict_environment_boolean,
+)
 from .model_config import load_pipeline_model_configuration
 from .ner_structured import validate_local_artifact, verify_ollama_model_digest
+
+
+REMOTE_CONSENT_ENVIRONMENT_VARIABLE = "LLM_ALLOW_REMOTE"
 
 
 T = TypeVar("T", bound=StrictModel)
@@ -415,12 +423,17 @@ class StructuredSemanticClient:
             {"role": "user", "content": user_content},
         ]
         prompt_sha256 = hashlib.sha256(_canonical_bytes(messages)).hexdigest()
-        completion = self.generator.complete(
-            messages,
-            response_format=response_format,
-            top_p=1,
-            reasoning_effort="none",
-        )
+        try:
+            completion = self.generator.complete(
+                messages,
+                response_format=response_format,
+                top_p=1,
+                reasoning_effort="none",
+            )
+        except RuntimeError as exc:
+            # One failed provider call abstains; there is no retry and no
+            # fallback to another provider or model.
+            raise SemanticAbstention(f"{task} provider call failed") from exc
         if isinstance(completion, str):
             completion = TextCompletion(content=completion)
         if completion.finish_reason not in {None, "stop"}:
@@ -840,9 +853,43 @@ class StructuredSemanticClient:
 def build_verified_semantic_client(
     model_config_path: str | None = None,
 ) -> StructuredSemanticClient:
-    """Use the one central Qwen/Ollama selection and refuse runtime drift."""
+    """Use the one central semantic selection and refuse runtime drift.
+
+    The provider comes only from ``config/pipeline-models.toml``. The local
+    Ollama path verifies the runtime executable and model digests before any
+    call; the OpenRouter path cannot verify weights, so it instead requires
+    explicit remote data-egress consent plus an environment-held API key, and
+    its provenance records revision/weight hashes as explicitly unavailable.
+    """
     configuration = load_pipeline_model_configuration(model_config_path)
     model = configuration.semantic
+    if model.provider == "openrouter":
+        if not _strict_environment_boolean(REMOTE_CONSENT_ENVIRONMENT_VARIABLE):
+            raise RuntimeError(
+                "semantic provider 'openrouter' sends reviewed text and page "
+                "images to a remote endpoint; set "
+                f"{REMOTE_CONSENT_ENVIRONMENT_VARIABLE}=true to consent"
+            )
+        api_key = os.environ.get(model.api_key_environment_variable)
+        if not api_key:
+            raise RuntimeError(
+                f"{model.api_key_environment_variable} is required for the "
+                "openrouter semantic provider; the key is read from the "
+                "environment and never written into configuration or artifacts"
+            )
+        generator = OpenAICompatibleGenerator(
+            model.base_url,
+            model.served_model,
+            api_key=api_key,
+            model_revision=model.model_revision_status,
+            timeout_seconds=model.timeout_seconds,
+            max_output_tokens=model.max_output_tokens,
+            seed=model.seed,
+            allow_remote=True,
+        )
+        return StructuredSemanticClient(
+            generator, model_configuration_sha256=configuration.sha256
+        )
     validate_local_artifact(model.runtime_executable, model.runtime_executable_sha256)
     generator = OpenAICompatibleGenerator(
         model.base_url,

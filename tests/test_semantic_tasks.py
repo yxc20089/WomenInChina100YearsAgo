@@ -3,11 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
 
 from wic_history.generation import TextCompletion
+from wic_history.model_config import OpenRouterSemanticModel
 from wic_history.semantic_tasks import (
     IdentityPairResponse,
     LocalMentionInput,
@@ -17,6 +19,7 @@ from wic_history.semantic_tasks import (
     SemanticAbstention,
     SemanticTextSegmentInput,
     StructuredSemanticClient,
+    build_verified_semantic_client,
 )
 
 
@@ -383,6 +386,77 @@ def test_identity_decisions_require_evidence_for_same_or_different() -> None:
             supporting_evidence_ids=[],
             contradiction_evidence_ids=[],
         )
+
+
+def _openrouter_semantic_model() -> OpenRouterSemanticModel:
+    return OpenRouterSemanticModel(
+        provider="openrouter",
+        base_url="https://openrouter.ai/api/v1",
+        served_model="z-ai/glm-4.6v",
+        model_name="zai-org/GLM-4.6V",
+        api_key_environment_variable="OPENROUTER_API_KEY",
+        model_revision_status="not_available",
+        weight_hash_status="not_available",
+        quantization_status="not_disclosed_by_provider",
+        thinking=False,
+        temperature=0.0,
+        seed=42,
+        context_length=131072,
+        max_output_tokens=4096,
+        timeout_seconds=120.0,
+        structured_output="openai_response_format_json_schema",
+    )
+
+
+def test_openrouter_client_requires_explicit_consent_then_environment_key(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "wic_history.semantic_tasks.load_pipeline_model_configuration",
+        lambda _path=None: SimpleNamespace(
+            semantic=_openrouter_semantic_model(), sha256="a" * 64
+        ),
+    )
+    monkeypatch.delenv("LLM_ALLOW_REMOTE", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="LLM_ALLOW_REMOTE"):
+        build_verified_semantic_client()
+
+    monkeypatch.setenv("LLM_ALLOW_REMOTE", "true")
+    with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
+        build_verified_semantic_client()
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-local-test")
+    client = build_verified_semantic_client()
+    generator = client.generator
+    assert generator.base_url == "https://openrouter.ai/api/v1"
+    assert generator.model == "z-ai/glm-4.6v"
+    assert generator.api_key == "sk-or-local-test"
+    # Provenance stays honest: no fabricated immutable revision.
+    assert generator.model_identity == "z-ai/glm-4.6v@not_available"
+    assert client.model_configuration_sha256 == "a" * 64
+
+
+class FailingGenerator:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def complete(self, messages, **kwargs):
+        self.calls += 1
+        raise RuntimeError("LLM endpoint request failed: timed out")
+
+
+def test_provider_transport_failure_abstains_without_any_retry(
+    tmp_path: Path,
+) -> None:
+    segments, images = _multimodal_context(tmp_path)
+    generator = FailingGenerator()
+    client = StructuredSemanticClient(generator, model_configuration_sha256="a" * 64)
+    with pytest.raises(SemanticAbstention, match="provider call failed"):
+        client.extract_evidence(
+            coherent_text="霍爾平曾赴上海。", segments=segments, page_images=images
+        )
+    assert generator.calls == 1
 
 
 def test_identity_pair_cannot_cite_unsupplied_evidence() -> None:

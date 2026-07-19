@@ -6,7 +6,7 @@ import hashlib
 import os
 import tomllib
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -67,7 +67,9 @@ class HunyuanOCRModel(FrozenConfiguration):
             raise ValueError("layout_prompt must equal the pinned official prompt")
         return self
 
-class SemanticModel(FrozenConfiguration):
+class OllamaSemanticModel(FrozenConfiguration):
+    """Local pinned semantic deployment with verifiable runtime and weights."""
+
     provider: Literal["ollama"]
     base_url: str = Field(pattern=r"^https?://")
     served_model: str = Field(min_length=1)
@@ -95,6 +97,72 @@ class SemanticModel(FrozenConfiguration):
     expected_canary_raw_output_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     prompt_schema_revision: str = Field(pattern=r"^[0-9a-f]{64}$")
     response_format_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+    def provenance_identity(self) -> dict[str, Any]:
+        """Exact recorded identity for run provenance and receipts."""
+        return {
+            "provider": self.provider,
+            "endpoint": self.base_url,
+            "served_model": self.served_model,
+            "model_name": self.model_name,
+            "model_revision": self.model_revision,
+            "ollama_manifest_digest": self.ollama_manifest_digest,
+            "model_blob_sha256": self.model_blob_sha256,
+            "quantization": self.quantization,
+            "runtime_name": self.runtime_name,
+            "runtime_version": self.runtime_version,
+            "acceleration": self.acceleration,
+        }
+
+
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+
+class OpenRouterSemanticModel(FrozenConfiguration):
+    """Hosted OpenAI-compatible semantic deployment behind OpenRouter.
+
+    OpenRouter exposes neither an immutable model revision nor weight hashes,
+    so those provenance fields are pinned to explicit unavailability markers.
+    The API key is read from the environment only and is never part of this
+    configuration, artifacts, or logs.
+    """
+
+    provider: Literal["openrouter"]
+    base_url: Literal["https://openrouter.ai/api/v1"]
+    served_model: str = Field(pattern=r"^[a-z0-9-]+/[A-Za-z0-9.:_-]+$")
+    model_name: str = Field(min_length=1)
+    api_key_environment_variable: Literal["OPENROUTER_API_KEY"]
+    model_revision_status: Literal["not_available"]
+    weight_hash_status: Literal["not_available"]
+    quantization_status: Literal["not_disclosed_by_provider"]
+    thinking: Literal[False]
+    temperature: Literal[0.0]
+    seed: int
+    context_length: int = Field(ge=1024)
+    max_output_tokens: int = Field(gt=0, le=32768)
+    timeout_seconds: float = Field(gt=0, le=300)
+    structured_output: Literal["openai_response_format_json_schema"]
+
+    def provenance_identity(self) -> dict[str, Any]:
+        """Honest recorded identity: unavailable fields stay explicitly so."""
+        return {
+            "provider": self.provider,
+            "endpoint": self.base_url,
+            "served_model": self.served_model,
+            "model_name": self.model_name,
+            "model_revision": self.model_revision_status,
+            "weight_hashes": self.weight_hash_status,
+            "quantization": self.quantization_status,
+            "runtime_name": self.provider,
+            "runtime_version": "not_available",
+            "acceleration": "not_applicable",
+        }
+
+
+SemanticModel = Annotated[
+    OllamaSemanticModel | OpenRouterSemanticModel,
+    Field(discriminator="provider"),
+]
 
 
 class EmbeddingModel(FrozenConfiguration):

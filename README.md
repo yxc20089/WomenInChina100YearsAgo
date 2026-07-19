@@ -170,6 +170,19 @@ combined mention/event extraction, then local ID-bounded resolution. Both calls
 receive hash-verified page images. Local clusters remain candidate evidence;
 there is no canonical entity merge.
 
+The `[semantic]` section of `config/pipeline-models.toml` is the only place
+that selects the provider for these two calls. The pinned production selection
+is `provider = "ollama"` (local Qwen3.5-4B with verified runtime executable and
+model digests). `provider = "openrouter"` is also supported under the same
+two-call contract: it requires `OPENROUTER_API_KEY` in the environment plus the
+explicit `LLM_ALLOW_REMOTE=true` data-egress consent, uses HTTPS with redirects
+refused, and keeps the same strict JSON-schema whole-response validation. Since
+OpenRouter exposes no immutable model revision or weight hashes, those
+provenance fields are recorded as explicitly unavailable, never fabricated. A
+failed or invalid response abstains; there is no cross-provider or cross-model
+fallback. The Ollama-verified ingestion NER and entity-link stages still
+require the local provider and refuse to plan without it.
+
 ## Local evidence and retrieval stack
 
 Copy `.env.example` to an untracked `.env` and replace its development passwords, then start the selected databases:

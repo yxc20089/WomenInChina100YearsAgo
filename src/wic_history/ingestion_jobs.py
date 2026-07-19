@@ -36,6 +36,15 @@ AGGREGATE_DEPENDENCY_STAGE = {
 }
 PIPELINE_MODELS = load_pipeline_model_configuration()
 SEMANTIC_MODEL = PIPELINE_MODELS.semantic
+# The ingestion NER and entity-link stages verify a local runtime executable
+# and Ollama model digest before every run. A hosted semantic provider exposes
+# no such verifiable local runtime, so these stage profiles exist only when the
+# pinned provider is ollama; planning them otherwise refuses explicitly.
+LOCAL_SEMANTIC_REQUIREMENT = (
+    "Ingestion NER and entity-link stages require the local Ollama semantic "
+    "provider pinned in config/pipeline-models.toml; provider "
+    f"'{SEMANTIC_MODEL.provider}' exposes no verifiable local runtime."
+)
 # Retained only to validate and replay already-published legacy artifacts. New
 # production plans cannot select this profile through resolve_stage_configuration.
 GLINER_NER_CONFIGURATION: dict[str, Any] = {
@@ -55,44 +64,71 @@ GLINER_NER_CONFIGURATION: dict[str, Any] = {
     "output_root": "artifacts/ingestion-ner",
     "status": "candidate_only",
 }
-QWEN_NER_CONFIGURATION: dict[str, Any] = {
-    "adapter": "structured_generation",
-    "model": SEMANTIC_MODEL.model_name,
-    "revision": SEMANTIC_MODEL.model_revision,
-    "license": "Apache-2.0",
-    "base_url": SEMANTIC_MODEL.base_url,
-    "served_model": SEMANTIC_MODEL.served_model,
-    "runtime_name": SEMANTIC_MODEL.runtime_name,
-    "runtime_version": SEMANTIC_MODEL.runtime_version,
-    "runtime_executable": str(SEMANTIC_MODEL.runtime_executable),
-    "runtime_executable_sha256": SEMANTIC_MODEL.runtime_executable_sha256,
-    "ollama_manifest_digest": SEMANTIC_MODEL.ollama_manifest_digest,
-    "model_blob_sha256": SEMANTIC_MODEL.model_blob_sha256,
-    "quantization": SEMANTIC_MODEL.quantization,
-    "device": "local-runtime",
-    "seed": SEMANTIC_MODEL.seed,
-    "max_output_tokens": SEMANTIC_MODEL.max_output_tokens,
-    "timeout_seconds": SEMANTIC_MODEL.timeout_seconds,
-    "schema_canary_repetitions": SEMANTIC_MODEL.schema_canary_repetitions,
-    "expected_canary_raw_output_sha256": SEMANTIC_MODEL.expected_canary_raw_output_sha256,
-    "code_revision": "1431e3ab024dca34c9f51c33a7b4294eb715a603",
-    "prompt_schema_revision": SEMANTIC_MODEL.prompt_schema_revision,
-    "response_format_sha256": SEMANTIC_MODEL.response_format_sha256,
-    "region_chunk_size": 8,
-    "request_concurrency": 1,
-    "endpoint_schema_enforcement": True,
-    "validation_mode": "strict_post_validation_whole_response_abstention",
-    "acceleration": SEMANTIC_MODEL.acceleration,
-    "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
-    "ontology_version": "women-history-zh-v1",
-    "input_variant": "raw_ocr",
-    "max_regions": None,
-    "dataset_id": None,
-    "split_id": None,
-    "output_root": "artifacts/ingestion-ner",
-    "status": "candidate_only",
-}
-DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
+QWEN_NER_CONFIGURATION: dict[str, Any] | None = None
+_ENTITY_LINK_CONFIGURATION: dict[str, Any] | None = None
+if SEMANTIC_MODEL.provider == "ollama":
+    QWEN_NER_CONFIGURATION = {
+        "adapter": "structured_generation",
+        "model": SEMANTIC_MODEL.model_name,
+        "revision": SEMANTIC_MODEL.model_revision,
+        "license": "Apache-2.0",
+        "base_url": SEMANTIC_MODEL.base_url,
+        "served_model": SEMANTIC_MODEL.served_model,
+        "runtime_name": SEMANTIC_MODEL.runtime_name,
+        "runtime_version": SEMANTIC_MODEL.runtime_version,
+        "runtime_executable": str(SEMANTIC_MODEL.runtime_executable),
+        "runtime_executable_sha256": SEMANTIC_MODEL.runtime_executable_sha256,
+        "ollama_manifest_digest": SEMANTIC_MODEL.ollama_manifest_digest,
+        "model_blob_sha256": SEMANTIC_MODEL.model_blob_sha256,
+        "quantization": SEMANTIC_MODEL.quantization,
+        "device": "local-runtime",
+        "seed": SEMANTIC_MODEL.seed,
+        "max_output_tokens": SEMANTIC_MODEL.max_output_tokens,
+        "timeout_seconds": SEMANTIC_MODEL.timeout_seconds,
+        "schema_canary_repetitions": SEMANTIC_MODEL.schema_canary_repetitions,
+        "expected_canary_raw_output_sha256": SEMANTIC_MODEL.expected_canary_raw_output_sha256,
+        "code_revision": "1431e3ab024dca34c9f51c33a7b4294eb715a603",
+        "prompt_schema_revision": SEMANTIC_MODEL.prompt_schema_revision,
+        "response_format_sha256": SEMANTIC_MODEL.response_format_sha256,
+        "region_chunk_size": 8,
+        "request_concurrency": 1,
+        "endpoint_schema_enforcement": True,
+        "validation_mode": "strict_post_validation_whole_response_abstention",
+        "acceleration": SEMANTIC_MODEL.acceleration,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
+        "ontology_version": "women-history-zh-v1",
+        "input_variant": "raw_ocr",
+        "max_regions": None,
+        "dataset_id": None,
+        "split_id": None,
+        "output_root": "artifacts/ingestion-ner",
+        "status": "candidate_only",
+    }
+    _ENTITY_LINK_CONFIGURATION = {
+        "engine": "exact-alias+character-similarity+qwen-candidate-bound",
+        "candidate_generator_revision": "1",
+        "top_k": 5,
+        "fuzzy_threshold": 0.72,
+        "reviewed_entities_only": True,
+        "nil_required": True,
+        "resolver": "qwen",
+        "resolver_base_url": SEMANTIC_MODEL.base_url,
+        "resolver_served_model": SEMANTIC_MODEL.served_model,
+        "resolver_model": SEMANTIC_MODEL.model_name,
+        "resolver_revision": SEMANTIC_MODEL.model_revision,
+        "resolver_runtime": SEMANTIC_MODEL.runtime_name,
+        "resolver_runtime_version": SEMANTIC_MODEL.runtime_version,
+        "resolver_ollama_manifest_digest": SEMANTIC_MODEL.ollama_manifest_digest,
+        "resolver_quantization": SEMANTIC_MODEL.quantization,
+        "resolver_seed": SEMANTIC_MODEL.seed,
+        "resolver_max_output_tokens": SEMANTIC_MODEL.max_output_tokens,
+        "resolver_timeout_seconds": SEMANTIC_MODEL.timeout_seconds,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
+        "identity_mutation": False,
+        "output_root": "artifacts/ingestion-links",
+        "status": "candidate_only",
+    }
+DEFAULT_CONFIGURATION: dict[str, dict[str, Any] | None] = {
     "render_lossless": {
         "output_root": "artifacts/ingestion-pages",
         "evidence_tier": "unreviewed_input",
@@ -128,30 +164,7 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "output_root": "artifacts/ingestion-embedding",
     },
     "ner": QWEN_NER_CONFIGURATION,
-    "entity_link": {
-        "engine": "exact-alias+character-similarity+qwen-candidate-bound",
-        "candidate_generator_revision": "1",
-        "top_k": 5,
-        "fuzzy_threshold": 0.72,
-        "reviewed_entities_only": True,
-        "nil_required": True,
-        "resolver": "qwen",
-        "resolver_base_url": SEMANTIC_MODEL.base_url,
-        "resolver_served_model": SEMANTIC_MODEL.served_model,
-        "resolver_model": SEMANTIC_MODEL.model_name,
-        "resolver_revision": SEMANTIC_MODEL.model_revision,
-        "resolver_runtime": SEMANTIC_MODEL.runtime_name,
-        "resolver_runtime_version": SEMANTIC_MODEL.runtime_version,
-        "resolver_ollama_manifest_digest": SEMANTIC_MODEL.ollama_manifest_digest,
-        "resolver_quantization": SEMANTIC_MODEL.quantization,
-        "resolver_seed": SEMANTIC_MODEL.seed,
-        "resolver_max_output_tokens": SEMANTIC_MODEL.max_output_tokens,
-        "resolver_timeout_seconds": SEMANTIC_MODEL.timeout_seconds,
-        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
-        "identity_mutation": False,
-        "output_root": "artifacts/ingestion-links",
-        "status": "candidate_only",
-    },
+    "entity_link": _ENTITY_LINK_CONFIGURATION,
     "search_projection": {
         "alias": "wic-regions-current",
         "index_prefix": "wic-regions-batch",
@@ -177,6 +190,8 @@ def resolve_stage_configuration(
     """Apply overrides to the selected adapter profile without cross-adapter leakage."""
     supplied = overrides or {}
     if stage == "ner":
+        if QWEN_NER_CONFIGURATION is None:
+            raise ValueError(LOCAL_SEMANTIC_REQUIREMENT)
         adapter = supplied.get("adapter", QWEN_NER_CONFIGURATION["adapter"])
         if adapter != "structured_generation":
             raise ValueError(
@@ -189,6 +204,8 @@ def resolve_stage_configuration(
             base = DEFAULT_CONFIGURATION[stage]
         except KeyError as exc:
             raise ValueError(f"Unsupported stage configuration: {stage}") from exc
+        if base is None:
+            raise ValueError(LOCAL_SEMANTIC_REQUIREMENT)
     return {**base, **supplied}
 
 

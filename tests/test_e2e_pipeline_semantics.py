@@ -58,14 +58,21 @@ def test_runner_uses_exactly_extraction_then_resolution_for_mentions(
             assert kwargs["page_images"] == ["immutable-image"]
             return resolution
 
+    semantic_identity = {
+        "provider": "ollama",
+        "endpoint": "http://127.0.0.1:11434/v1",
+        "served_model": "qwen3.5:4b",
+        "model_name": "Qwen3.5-4B",
+        "model_revision": "revision",
+        "ollama_manifest_digest": "sha256:" + "e" * 64,
+        "model_blob_sha256": "sha256:" + "e" * 64,
+        "quantization": "Q4_K_M",
+        "runtime_name": "ollama",
+        "runtime_version": "0.15.4",
+        "acceleration": "none",
+    }
     semantic_config = SimpleNamespace(
-        model_name="Qwen3.5-4B",
-        model_revision="revision",
-        served_model="qwen3.5:4b",
-        ollama_manifest_digest="sha256:" + "e" * 64,
-        quantization="Q4_K_M",
-        runtime_version="0.15.4",
-        acceleration="metal",
+        provenance_identity=lambda: dict(semantic_identity),
     )
     monkeypatch.setattr(
         "wic_history.e2e_pipeline.load_pipeline_model_configuration",
@@ -108,6 +115,7 @@ def test_runner_uses_exactly_extraction_then_resolution_for_mentions(
 
     assert calls == ["extraction", "resolution"]
     assert receipt["counts"]["semantic_model_calls"] == 2
+    assert receipt["semantic_model"] == semantic_identity
     assert receipt["runs"] == {
         "semantic_extraction": "extraction-run",
         "local_resolution": "resolution-run",

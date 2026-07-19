@@ -518,6 +518,7 @@ def persist_identity_pair_decision(
 ) -> IdentityDecisionResult:
     configuration = load_pipeline_model_configuration(model_config_path)
     model = configuration.semantic
+    model_identity = model.provenance_identity()
     run_id = uuid5(
         identity_pair_candidate_id,
         f"qwen-pair:{configuration.sha256}:{result.prompt_schema_sha256}:{result.prompt_sha256}",
@@ -550,16 +551,15 @@ def persist_identity_pair_decision(
             """,
             (
                 run_id,
-                f"structured-semantic:{model.runtime_name}",
-                model.model_name,
-                model.model_revision,
-                model.runtime_version,
+                f"structured-semantic:{model.provider}",
+                model_identity["model_name"],
+                model_identity["model_revision"],
+                model_identity["runtime_version"],
                 json.dumps(
                     {
                         "task": "identity_pair",
                         "pipeline_model_configuration_sha256": configuration.sha256,
-                        "ollama_manifest_digest": model.ollama_manifest_digest,
-                        "quantization": model.quantization,
+                        **model_identity,
                         "prompt_sha256": result.prompt_sha256,
                         "prompt_schema_sha256": result.prompt_schema_sha256,
                         "raw_output_sha256": result.raw_output_sha256,

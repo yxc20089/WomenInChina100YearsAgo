@@ -104,15 +104,9 @@ def run_semantic_e2e(
         "coherent_input_sha256": bundle.input_sha256,
         "pipeline_model_configuration": model_configuration.source_path.as_posix(),
         "pipeline_model_configuration_sha256": model_configuration.sha256,
-        "semantic_model": {
-            "model_name": model_configuration.semantic.model_name,
-            "model_revision": model_configuration.semantic.model_revision,
-            "served_model": model_configuration.semantic.served_model,
-            "ollama_manifest_digest": model_configuration.semantic.ollama_manifest_digest,
-            "quantization": model_configuration.semantic.quantization,
-            "runtime_version": model_configuration.semantic.runtime_version,
-            "acceleration": model_configuration.semantic.acceleration,
-        },
+        # Provider-honest identity: unavailable provenance fields (for hosted
+        # providers without weight hashes) are recorded as explicitly unavailable.
+        "semantic_model": model_configuration.semantic.provenance_identity(),
         "runs": {
             "semantic_extraction": extraction_persisted.run.run_id,
             "local_resolution": resolution_run.run_id if resolution_run else None,

@@ -546,16 +546,11 @@ def _register_semantic_run(
             )
         return run_id, True
     now = datetime.now(timezone.utc)
+    model_identity = model.provenance_identity()
     run_configuration = {
         "task": task,
         "pipeline_model_configuration_sha256": configuration.sha256,
-        "served_model": model.served_model,
-        "ollama_manifest_digest": model.ollama_manifest_digest,
-        "model_blob_sha256": model.model_blob_sha256,
-        "quantization": model.quantization,
-        "runtime_name": model.runtime_name,
-        "runtime_version": model.runtime_version,
-        "acceleration": model.acceleration,
+        **model_identity,
         "temperature": model.temperature,
         "seed": model.seed,
         "prompt_sha256": result.prompt_sha256,
@@ -585,10 +580,10 @@ def _register_semantic_run(
         (
             run_id,
             run_kind,
-            f"structured-semantic:{model.runtime_name}",
-            model.model_name,
-            model.model_revision,
-            model.runtime_version,
+            f"structured-semantic:{model.provider}",
+            model_identity["model_name"],
+            model_identity["model_revision"],
+            model_identity["runtime_version"],
             json.dumps(run_configuration, ensure_ascii=False),
             now,
             now,

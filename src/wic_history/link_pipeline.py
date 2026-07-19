@@ -35,9 +35,11 @@ from .ner_structured import verify_ollama_model_digest
 _PIPELINE_MODELS = load_pipeline_model_configuration()
 _SEMANTIC_MODEL = _PIPELINE_MODELS.semantic
 QWEN_RESOLVER_MODEL = _SEMANTIC_MODEL.model_name
-QWEN_RESOLVER_REVISION = _SEMANTIC_MODEL.model_revision
 QWEN_RESOLVER_SERVED_MODEL = _SEMANTIC_MODEL.served_model
-QWEN_RESOLVER_OLLAMA_DIGEST = _SEMANTIC_MODEL.ollama_manifest_digest
+# Ollama-only provenance pins; None when the semantic provider has no
+# verifiable local runtime (the qwen resolver then refuses to run).
+QWEN_RESOLVER_REVISION = getattr(_SEMANTIC_MODEL, "model_revision", None)
+QWEN_RESOLVER_OLLAMA_DIGEST = getattr(_SEMANTIC_MODEL, "ollama_manifest_digest", None)
 
 
 def normalize_name(value: str) -> str:
@@ -337,6 +339,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.resolver == "qwen":
         pipeline_configuration = load_pipeline_model_configuration(args.model_config)
         semantic = pipeline_configuration.semantic
+        if semantic.provider != "ollama":
+            raise SystemExit(
+                "the qwen entity-link resolver verifies a local Ollama runtime; "
+                f"semantic provider '{semantic.provider}' is not supported here"
+            )
         local_artifact_sha256 = semantic.ollama_manifest_digest.removeprefix("sha256:")
         resolver = OpenAICompatibleGenerator(
             semantic.base_url,

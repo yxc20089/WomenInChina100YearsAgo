@@ -14,7 +14,7 @@ from uuid import UUID
 
 from .corpus_manifest import build_s3_client
 from .embedding_pipeline import embed_regions
-from .evidence import EntityLinkArtifact, NERArtifact, OCRPageArtifact
+from .evidence import EntityLinkArtifact, LayoutPageArtifact, NERArtifact, OCRPageArtifact
 from .graph import project_reviewed_graph
 from .gold_render import (
     ingestion_candidate,
@@ -24,6 +24,7 @@ from .gold_render import (
 from .ingestion_jobs import (
     ALL_STAGES,
     JobLease,
+    PIPELINE_MODELS,
     canonical_sha256,
     claim_job,
     complete_job,
@@ -32,6 +33,7 @@ from .ingestion_jobs import (
     start_job,
 )
 from .link_pipeline import main as link_main
+from .layout_pipeline import main as layout_main
 from .ner_pipeline import main as ner_main, ner_input_sha256
 from .ner_structured import (
     LocalStructuredNERConfiguration,
@@ -44,7 +46,12 @@ from .ocr_pipeline import resolve_render_provenance
 from .rag_adapters import validate_export
 from .rag_experiment import export_rag_corpus
 from .render_samples import sha256_file
-from .repository import ingest_link_artifact, ingest_ner_artifact, ingest_ocr_artifact
+from .repository import (
+    ingest_layout_artifact,
+    ingest_link_artifact,
+    ingest_ner_artifact,
+    ingest_ocr_artifact,
+)
 from .search import project_regions
 
 
@@ -446,7 +453,7 @@ def _parent_manifest(
     context: PageJobContext, workspace_root: Path
 ) -> tuple[Path, dict[str, Any], Path]:
     if context.parent_stage != "render_lossless" or not context.parent_artifact_uri:
-        raise ValueError("OCR jobs require one completed render_lossless parent")
+        raise ValueError("Layout jobs require one completed render_lossless parent")
     manifest_path = resolve_workspace_path(workspace_root, context.parent_artifact_uri)
     if context.parent_output_sha256 != sha256_file(manifest_path):
         raise ValueError("Render parent artifact checksum no longer matches its job")
@@ -470,6 +477,178 @@ def _parent_manifest(
     return manifest_path, matches[0], image_path
 
 
+def _layout_artifact_matches(
+    artifact: LayoutPageArtifact,
+    context: PageJobContext,
+    image_sha256: str,
+) -> bool:
+    configuration = context.configuration
+    return (
+        artifact.source.source_uri == context.source_uri
+        and artifact.source.volume_number == context.volume_number
+        and artifact.source.publication_year == context.publication_year
+        and artifact.source.page_number == context.page_number
+        and artifact.image_sha256 == image_sha256
+        and artifact.run.engine == configuration.get("engine")
+        and artifact.run.model_name == configuration.get("model")
+        and artifact.run.model_revision == configuration.get("revision")
+        and artifact.run.configuration.get("pipeline") == configuration.get("pipeline")
+        and artifact.run.configuration.get("toolkit_name")
+        == configuration.get("toolkit")
+        and artifact.run.configuration.get("toolkit_revision")
+        == configuration.get("toolkit_revision")
+        and artifact.run.configuration.get("language") == configuration.get("language")
+        and artifact.run.configuration.get("fallback_allowed") is False
+        and artifact.run.configuration.get("pipeline_model_configuration_sha256")
+        == configuration.get("pipeline_model_configuration_sha256")
+    )
+
+
+def _existing_layout(
+    database_url: str,
+    context: PageJobContext,
+    workspace_root: Path,
+    image_sha256: str,
+) -> StageExecution | None:
+    psycopg, dict_row = _psycopg()
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        rows = connection.execute(
+            """
+            SELECT input.artifact_uri
+            FROM evidence.layout_run_input input
+            JOIN evidence.processing_run run USING (run_id)
+            JOIN archive.page page USING (page_id)
+            JOIN archive.volume volume USING (volume_id)
+            JOIN archive.page_derivative derivative USING (derivative_id)
+            WHERE volume.volume_number = %s AND page.page_number = %s
+              AND derivative.image_sha256 = %s
+              AND run.status = 'completed' AND run.kind = 'layout'
+            ORDER BY run.completed_at, run.run_id
+            """,
+            (context.volume_number, context.page_number, image_sha256),
+        ).fetchall()
+    for row in rows:
+        try:
+            artifact_path = resolve_workspace_path(workspace_root, row["artifact_uri"])
+            artifact = LayoutPageArtifact.model_validate_json(
+                artifact_path.read_text(encoding="utf-8")
+            )
+            if not _layout_artifact_matches(artifact, context, image_sha256):
+                continue
+            stored = ingest_layout_artifact(database_url, artifact_path)
+            return StageExecution(
+                artifact_uri=workspace_artifact_uri(workspace_root, artifact_path),
+                output_sha256=sha256_file(artifact_path),
+                result={
+                    "layout_run_id": stored.run_id,
+                    "regions": stored.regions_verified,
+                    "ocr_targets": stored.ocr_targets,
+                    "derivative_id": stored.derivative_id,
+                    "reused_verified_artifact": True,
+                },
+                adopted=True,
+            )
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+def execute_layout(
+    database_url: str,
+    context: PageJobContext,
+    workspace_root: Path,
+) -> StageExecution:
+    selected = PIPELINE_MODELS.ocr
+    supported = {
+        "engine": selected.engine,
+        "pipeline": selected.pipeline,
+        "model": selected.model_name,
+        "revision": selected.model_revision,
+        "toolkit": selected.toolkit_name,
+        "toolkit_revision": selected.toolkit_revision,
+        "language": selected.language,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
+    }
+    for field, expected in supported.items():
+        if context.configuration.get(field) != expected:
+            raise ValueError(
+                f"Layout worker does not implement {field}={context.configuration.get(field)!r}"
+            )
+    manifest_path, render, image_path = _parent_manifest(context, workspace_root)
+    source_sha256, _evidence_tier = resolve_render_provenance(
+        image_path,
+        manifest_path,
+        source_uri=context.source_uri,
+        page_number=context.page_number,
+        volume_number=context.volume_number,
+        publication_year=context.publication_year,
+        supplied_source_sha256=context.source_sha256,
+        artifact_root=workspace_root,
+    )
+    output_path = stage_output_dir(context, workspace_root) / "layout.json"
+    if output_path.is_file():
+        artifact = LayoutPageArtifact.model_validate_json(
+            output_path.read_text(encoding="utf-8")
+        )
+        if not _layout_artifact_matches(artifact, context, render["render_sha256"]):
+            raise ValueError("Existing layout artifact contradicts its immutable plan")
+        stored = ingest_layout_artifact(database_url, output_path)
+        return StageExecution(
+            artifact_uri=workspace_artifact_uri(workspace_root, output_path),
+            output_sha256=sha256_file(output_path),
+            result={
+                "layout_run_id": stored.run_id,
+                "regions": stored.regions_verified,
+                "ocr_targets": stored.ocr_targets,
+                "derivative_id": stored.derivative_id,
+                "reused_verified_artifact": True,
+            },
+            adopted=True,
+        )
+    adopted = _existing_layout(
+        database_url, context, workspace_root, render["render_sha256"]
+    )
+    if adopted:
+        return adopted
+    exit_code = layout_main(
+        [
+            "--image",
+            str(image_path),
+            "--source-uri",
+            context.source_uri,
+            "--source-sha256",
+            source_sha256,
+            "--render-manifest",
+            str(manifest_path),
+            "--page",
+            str(context.page_number),
+            "--volume",
+            str(context.volume_number),
+            "--year",
+            str(context.publication_year),
+            "--model-config-sha256",
+            str(context.configuration["pipeline_model_configuration_sha256"]),
+            "--output",
+            str(output_path),
+        ]
+    )
+    if exit_code:
+        raise RuntimeError(f"Layout command exited with status {exit_code}")
+    stored = ingest_layout_artifact(database_url, output_path)
+    return StageExecution(
+        artifact_uri=workspace_artifact_uri(workspace_root, output_path),
+        output_sha256=sha256_file(output_path),
+        result={
+            "layout_run_id": stored.run_id,
+            "regions": stored.regions_verified,
+            "ocr_targets": stored.ocr_targets,
+            "derivative_id": stored.derivative_id,
+            "reused_verified_artifact": False,
+        },
+        adopted=False,
+    )
+
+
 def _ocr_artifact_matches(
     artifact: OCRPageArtifact,
     context: PageJobContext,
@@ -485,9 +664,21 @@ def _ocr_artifact_matches(
         and artifact.run.engine == configuration.get("engine")
         and artifact.run.model_name == configuration.get("model")
         and artifact.run.model_revision == configuration.get("revision")
+        and artifact.run.configuration.get("pipeline") == configuration.get("pipeline")
+        and artifact.run.configuration.get("toolkit_name")
+        == configuration.get("toolkit")
+        and artifact.run.configuration.get("toolkit_revision")
+        == configuration.get("toolkit_revision")
         and artifact.run.configuration.get("language") == configuration.get("language")
-        and artifact.run.configuration.get("tile_size") == configuration.get("tile_size")
-        and artifact.run.configuration.get("overlap") == configuration.get("overlap")
+        and artifact.run.configuration.get("role")
+        == "materialize_accepted_hunyuan_spotting_json"
+        and artifact.run.configuration.get("fallback_allowed") is False
+        and artifact.run.configuration.get("reinference_performed") is False
+        and artifact.run.configuration.get("tiling_used") is False
+        and artifact.run.configuration.get("layout_artifact_sha256")
+        == context.parent_output_sha256
+        and artifact.run.configuration.get("pipeline_model_configuration_sha256")
+        == configuration.get("pipeline_model_configuration_sha256")
     )
 
 
@@ -539,20 +730,52 @@ def _existing_ocr(
     return None
 
 
+def _parent_layout(
+    context: PageJobContext, workspace_root: Path
+) -> tuple[Path, LayoutPageArtifact, Path, Path]:
+    if context.parent_stage != "layout" or not context.parent_artifact_uri:
+        raise ValueError("OCR jobs require one completed layout parent")
+    artifact_path = resolve_workspace_path(workspace_root, context.parent_artifact_uri)
+    if context.parent_output_sha256 != sha256_file(artifact_path):
+        raise ValueError("Layout parent artifact checksum no longer matches its job")
+    artifact = LayoutPageArtifact.model_validate_json(
+        artifact_path.read_text(encoding="utf-8")
+    )
+    expected_run_id = str((context.parent_result or {}).get("layout_run_id", ""))
+    if str(artifact.run.run_id) != expected_run_id:
+        raise ValueError("Layout parent result disagrees with its artifact run UUID")
+    image_path = resolve_workspace_path(workspace_root, artifact.image_uri)
+    if sha256_file(image_path) != artifact.image_sha256:
+        raise ValueError("Layout parent image checksum no longer matches its artifact")
+    manifest_uri = artifact.run.configuration.get("render_manifest")
+    if not isinstance(manifest_uri, str) or not manifest_uri:
+        raise ValueError("Layout artifact lacks its render manifest")
+    manifest_path = resolve_workspace_path(workspace_root, manifest_uri)
+    return artifact_path, artifact, manifest_path, image_path
+
+
 def execute_ocr(
     database_url: str,
     context: PageJobContext,
     workspace_root: Path,
 ) -> StageExecution:
+    selected = PIPELINE_MODELS.ocr
     supported = {
-        "engine": "PaddleOCR",
-        "model": "PP-OCRv6_medium_det+PP-OCRv6_medium_rec",
-        "revision": "paddleocr-3.7.0-official",
+        "engine": selected.engine,
+        "pipeline": selected.pipeline,
+        "model": selected.model_name,
+        "revision": selected.model_revision,
+        "toolkit": selected.toolkit_name,
+        "toolkit_revision": selected.toolkit_revision,
+        "language": selected.language,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
     }
     for field, expected in supported.items():
         if context.configuration.get(field) != expected:
             raise ValueError(f"OCR worker does not implement {field}={context.configuration.get(field)!r}")
-    manifest_path, render, image_path = _parent_manifest(context, workspace_root)
+    layout_path, layout, manifest_path, image_path = _parent_layout(
+        context, workspace_root
+    )
     source_sha256, _ = resolve_render_provenance(
         image_path,
         manifest_path,
@@ -568,7 +791,7 @@ def execute_ocr(
         artifact = OCRPageArtifact.model_validate_json(
             output_path.read_text(encoding="utf-8")
         )
-        if not _ocr_artifact_matches(artifact, context, render["render_sha256"]):
+        if not _ocr_artifact_matches(artifact, context, layout.image_sha256):
             raise ValueError("Existing job OCR artifact contradicts its immutable plan")
         stored = ingest_ocr_artifact(database_url, output_path)
         return StageExecution(
@@ -583,28 +806,16 @@ def execute_ocr(
             adopted=True,
         )
     adopted = _existing_ocr(
-        database_url, context, workspace_root, render["render_sha256"]
+        database_url, context, workspace_root, layout.image_sha256
     )
     if adopted:
         return adopted
     arguments = [
         "--image", str(image_path),
-        "--source-uri", context.source_uri,
-        "--source-sha256", source_sha256,
-        "--render-manifest", str(manifest_path),
-        "--page", str(context.page_number),
-        "--volume", str(context.volume_number),
-        "--year", str(context.publication_year),
-        "--language", str(context.configuration["language"]),
-        "--tile-size", str(context.configuration["tile_size"]),
-        "--overlap", str(context.configuration["overlap"]),
-        "--worker-batch-size", str(context.configuration.get("worker_batch_size", 5)),
+        "--layout-artifact", str(layout_path),
+        "--model-config-sha256", str(context.configuration["pipeline_model_configuration_sha256"]),
         "--output", str(output_path),
     ]
-    if context.configuration.get("worker_mode") == "reuse_model":
-        arguments.append("--reuse-model")
-    elif context.configuration.get("worker_mode") == "isolate_tiles":
-        arguments.append("--isolate-tiles")
     exit_code = ocr_main(arguments)
     if exit_code:
         raise RuntimeError(f"OCR command exited with status {exit_code}")
@@ -1476,6 +1687,11 @@ def execute_graph_projection(
                 "claims",
                 "mentions",
                 "claim_evidence",
+                "events",
+                "event_participants",
+                "event_evidence",
+                "local_identity_clusters",
+                "local_cluster_members",
                 "reviewed_only",
             )
         }
@@ -1498,6 +1714,11 @@ def execute_graph_projection(
         "claims": projected.claims,
         "mentions": projected.mentions,
         "claim_evidence": projected.claim_evidence,
+        "events": projected.events,
+        "event_participants": projected.event_participants,
+        "event_evidence": projected.event_evidence,
+        "local_identity_clusters": projected.local_identity_clusters,
+        "local_cluster_members": projected.local_cluster_members,
         "reviewed_only": True,
     }
     _atomic_json(receipt_path, receipt)
@@ -1555,6 +1776,8 @@ def execute_stage(
             credentials_csv=credentials_csv,
             region=region,
         )
+    if context.stage == "layout":
+        return execute_layout(database_url, context, workspace_root)
     if context.stage == "ocr":
         return execute_ocr(database_url, context, workspace_root)
     if context.stage == "embedding":

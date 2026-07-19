@@ -40,6 +40,13 @@ class DatabaseContractTests(unittest.TestCase):
                 "012_coherent_unit_provenance_guards.sql",
                 "013_segmentation_action_idempotency.sql",
                 "014_ingestion_entity_link_stage.sql",
+                "015_e2e_evidence_identity_events.sql",
+                "016_layout_ingestion_stage.sql",
+                "017_reviewed_text_semantic_runs.sql",
+                "018_semantic_discovery_task.sql",
+                "019_batch_identity_resolution.sql",
+                "020_identity_candidate_model_runs.sql",
+                "021_authoritative_visual_outputs_local_identity.sql",
             ],
         )
 
@@ -50,6 +57,72 @@ class DatabaseContractTests(unittest.TestCase):
         self.assertIn("DROP CONSTRAINT ingestion_job_stage_check", sql)
         self.assertIn("'entity_link'", sql)
         self.assertIn("VALIDATE CONSTRAINT ingestion_job_stage_check", sql)
+
+    def test_e2e_schema_preserves_occurrences_events_and_reversible_identity(self):
+        sql = Path(
+            "db/migrations/015_e2e_evidence_identity_events.sql"
+        ).read_text(encoding="utf-8")
+        for fragment in (
+            "CREATE TABLE evidence.layout_region",
+            "CREATE TABLE evidence.text_version",
+            "CREATE TABLE evidence.evidence_span",
+            "evidence_span_surface_trigger",
+            "CREATE TABLE evidence.mention_resolution",
+            "mention_resolution_one_active_reviewed_idx",
+            "CREATE TABLE evidence.entity_redirect",
+            "entity_redirect_cycle_trigger",
+            "CREATE TABLE evidence.event",
+            "CREATE TABLE evidence.event_participant",
+            "CREATE TABLE evidence.event_evidence",
+            "claim_evidence_id",
+        ):
+            self.assertIn(fragment, sql)
+
+    def test_batch_identity_resolution_is_frozen_and_reviewable(self):
+        sql = Path("db/migrations/019_batch_identity_resolution.sql").read_text(
+            encoding="utf-8"
+        )
+        for fragment in (
+            "CREATE TABLE evidence.identity_resolution_cohort",
+            "CREATE TABLE evidence.identity_profile",
+            "CREATE TABLE evidence.identity_pair_candidate",
+            "CREATE TABLE evidence.identity_pair_decision",
+            "'SAME', 'DIFFERENT', 'INSUFFICIENT'",
+        ):
+            self.assertIn(fragment, sql)
+
+        run_sql = Path(
+            "db/migrations/020_identity_candidate_model_runs.sql"
+        ).read_text(encoding="utf-8")
+        self.assertIn("embedding_run_id", run_sql)
+        self.assertIn("reranker_run_id", run_sql)
+
+    def test_first_build_visual_outputs_and_identity_are_immutable_and_local(self):
+        sql = Path(
+            "db/migrations/021_authoritative_visual_outputs_local_identity.sql"
+        ).read_text(encoding="utf-8")
+        for fragment in (
+            "CREATE TABLE evidence.confidence_calibration",
+            "CREATE TABLE evidence.visual_model_output",
+            "'spotting', 'layout', 'recognition'",
+            "CREATE TABLE evidence.visual_model_evidence_path",
+            "visual_model_output_sha256_trigger",
+            "visual_model_evidence_path_trigger",
+            "semantic_run_output_sha256_trigger",
+            "semantic_run_input_immutable_trigger",
+            "confidence_status",
+            "calibration_id",
+            "local_coreference_cluster_run_scope_fk",
+            "local_coreference_member_cluster_scope_fk",
+            "local_coreference_run_active_revision_trigger",
+            "local_coreference_member_scope_trigger",
+            "local_coreference_cluster_review_transition_trigger",
+            "'mention_resolution', 'local_coreference_cluster'",
+            "mention.evidence_span_id IS NOT NULL",
+        ):
+            self.assertIn(fragment, sql)
+        self.assertNotIn("INSERT INTO evidence.entity_redirect", sql)
+        self.assertNotIn("UPDATE evidence.entity\n", sql)
 
     def test_reviewed_segmentation_is_distinct_from_machine_proposals(self):
         sql = Path("db/migrations/010_article_segmentation_review.sql").read_text(

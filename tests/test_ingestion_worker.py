@@ -14,6 +14,7 @@ from PIL import Image
 from wic_history.evidence import EntityLinkArtifact, NERArtifact, OCRPageArtifact
 from wic_history.ingestion_jobs import (
     DEFAULT_CONFIGURATION,
+    GLINER_NER_CONFIGURATION,
     JobLease,
     canonical_sha256,
 )
@@ -202,7 +203,7 @@ class IngestionWorkerTests(unittest.TestCase):
             )
 
     def test_existing_ocr_requires_exact_model_and_image(self):
-        artifact = OCRPageArtifact.model_validate_json(
+        legacy = OCRPageArtifact.model_validate_json(
             Path("artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json").read_text(
                 encoding="utf-8"
             )
@@ -214,7 +215,42 @@ class IngestionWorkerTests(unittest.TestCase):
                 "output_root": "artifacts/test",
             },
         )
-        candidate = replace(candidate, source_uri=artifact.source.source_uri)
+        candidate = replace(
+            candidate,
+            source_uri=legacy.source.source_uri,
+            parent_stage="layout",
+            parent_output_sha256="c" * 64,
+        )
+        self.assertFalse(
+            _ocr_artifact_matches(legacy, candidate, legacy.image_sha256)
+        )
+        artifact = legacy.model_copy(
+            update={
+                "run": legacy.run.model_copy(
+                    update={
+                        "engine": candidate.configuration["engine"],
+                        "model_name": candidate.configuration["model"],
+                        "model_revision": candidate.configuration["revision"],
+                        "configuration": {
+                            "pipeline": candidate.configuration["pipeline"],
+                            "toolkit_name": candidate.configuration["toolkit"],
+                            "toolkit_revision": candidate.configuration[
+                                "toolkit_revision"
+                            ],
+                            "language": candidate.configuration["language"],
+                            "role": "materialize_accepted_hunyuan_spotting_json",
+                            "fallback_allowed": False,
+                            "reinference_performed": False,
+                            "tiling_used": False,
+                            "layout_artifact_sha256": "c" * 64,
+                            "pipeline_model_configuration_sha256": candidate.configuration[
+                                "pipeline_model_configuration_sha256"
+                            ],
+                        }
+                    }
+                )
+            }
+        )
         self.assertTrue(
             _ocr_artifact_matches(artifact, candidate, artifact.image_sha256)
         )
@@ -227,7 +263,7 @@ class IngestionWorkerTests(unittest.TestCase):
             )
         )
         configuration = {
-            **DEFAULT_CONFIGURATION["ner"],
+            **GLINER_NER_CONFIGURATION,
             "max_regions": 50,
             "batch_size": 2,
         }

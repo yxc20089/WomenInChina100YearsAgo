@@ -8,14 +8,26 @@ projections, never alternate sources of historical truth.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
-from uuid import UUID
+from uuid import UUID, uuid5
 
-from .evidence import ClaimArtifact, EntityLinkArtifact, NERArtifact, OCRPageArtifact
+from .e2e_store import (
+    VisualEvidencePathSpec,
+    VisualModelOutputSpec,
+    persist_visual_model_outputs,
+)
+from .evidence import (
+    ClaimArtifact,
+    EntityLinkArtifact,
+    LayoutPageArtifact,
+    NERArtifact,
+    OCRPageArtifact,
+)
 
 
 EVIDENCE_TIER_RANKS = {
@@ -40,6 +52,16 @@ class OCRIngestResult:
     run_id: str
     active_selection_id: str
     regions_verified: int
+
+
+@dataclass(frozen=True, slots=True)
+class LayoutIngestResult:
+    artifact_id: str
+    page_id: str
+    derivative_id: str
+    run_id: str
+    regions_verified: int
+    ocr_targets: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,16 +240,52 @@ def _verify_run(connection: Any, artifact: Any, Jsonb: Any) -> None:
         raise ValueError(f"Processing run UUID {run.run_id} already has different provenance")
 
 
+def _confidence_provenance(
+    confidence: float | None, payload: dict[str, Any]
+) -> tuple[str, UUID | None]:
+    """Normalize explicit score provenance without treating raw scores as calibrated."""
+    default_status = "not_reported" if confidence is None else "uncalibrated"
+    status = payload.get("confidence_status", default_status)
+    if (
+        status == "not_emitted_by_model"
+        and payload.get("confidence_calibration") == "not_available"
+    ):
+        status = "not_reported"
+    if status not in {"not_reported", "uncalibrated", "calibrated"}:
+        raise ValueError(f"Unsupported confidence_status: {status}")
+    raw_calibration_id = payload.get("calibration_id")
+    try:
+        calibration_id = UUID(str(raw_calibration_id)) if raw_calibration_id else None
+    except ValueError as exc:
+        raise ValueError("calibration_id must be a UUID") from exc
+    valid = (
+        status == "not_reported" and confidence is None and calibration_id is None
+    ) or (
+        status == "uncalibrated" and confidence is not None and calibration_id is None
+    ) or (
+        status == "calibrated" and confidence is not None and calibration_id is not None
+    )
+    if not valid:
+        raise ValueError("confidence_status does not match score/calibration provenance")
+    return status, calibration_id
+
+
 def _region_record(region: Any) -> tuple[Any, ...]:
+    confidence_status, calibration_id = _confidence_provenance(
+        region.confidence, region.engine_payload
+    )
     return (
         region.region_id,
         region.parent_region_id,
+        region.layout_region_id,
         region.kind.value,
         region.reading_order,
         region.polygon.model_dump(mode="json"),
         region.raw_text,
         region.normalized_text,
         region.confidence,
+        confidence_status,
+        calibration_id,
         region.language,
         region.direction,
         region.engine_payload,
@@ -360,6 +418,339 @@ def select_ocr_run(
             selected_by=selected_by,
             note=note,
         )
+
+
+def _hunyuan_visual_output_specs(
+    artifact: LayoutPageArtifact,
+    artifact_path: Path,
+    *,
+    source_object_id: UUID,
+    page_id: UUID,
+    derivative_id: UUID,
+) -> tuple[VisualModelOutputSpec, ...]:
+    """Translate the paired official Hunyuan tasks into immutable store rows."""
+    raw_bundle = artifact.run.configuration.get("raw_task_bundle")
+    if raw_bundle is None:
+        return ()
+    if not isinstance(raw_bundle, dict):
+        raise ValueError("Hunyuan layout raw_task_bundle must be an object")
+    required = {
+        "spotting_task": "spotting_json",
+        "layout_task": "layout_parse",
+        "confidence_status": "not_emitted_by_model",
+        "confidence_calibration": "not_available",
+    }
+    if any(raw_bundle.get(key) != value for key, value in required.items()):
+        raise ValueError("Hunyuan layout task bundle differs from the pinned contract")
+    spotting_raw = raw_bundle.get("spotting_raw_output")
+    layout_raw = raw_bundle.get("layout_raw_output")
+    if not isinstance(spotting_raw, str) or not isinstance(layout_raw, str):
+        raise ValueError("Hunyuan layout task bundle lacks exact raw outputs")
+    expected_hashes = (
+        raw_bundle.get("spotting_raw_output_sha256"),
+        raw_bundle.get("layout_raw_output_sha256"),
+    )
+    observed_hashes = (
+        hashlib.sha256(spotting_raw.encode("utf-8")).hexdigest(),
+        hashlib.sha256(layout_raw.encode("utf-8")).hexdigest(),
+    )
+    if expected_hashes != observed_hashes:
+        raise ValueError("Hunyuan layout task bundle raw-output hashes have drifted")
+
+    artifact_sha256 = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    outputs: list[VisualModelOutputSpec] = []
+    for output_kind, raw_output in (
+        ("spotting", spotting_raw),
+        ("layout", layout_raw),
+    ):
+        output_id = uuid5(artifact.run.run_id, f"visual-output:{output_kind}")
+        structured_output: dict[str, Any] = {
+            "assessment_status": artifact.run.configuration.get("assessment_status"),
+            "review_required": artifact.run.configuration.get("review_required"),
+        }
+        if output_kind == "spotting":
+            try:
+                structured_output["parsed_output"] = json.loads(raw_output)
+                structured_output["parse_status"] = "valid_json"
+            except json.JSONDecodeError:
+                structured_output["parse_status"] = "invalid_json_abstention"
+        path = VisualEvidencePathSpec(
+            evidence_path_id=uuid5(output_id, "source-page"),
+            path_role="source_page",
+            source_object_id=source_object_id,
+            page_id=page_id,
+            derivative_id=derivative_id,
+            source_uri=artifact.source.source_uri,
+            image_uri=artifact.image_uri,
+            image_sha256=artifact.image_sha256,
+        )
+        outputs.append(
+            VisualModelOutputSpec(
+                visual_output_id=output_id,
+                output_kind=output_kind,
+                artifact_uri=artifact_path.as_posix(),
+                artifact_sha256=artifact_sha256,
+                raw_output=raw_output,
+                evidence_paths=(path,),
+                structured_output=structured_output,
+                confidence=None,
+                confidence_status="not_reported",
+            )
+        )
+    return tuple(outputs)
+
+
+def ingest_layout_artifact(
+    database_url: str, artifact_path: Path
+) -> LayoutIngestResult:
+    """Store a page-coordinate layout proposal before any OCR crop is run."""
+    psycopg, Jsonb = _psycopg()
+    artifact = LayoutPageArtifact.model_validate_json(
+        artifact_path.read_text(encoding="utf-8")
+    )
+    source = artifact.source
+    if source.volume_number is None:
+        raise ValueError("Layout artifacts for this corpus require volume_number")
+    evidence_tier = source.evidence_tier or artifact.run.configuration.get(
+        "evidence_tier", "unreviewed_input"
+    )
+    if evidence_tier not in EVIDENCE_TIER_RANKS:
+        raise ValueError(f"Unsupported layout evidence tier: {evidence_tier}")
+    configuration_sha256 = artifact.run.configuration.get(
+        "pipeline_model_configuration_sha256"
+    )
+    if not isinstance(configuration_sha256, str) or len(configuration_sha256) != 64:
+        raise ValueError("Layout run lacks the authoritative model-configuration SHA-256")
+
+    with psycopg.connect(database_url) as connection:
+        volume = connection.execute(
+            """
+            SELECT v.volume_id, v.publication_year, s.source_object_id,
+                   s.source_uri, s.sha256
+            FROM archive.volume v
+            JOIN archive.source_object s USING (source_object_id)
+            WHERE v.volume_number = %s
+            """,
+            (source.volume_number,),
+        ).fetchone()
+        if volume is None:
+            raise ValueError(
+                f"Volume {source.volume_number} is absent; ingest the corpus manifest first"
+            )
+        volume_id, publication_year, source_object_id, stored_uri, stored_sha256 = volume
+        if stored_uri != source.source_uri or (
+            source.publication_year is not None
+            and publication_year != source.publication_year
+        ):
+            raise ValueError("Layout source disagrees with the authoritative volume")
+        if source.source_sha256 and stored_sha256 and source.source_sha256 != stored_sha256:
+            raise ValueError("Layout source SHA-256 disagrees with the authoritative object")
+        if source.source_sha256 and stored_sha256 is None:
+            connection.execute(
+                "UPDATE archive.source_object SET sha256 = %s WHERE source_object_id = %s",
+                (source.source_sha256, source_object_id),
+            )
+
+        _verify_run(connection, artifact, Jsonb)
+        page_id = connection.execute(
+            """
+            INSERT INTO archive.page (volume_id, page_number, metadata)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (volume_id, page_number) DO UPDATE SET
+                metadata = archive.page.metadata || EXCLUDED.metadata
+            RETURNING page_id
+            """,
+            (
+                volume_id,
+                source.page_number,
+                Jsonb(
+                    {
+                        "latest_layout_artifact_id": str(artifact.artifact_id),
+                        "layout_warnings": artifact.warnings,
+                    }
+                ),
+            ),
+        ).fetchone()[0]
+        preference_rank = EVIDENCE_TIER_RANKS[evidence_tier]
+        derivative_id = connection.execute(
+            """
+            INSERT INTO archive.page_derivative (
+                page_id, image_uri, image_sha256, width, height, dpi,
+                media_type, evidence_tier, preference_rank,
+                render_manifest_uri, metadata
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (page_id, image_sha256) DO UPDATE SET
+                image_uri = EXCLUDED.image_uri,
+                dpi = COALESCE(EXCLUDED.dpi, archive.page_derivative.dpi),
+                metadata = archive.page_derivative.metadata || EXCLUDED.metadata
+            RETURNING derivative_id
+            """,
+            (
+                page_id,
+                artifact.image_uri,
+                artifact.image_sha256,
+                artifact.width,
+                artifact.height,
+                artifact.dpi,
+                _image_media_type(artifact.image_uri),
+                evidence_tier,
+                preference_rank,
+                artifact.run.configuration.get("render_manifest"),
+                Jsonb({"last_layout_run_id": str(artifact.run.run_id)}),
+            ),
+        ).fetchone()[0]
+        stored_derivative = connection.execute(
+            """
+            SELECT image_sha256, width, height
+            FROM archive.page_derivative WHERE derivative_id = %s
+            """,
+            (derivative_id,),
+        ).fetchone()
+        if stored_derivative != (artifact.image_sha256, artifact.width, artifact.height):
+            raise ValueError("Stored derivative conflicts with immutable layout image")
+        connection.execute(
+            """
+            UPDATE archive.page
+            SET preferred_derivative_id = %s, source_image_uri = %s,
+                source_image_sha256 = %s, width = %s, height = %s, dpi = %s
+            WHERE page_id = %s
+              AND (
+                  preferred_derivative_id IS NULL OR
+                  (SELECT preference_rank FROM archive.page_derivative
+                   WHERE derivative_id = preferred_derivative_id) <= %s
+              )
+            """,
+            (
+                derivative_id,
+                artifact.image_uri,
+                artifact.image_sha256,
+                artifact.width,
+                artifact.height,
+                artifact.dpi,
+                page_id,
+                preference_rank,
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO evidence.layout_run_input (
+                run_id, page_id, derivative_id, artifact_uri, configuration_sha256
+            ) VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (run_id, page_id) DO NOTHING
+            """,
+            (
+                artifact.run.run_id,
+                page_id,
+                derivative_id,
+                artifact_path.as_posix(),
+                configuration_sha256,
+            ),
+        )
+        stored_input = connection.execute(
+            """
+            SELECT derivative_id, artifact_uri, configuration_sha256
+            FROM evidence.layout_run_input WHERE run_id = %s AND page_id = %s
+            """,
+            (artifact.run.run_id, page_id),
+        ).fetchone()
+        if stored_input != (
+            derivative_id,
+            artifact_path.as_posix(),
+            configuration_sha256,
+        ):
+            raise ValueError("Stored layout input differs from its immutable artifact")
+
+        rows = []
+        for region in artifact.regions:
+            confidence_status, calibration_id = _confidence_provenance(
+                region.confidence, region.engine_payload
+            )
+            rows.append(
+                (
+                    region.layout_region_id,
+                    artifact.run.run_id,
+                    page_id,
+                    derivative_id,
+                    region.parent_layout_region_id,
+                    region.kind.value,
+                    region.polygon.model_dump(mode="json"),
+                    region.reading_order,
+                    region.direction,
+                    region.source_method,
+                    region.confidence,
+                    confidence_status,
+                    calibration_id,
+                    region.boundary_evidence,
+                    region.engine_payload,
+                )
+            )
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO evidence.layout_region (
+                    layout_region_id, run_id, page_id, derivative_id,
+                    parent_layout_region_id, region_kind, polygon,
+                    proposed_reading_order, direction, source_method,
+                    confidence, confidence_status, calibration_id,
+                    boundary_evidence, engine_payload
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s
+                ) ON CONFLICT (layout_region_id) DO NOTHING
+                """,
+                [
+                    (
+                        *row[:6],
+                        Jsonb(row[6]),
+                        *row[7:13],
+                        Jsonb(row[13]),
+                        Jsonb(row[14]),
+                    )
+                    for row in rows
+                ],
+            )
+        stored_rows = connection.execute(
+            """
+            SELECT layout_region_id, run_id, page_id, derivative_id,
+                   parent_layout_region_id, region_kind, polygon,
+                   proposed_reading_order, direction, source_method,
+                   confidence, confidence_status, calibration_id,
+                   boundary_evidence, engine_payload
+            FROM evidence.layout_region
+            WHERE run_id = %s AND page_id = %s
+            ORDER BY layout_region_id
+            """,
+            (artifact.run.run_id, page_id),
+        ).fetchall()
+        if sorted(rows, key=lambda row: row[0]) != stored_rows:
+            raise ValueError("Stored layout regions differ from the immutable artifact")
+
+    visual_outputs = _hunyuan_visual_output_specs(
+        artifact,
+        artifact_path,
+        source_object_id=source_object_id,
+        page_id=page_id,
+        derivative_id=derivative_id,
+    )
+    if visual_outputs:
+        persist_visual_model_outputs(
+            database_url,
+            run_id=artifact.run.run_id,
+            outputs=visual_outputs,
+        )
+
+    ocr_targets = sum(
+        region.kind.value in {"panel", "column", "text_group", "table"}
+        for region in artifact.regions
+    )
+    return LayoutIngestResult(
+        artifact_id=str(artifact.artifact_id),
+        page_id=str(page_id),
+        derivative_id=str(derivative_id),
+        run_id=str(artifact.run.run_id),
+        regions_verified=len(rows),
+        ocr_targets=ocr_targets,
+    )
 
 
 def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResult:
@@ -576,16 +967,22 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
             cursor.executemany(
                 """
                 INSERT INTO evidence.ocr_region (
-                    region_id, page_id, parent_region_id, run_id, region_kind,
+                    region_id, page_id, parent_region_id, layout_region_id,
+                    run_id, region_kind,
                     reading_order, polygon, raw_text, normalized_text, confidence,
+                    confidence_status, calibration_id,
                     language, direction, engine_payload
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
                 ON CONFLICT (region_id) DO NOTHING
                 """,
                 [
                     (
-                        row[0], page_id, row[1], artifact.run.run_id, row[2], row[3],
-                        Jsonb(row[4]), row[5], row[6], row[7], row[8], row[9], Jsonb(row[10]),
+                        row[0], page_id, row[1], row[2], artifact.run.run_id,
+                        row[3], row[4], Jsonb(row[5]), row[6], row[7], row[8],
+                        row[9], row[10], row[11], row[12], Jsonb(row[13]),
                     )
                     for row in rows
                 ],
@@ -593,8 +990,11 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
 
         stored_rows = connection.execute(
             """
-            SELECT region_id, parent_region_id, region_kind, reading_order, polygon,
-                   raw_text, normalized_text, confidence, language, direction, engine_payload
+            SELECT region_id, parent_region_id, layout_region_id, region_kind,
+                   reading_order, polygon,
+                   raw_text, normalized_text, confidence,
+                   confidence_status, calibration_id,
+                   language, direction, engine_payload
             FROM evidence.ocr_region
             WHERE page_id = %s AND run_id = %s
             ORDER BY reading_order
@@ -605,6 +1005,39 @@ def ingest_ocr_artifact(database_url: str, artifact_path: Path) -> OCRIngestResu
             raise ValueError(
                 "Stored OCR regions differ from the artifact; evidence rows are immutable"
             )
+
+        connection.execute(
+            """
+            INSERT INTO evidence.text_version (
+                region_id, producing_run_id, variant, text_content,
+                text_sha256, language, review_status, configuration
+            )
+            SELECT region_id, run_id, 'raw_ocr', raw_text,
+                   encode(digest(convert_to(raw_text, 'UTF8'), 'sha256'), 'hex'),
+                   language, 'candidate',
+                   jsonb_build_object(
+                       'ocr_artifact_id', %s::text,
+                       'ocr_run_id', run_id::text,
+                       'immutable_raw_output', true
+                   )
+            FROM evidence.ocr_region
+            WHERE page_id = %s AND run_id = %s
+            ON CONFLICT (region_id, variant, text_sha256) DO NOTHING
+            """,
+            (str(artifact.artifact_id), page_id, artifact.run.run_id),
+        )
+        text_version_count = connection.execute(
+            """
+            SELECT count(*)
+            FROM evidence.text_version version
+            JOIN evidence.ocr_region region USING (region_id)
+            WHERE region.page_id = %s AND region.run_id = %s
+              AND version.variant = 'raw_ocr'
+            """,
+            (page_id, artifact.run.run_id),
+        ).fetchone()[0]
+        if text_version_count != len(rows):
+            raise ValueError("Every OCR region must have one immutable raw text version")
 
         active = connection.execute(
             """
@@ -770,6 +1203,20 @@ def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResu
         if sources.keys() != expected_ids:
             missing = sorted(str(value) for value in expected_ids - sources.keys())
             raise ValueError(f"NER artifact references unknown OCR regions: {', '.join(missing)}")
+        version_rows = connection.execute(
+            """
+            SELECT version.region_id, version.text_version_id
+            FROM evidence.text_version version
+            JOIN evidence.ocr_region region USING (region_id)
+            WHERE version.region_id = ANY(%s)
+              AND version.variant = 'raw_ocr'
+              AND region.run_id = %s
+            """,
+            (region_ids, artifact.source_ocr_run_id),
+        ).fetchall() if region_ids else []
+        text_versions = {row[0]: row[1] for row in version_rows}
+        if text_versions.keys() != expected_ids:
+            raise ValueError("NER source regions lack immutable raw OCR text versions")
 
         rows = []
         for mention in artifact.mentions:
@@ -790,6 +1237,34 @@ def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResu
                 raise ValueError("NER mentions require exact source text offsets")
             if raw_text[source.text_start : source.text_end] != mention.text:
                 raise ValueError("NER mention text does not match the cited OCR character span")
+            evidence_span_id = connection.execute(
+                """
+                INSERT INTO evidence.evidence_span (
+                    text_version_id, text_start, text_end, surface_text,
+                    surface_sha256, polygon, span_role
+                ) VALUES (
+                    %s, %s, %s, %s,
+                    encode(digest(convert_to(%s, 'UTF8'), 'sha256'), 'hex'),
+                    %s, 'mention'
+                )
+                ON CONFLICT (text_version_id, text_start, text_end, surface_sha256)
+                DO UPDATE SET surface_text = EXCLUDED.surface_text
+                RETURNING evidence_span_id
+                """,
+                (
+                    text_versions[source.region_id],
+                    source.text_start,
+                    source.text_end,
+                    mention.text,
+                    mention.text,
+                    Jsonb(source.polygon.model_dump(mode="json"))
+                    if source.polygon
+                    else None,
+                ),
+            ).fetchone()[0]
+            confidence_status, calibration_id = _confidence_provenance(
+                mention.confidence, mention.attributes
+            )
             rows.append(
                 (
                     mention.mention_id,
@@ -802,7 +1277,11 @@ def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResu
                     source.text_end,
                     source.polygon.model_dump(mode="json") if source.polygon else None,
                     mention.confidence,
+                    confidence_status,
+                    calibration_id,
                     mention.attributes,
+                    evidence_span_id,
+                    mention.attributes.get("mention_form"),
                 )
             )
 
@@ -812,19 +1291,34 @@ def ingest_ner_artifact(database_url: str, artifact_path: Path) -> NERIngestResu
                 INSERT INTO evidence.entity_mention (
                     mention_id, region_id, run_id, entity_type, mention_text,
                     normalized_text, text_start, text_end, polygon, confidence,
-                    mention_status, attributes
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'candidate', %s)
+                    confidence_status, calibration_id, mention_status,
+                    attributes, evidence_span_id, mention_form
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, 'candidate', %s, %s, %s
+                )
                 ON CONFLICT (mention_id) DO NOTHING
                 """,
                 [
-                    (*row[:8], Jsonb(row[8]) if row[8] else None, row[9], Jsonb(row[10]))
+                    (
+                        *row[:8],
+                        Jsonb(row[8]) if row[8] else None,
+                        row[9],
+                        row[10],
+                        row[11],
+                        Jsonb(row[12]),
+                        row[13],
+                        row[14],
+                    )
                     for row in rows
                 ],
             )
         stored = connection.execute(
             """
             SELECT mention_id, region_id, run_id, entity_type, mention_text,
-                   normalized_text, text_start, text_end, polygon, confidence, attributes
+                   normalized_text, text_start, text_end, polygon, confidence,
+                   confidence_status, calibration_id,
+                   attributes, evidence_span_id, mention_form
             FROM evidence.entity_mention WHERE run_id = %s ORDER BY mention_id
             """,
             (artifact.run.run_id,),
@@ -1061,6 +1555,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     manifest = subparsers.add_parser("manifest", help="Load a corpus manifest JSONL")
     manifest.add_argument("path", type=Path)
+    layout = subparsers.add_parser(
+        "layout", help="Load one or more Hunyuan layout artifact JSON files"
+    )
+    layout.add_argument("paths", type=Path, nargs="+")
     ocr = subparsers.add_parser("ocr", help="Load one or more OCR artifact JSON files")
     ocr.add_argument("paths", type=Path, nargs="+")
     selection = subparsers.add_parser(
@@ -1106,7 +1604,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(asdict(result), ensure_ascii=False))
         return 0
     for path in args.paths:
-        if args.command == "ocr":
+        if args.command == "layout":
+            result = ingest_layout_artifact(args.database_url, path)
+        elif args.command == "ocr":
             result = ingest_ocr_artifact(args.database_url, path)
         elif args.command == "ner":
             result = ingest_ner_artifact(args.database_url, path)

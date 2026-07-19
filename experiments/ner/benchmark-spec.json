@@ -387,32 +387,32 @@
       "id": "qwen3.5-0.8b-structured-ner",
       "candidate_id": "qwen3.5-0.8b-structured-ner",
       "adapter_family": "structured_generation",
-      "status": "backend_neutral_adapter_implemented_real_model_run_pending",
+      "status": "selected_first_pass_build_default_live_canary_passed_target_quality_unmeasured",
       "model": "Qwen/Qwen3.5-0.8B",
       "revision": "2fc06364715b967f1860aea9cf38778875588b17",
       "modalities": [
         "text",
         "image"
       ],
-      "selection_role": "low_cost_chinese_capable_generative_ner_challenger",
-      "serving_contract": "OpenAI-compatible local endpoint supplied by Ollama or LM Studio; benchmark logic is backend-neutral",
+      "selection_role": "first_pass_system_default_with_strict_abstention_and_9b_escalation_reserved",
+      "serving_contract": "Production uses pinned local Ollama; the benchmark adapter also supports separately identified LM Studio systems",
       "implementation": {
         "module": "src/wic_history/ner_structured.py",
         "cli": "wic-ner-benchmark run --adapter structured-generation",
-        "prompt_schema_sha256": "3ac9b3759db32f11bdb911db6a06b9dbbdf993e0fd20ce98ededf1424e1a236c",
-        "response_format_sha256": "cdc6d4c736bae55ec47ef2795e22a4435262f9f8d6bb9d95643498a46a8f33a6",
-        "validation": "strict_json_unknown_label_unicode_half_open_offset_verbatim_surface_duplicate_finish_reason_and_count_checks",
+        "prompt_schema_sha256": "22c5166ad1e079fdf0c08507c7a4ac39ab49560e468b9877aea80b4c81c46dd7",
+        "response_format_sha256": "46e997efa7e3f45493e442b08bc11217f48ab374ef45893ee61eee03b5077cc0",
+        "validation": "endpoint_schema_enforcement_is_false; strict_post_validation_rejects_unknown_label_nonverbatim_or_nonunique_surface_duplicate_finish_reason_or_count; offsets are derived only by unique exact substring search; any invalid child abstains on the whole response",
         "provenance": "per_input_prompt_raw_output_finish_reason_token_usage_latency_and_invalid_output_records",
         "runtime_checks": "Ollama_live_version_and_manifest_digest_or_LM_Studio_exact_local_GGUF_SHA256_plus_repeated_schema_canary",
-        "test_state": "local_mock_Ollama_and_LM_Studio_end_to_end_paths_pass"
+        "test_state": "local_mock_paths_pass; real_Ollama_0.24.0_Q8_model_digest_quantization_and_three_repeat_semantic_canary_pass"
       },
       "canonical_runtime": {
         "backend": "Ollama",
-        "version": "0.32.0",
+        "version": "0.24.0",
         "model_tag": "qwen3.5:0.8b",
         "quantization": "Q8_0",
         "required_manifest_digest": "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
-        "verified_local_name": "project/qwen35-08b-q8-ner-v1",
+        "verified_local_name": "qwen3.5:0.8b",
         "minimum_context": 8192
       },
       "secondary_runtime": {
@@ -432,14 +432,14 @@
         "speculative_decoding_policy": "disable_where_exposed_otherwise_pin_runtime_and_record_state",
         "schema_canary_repetitions": 3
       },
-      "first_ablation": "text_only_non_thinking_schema_constrained_generation",
+      "first_ablation": "text_only_non_thinking_prompt_structured_generation_with_strict_post_validation",
       "image_ablation": "separately_scored_page_crop_plus_ocr_text_input",
-      "maximum_route_fraction": 0.2,
+      "maximum_route_fraction": 1.0,
       "required_output_contract": {
-        "shape": "entities_array_with_type_surface_start_end",
-        "offset_unit": "unicode_codepoints_half_open",
-        "surface_rule": "source_text_start_end_must_equal_surface",
-        "invalid_output_policy": "reject_unknown_type_out_of_range_nonverbatim_duplicate_or_ambiguous_surface"
+        "shape": "entities_array_with_type_and_verbatim_surface",
+        "offset_unit": "system_derived_unicode_codepoints_half_open",
+        "surface_rule": "surface_must_occur_exactly_once_then_start_end_are_derived_deterministically",
+        "invalid_output_policy": "whole_response_abstention_for_unknown_type_nonverbatim_nonunique_duplicate_or_malformed_surface"
       },
       "reproducibility": [
         "hf_source_revision",
@@ -450,9 +450,8 @@
         "temperature_top_p_seed_and_max_tokens"
       ],
       "blockers": [
-        "real_qwen_local_model_pull_and_content_verification",
         "eligible_adjudicated_gold",
-        "real_local_inference_and_scoring_run"
+        "target_page_worker_pilot_and_scoring_run"
       ]
     },
     {

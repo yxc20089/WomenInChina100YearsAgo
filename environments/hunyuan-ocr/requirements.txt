@@ -1,0 +1,7 @@
+# Dedicated CUDA environment: HunyuanOCR 1.5's official Transformers runtime
+# is incompatible with the GLiNER research extra's Transformers upper bound.
+accelerate>=1.14,<2
+Pillow>=11,<13
+torch>=2.11,<3
+torchvision>=0.26,<1
+transformers>=5.13,<6

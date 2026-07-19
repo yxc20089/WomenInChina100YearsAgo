@@ -106,9 +106,63 @@ class RegionKind(StrEnum):
     UNKNOWN = "unknown"
 
 
+class LayoutRegionKind(StrEnum):
+    PAGE = "page"
+    PANEL = "panel"
+    COLUMN = "column"
+    TEXT_GROUP = "text_group"
+    IMAGE = "image"
+    TABLE = "table"
+    RULE = "rule"
+    OTHER = "other"
+
+
+class LayoutRegion(StrictModel):
+    layout_region_id: UUID = Field(default_factory=uuid4)
+    parent_layout_region_id: UUID | None = None
+    kind: LayoutRegionKind
+    polygon: Polygon
+    reading_order: int | None = Field(default=None, ge=0)
+    direction: Literal["vertical", "horizontal", "mixed", "unknown"] = "unknown"
+    source_method: str = Field(min_length=1)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    boundary_evidence: dict[str, Any] = Field(default_factory=dict)
+    engine_payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class LayoutPageArtifact(StrictModel):
+    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    artifact_id: UUID = Field(default_factory=uuid4)
+    source: SourcePointer
+    image_uri: str
+    image_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+    dpi: int | None = Field(default=None, gt=0)
+    run: ProcessingRun
+    regions: list[LayoutRegion]
+    warnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_layout(self) -> "LayoutPageArtifact":
+        if self.run.kind != RunKind.LAYOUT:
+            raise ValueError("layout artifact processing run must have kind=layout")
+        ids = {region.layout_region_id for region in self.regions}
+        if len(ids) != len(self.regions):
+            raise ValueError("layout region UUIDs must be unique")
+        if any(
+            region.parent_layout_region_id is not None
+            and region.parent_layout_region_id not in ids
+            for region in self.regions
+        ):
+            raise ValueError("layout parents must belong to the same artifact")
+        return self
+
+
 class OCRRegion(StrictModel):
     region_id: UUID = Field(default_factory=uuid4)
     parent_region_id: UUID | None = None
+    layout_region_id: UUID | None = None
     kind: RegionKind
     polygon: Polygon
     reading_order: int = Field(ge=0)

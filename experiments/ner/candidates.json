@@ -124,8 +124,8 @@
       "model": "Qwen/Qwen3.5-0.8B",
       "revision": "2fc06364715b967f1860aea9cf38778875588b17",
       "license": "Apache-2.0",
-      "role": "low-cost Chinese-capable generative exact-span NER challenger served through a local OpenAI-compatible endpoint",
-      "evidence": "The official card describes an 873,438,784-parameter multilingual vision-language causal model with Chinese evaluation and a 262,144-token native context, but publishes no NER, late-Qing/Republican-era Traditional-Chinese, OCR-noise, or exact-offset result. Its modern Chinese competence makes it a worthwhile measured challenger for this non-ancient corpus, not an assumed winner. Benchmark output must be schema-constrained and rejected unless every returned surface and offset is verbatim evidence.",
+      "role": "first-pass build default for candidate-only NER and candidate-bounded entity resolution; not an empirical winner",
+      "evidence": "The official card describes an 873,438,784-parameter multilingual vision-language causal model with Chinese evaluation and a 262,144-token native context, but publishes no NER, late-Qing/Republican-era Traditional-Chinese, OCR-noise, or exact-offset result. The pinned local runtime passes a repeated semantic canary. Ollama 0.24 does not reliably enforce the requested schema, so production accepts only strict type plus verbatim-surface objects, derives offsets only for a unique exact substring, and wholly abstains on any invalid child.",
       "upstream_bf16_artifact": {
         "filename": "model.safetensors",
         "bytes": 1746942600,
@@ -134,7 +134,7 @@
       "local_runtime_conditions": [
         {
           "id": "ollama-q8-canonical",
-          "runtime_version": "0.32.0",
+          "runtime_version": "0.24.0",
           "library_tag": "qwen3.5:0.8b",
           "quantization": "Q8_0",
           "manifest_digest": "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
@@ -193,7 +193,7 @@
     },
     {
       "model": "Qwen/Qwen3.5-9B",
-      "reason": "Retain only as a lower-cost control when 80 GB-class hardware is unavailable; NuExtract3's own generic structured-extraction comparison favors NuExtract3, and neither has target late-Qing/Republican-era Traditional-Chinese NER evidence."
+      "reason": "Reserved as the sole planned production escalation after a future frozen 0.8B abstention/ambiguity trigger. It is not the first pass and has no pinned local artifact, runtime, trigger policy, or target evidence yet."
     },
     {
       "model": "TriG-NER",

@@ -4,13 +4,30 @@ import unittest
 from datetime import date
 from uuid import uuid4
 
-from wic_history.graph import REVIEWED_CLAIMS_SQL, claim_payload, entity_payload
+from wic_history.graph import (
+    REVIEWED_CLAIMS_SQL,
+    REVIEWED_EVENT_EVIDENCE_SQL,
+    REVIEWED_EVENTS_SQL,
+    REVIEWED_LOCAL_CLUSTERS_SQL,
+    REVIEWED_LOCAL_CLUSTER_MEMBERS_SQL,
+    REVIEWED_MENTIONS_SQL,
+    claim_payload,
+    entity_payload,
+)
 
 
 class GraphProjectionTests(unittest.TestCase):
     def test_projection_query_is_reviewed_only(self):
         self.assertIn("c.claim_status = 'reviewed'", REVIEWED_CLAIMS_SQL)
         self.assertIn("subject.entity_status = 'reviewed'", REVIEWED_CLAIMS_SQL)
+        self.assertIn("resolution.review_status = 'reviewed'", REVIEWED_MENTIONS_SQL)
+        self.assertIn("resolution.superseded_at IS NULL", REVIEWED_MENTIONS_SQL)
+        self.assertIn("evidence.entity_redirect", REVIEWED_MENTIONS_SQL)
+        self.assertIn("event.event_status = 'reviewed'", REVIEWED_EVENTS_SQL)
+        self.assertIn("event_evidence.review_status = 'reviewed'", REVIEWED_EVENT_EVIDENCE_SQL)
+        self.assertIn("cluster.review_status = 'reviewed'", REVIEWED_LOCAL_CLUSTERS_SQL)
+        self.assertIn("revision.superseded_at IS NULL", REVIEWED_LOCAL_CLUSTER_MEMBERS_SQL)
+        self.assertIn("mention.mention_status = 'reviewed'", REVIEWED_LOCAL_CLUSTER_MEMBERS_SQL)
 
     def test_payloads_keep_reified_claim_and_provenance(self):
         subject_id = uuid4()

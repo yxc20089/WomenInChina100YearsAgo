@@ -28,15 +28,16 @@ from .evidence import (
     RunKind,
 )
 from .generation import OpenAICompatibleGenerator
+from .model_config import load_pipeline_model_configuration
 from .ner_structured import verify_ollama_model_digest
 
 
-QWEN_RESOLVER_MODEL = "Qwen/Qwen3.5-0.8B"
-QWEN_RESOLVER_REVISION = "2fc06364715b967f1860aea9cf38778875588b17"
-QWEN_RESOLVER_SERVED_MODEL = "qwen3.5:0.8b"
-QWEN_RESOLVER_OLLAMA_DIGEST = (
-    "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4"
-)
+_PIPELINE_MODELS = load_pipeline_model_configuration()
+_SEMANTIC_MODEL = _PIPELINE_MODELS.semantic
+QWEN_RESOLVER_MODEL = _SEMANTIC_MODEL.model_name
+QWEN_RESOLVER_REVISION = _SEMANTIC_MODEL.model_revision
+QWEN_RESOLVER_SERVED_MODEL = _SEMANTIC_MODEL.served_model
+QWEN_RESOLVER_OLLAMA_DIGEST = _SEMANTIC_MODEL.ollama_manifest_digest
 
 
 def normalize_name(value: str) -> str:
@@ -316,21 +317,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fuzzy-threshold", type=float, default=0.72)
     parser.add_argument("--resolver", choices=("none", "qwen"), default="none")
     parser.add_argument(
-        "--resolver-base-url",
-        default=os.environ.get("ENTITY_LLM_BASE_URL", "http://127.0.0.1:11434/v1"),
+        "--model-config",
+        help="Complete model configuration; individual model overrides are not accepted",
     )
-    parser.add_argument("--resolver-served-model", default=QWEN_RESOLVER_SERVED_MODEL)
-    parser.add_argument("--resolver-model", default=QWEN_RESOLVER_MODEL)
-    parser.add_argument("--resolver-revision", default=QWEN_RESOLVER_REVISION)
-    parser.add_argument(
-        "--resolver-ollama-manifest-digest",
-        default=QWEN_RESOLVER_OLLAMA_DIGEST,
-    )
-    parser.add_argument("--resolver-runtime-version", required=False)
-    parser.add_argument("--resolver-quantization", default="Q8_0")
-    parser.add_argument("--resolver-timeout-seconds", type=float, default=120)
-    parser.add_argument("--resolver-max-output-tokens", type=int, default=256)
-    parser.add_argument("--resolver-seed", type=int, default=42)
     return parser
 
 
@@ -346,43 +335,43 @@ def main(argv: Sequence[str] | None = None) -> int:
     resolver_identity = None
     contexts = None
     if args.resolver == "qwen":
-        if not args.resolver_runtime_version:
-            raise SystemExit("--resolver-runtime-version is required for Qwen resolution")
-        local_artifact_sha256 = args.resolver_ollama_manifest_digest.removeprefix(
-            "sha256:"
-        )
+        pipeline_configuration = load_pipeline_model_configuration(args.model_config)
+        semantic = pipeline_configuration.semantic
+        local_artifact_sha256 = semantic.ollama_manifest_digest.removeprefix("sha256:")
         resolver = OpenAICompatibleGenerator(
-            args.resolver_base_url,
-            args.resolver_served_model,
+            semantic.base_url,
+            semantic.served_model,
             api_key=os.environ.get("ENTITY_LLM_API_KEY"),
             model_revision=local_artifact_sha256,
-            timeout_seconds=args.resolver_timeout_seconds,
-            max_output_tokens=args.resolver_max_output_tokens,
-            seed=args.resolver_seed,
+            timeout_seconds=semantic.timeout_seconds,
+            max_output_tokens=semantic.max_output_tokens,
+            seed=semantic.seed,
             allow_remote=False,
         )
         verification = verify_ollama_model_digest(
             resolver,
-            args.resolver_ollama_manifest_digest,
-            args.resolver_runtime_version,
+            semantic.ollama_manifest_digest,
+            semantic.runtime_version,
         )
         contexts = load_mention_contexts(args.database_url, ner)
         resolver_identity = {
             "family": "qwen_candidate_bound",
-            "model": args.resolver_model,
-            "model_revision": args.resolver_revision,
-            "served_model": args.resolver_served_model,
+            "model": semantic.model_name,
+            "model_revision": semantic.model_revision,
+            "served_model": semantic.served_model,
             "local_artifact_sha256": local_artifact_sha256,
-            "runtime": "ollama",
-            "runtime_version": args.resolver_runtime_version,
+            "runtime": semantic.runtime_name,
+            "runtime_version": semantic.runtime_version,
             "runtime_verification": verification.model_dump(mode="json"),
-            "quantization": args.resolver_quantization,
-            "temperature": 0,
+            "quantization": semantic.quantization,
+            "temperature": semantic.temperature,
             "top_p": 1,
             "reasoning_effort": "none",
-            "seed": args.resolver_seed,
-            "max_output_tokens": args.resolver_max_output_tokens,
-            "timeout_seconds": args.resolver_timeout_seconds,
+            "seed": semantic.seed,
+            "max_output_tokens": semantic.max_output_tokens,
+            "timeout_seconds": semantic.timeout_seconds,
+            "acceleration": semantic.acceleration,
+            "pipeline_model_configuration_sha256": pipeline_configuration.sha256,
         }
     artifact = create_link_artifact(
         ner,

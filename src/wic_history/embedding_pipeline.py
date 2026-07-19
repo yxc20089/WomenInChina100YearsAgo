@@ -10,10 +10,12 @@ from datetime import datetime, timezone
 from typing import Any, Sequence
 from uuid import uuid4
 
+from .model_config import load_pipeline_model_configuration
 
-DEFAULT_MODEL = "BAAI/bge-m3"
-DEFAULT_REVISION = "5617a9f61b028005a4858fdac845db406aefb181"
-EMBEDDING_DIMENSION = 1024
+_PIPELINE_MODELS = load_pipeline_model_configuration()
+DEFAULT_MODEL = _PIPELINE_MODELS.retrieval.passage_embedding.model_name
+DEFAULT_REVISION = _PIPELINE_MODELS.retrieval.passage_embedding.model_revision
+EMBEDDING_DIMENSION = _PIPELINE_MODELS.retrieval.passage_embedding.dimension
 
 
 class BGEEmbedder:
@@ -128,8 +130,10 @@ def embed_regions(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
-    parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--revision", default=DEFAULT_REVISION)
+    parser.add_argument(
+        "--model-config",
+        help="Complete model configuration; individual model overrides are not accepted",
+    )
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--source-ocr-run-id")
     return parser
@@ -139,10 +143,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if not args.database_url:
         raise SystemExit("DATABASE_URL or --database-url is required")
+    configuration = load_pipeline_model_configuration(args.model_config)
+    embedding = configuration.retrieval.passage_embedding
     result = embed_regions(
         args.database_url,
-        args.model,
-        args.revision,
+        embedding.model_name,
+        embedding.model_revision,
         args.batch_size,
         args.source_ocr_run_id,
     )

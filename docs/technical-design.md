@@ -1,6 +1,6 @@
 # Technical design: reconstructing women's history from *Shen Bao*
 
-Status: selected architecture, benchmark plan, and tested three-page/three-volume vertical slice
+Status: research record; first-build selections superseded on 2026-07-19 by [e2e-pipeline-contract.md](e2e-pipeline-contract.md)
 Research cutoff: 2026-07-18  
 Scope: `s3://ccaa-us-east-1-504133794192/sb_raw/`
 
@@ -12,9 +12,15 @@ Use three distinct data planes:
 
 1. **Evidence plane:** immutable sources, page geometry, OCR versions, annotations, candidate claims, reviewed assertions, and provenance. PostgreSQL is authoritative; S3 stores images and versioned derivatives.
 2. **Search plane:** OpenSearch hybrid lexical+dense retrieval with reranking and exact page/region citations. This is the production baseline.
-3. **Experimental graph plane:** rebuildable Neo4j projections and graph-RAG indexes. Start with LightRAG; benchmark Microsoft GraphRAG Global and DRIFT. Do not treat LazyGraphRAG as an installable OSS component.
+3. **Graph plane:** a rebuildable, reviewed-only Neo4j projection. GraphRAG,
+   LightRAG, and LazyGraphRAG remain later experiments and are not first-build
+   ingestion or query dependencies.
 
-The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-preserving evidence extraction, with **PaddleOCR-VL-1.6** as a fallback/challenger on difficult regions. This is a benchmark hypothesis, not a final model lock.
+The final first-build selection is **HunyuanOCR 1.5 only**, using its official
+`spotting_json` and `layout_parse` tasks on identical immutable page bytes.
+Uncertainty enters review rather than another OCR model. The only normative
+stage contract is [e2e-pipeline-contract.md](e2e-pipeline-contract.md); candidate
+comparisons and earlier Paddle pilots below are retained as research history.
 
 ### Verified implementation slice (2026-07-18)
 
@@ -33,7 +39,7 @@ The provisional OCR selection is **PP-StructureV3 + PP-OCRv6** for coordinate-pr
 - The global active-selection RAG export accounts for all 2,498 regions across three pages: 2,471 text-bearing regions map back from exact page-text character offsets to scan polygons and derivative/source hashes; 27 empty regions are recorded as omitted. Its three documents contain 16,834 characters. GraphRAG and LightRAG receive the same version-isolated text input. A live global export exposed and fixed explicit PostgreSQL typing for null optional volume/page filters.
 - Pinned GraphRAG 3.1.1 and LightRAG 1.5.4 package CLIs were installed and inspected in isolated environments. The shared-export validator, GraphRAG workspace preparation and authenticated LightRAG REST adapter are implemented; indexing is waiting for a recorded experiment LLM/embedding configuration and review-quality article units.
 - Lexical, dense and hybrid retrieval each achieve Recall@5 1.0, MRR 1.0, citation-pointer rate 1.0 and derivative-pointer rate 1.0 on the single lossless exact-match pilot question. Historian-gold evidence rate is correctly 0.0. This validates metric plumbing only and is explicitly not a historian-facing quality result.
-- The NER gold contract now requires two distinct independent reviews and an adjudication, validates corrected/raw exact offsets, and rejects duplicate identities/spans. Schema 1.1 separates model-independent gold region IDs from mapped OCR run/region IDs. The executable benchmark layer adds a separate non-ingestible prediction artifact because one issue-split evaluation spans many OCR runs: every zero- or nonzero-mention result freezes its snippet, issue, model-independent gold region, source OCR run/region and input-text hash. It rejects issue leakage, incomplete or underpowered manifests, moving model revisions, abbreviated code revisions and incomplete supervised/generative provenance; the scorer verifies the exact gold file and scores only the artifact split. A paired comparator checks identical inputs and computes deterministic issue-cluster bootstrap intervals. Rules and GLiNER adapters are implemented. The supervised specification pins official W2NER code and adds training-issue-only MacBERT-DAPT plus same-head mmBERT challengers. A provenance-safe exporter now emits native W2NER views plus deterministic, length-preserving training-issue-only OCR substitutions; it clears data conversion, not head/model selection or training. The backend-neutral structured-generation adapter sends one frozen JSON schema through Ollama or LM Studio, rejects normalization and invalid Unicode offsets, records prompt/raw-output/finish/token/latency provenance, verifies live Ollama version and digest or an exact LM Studio GGUF hash, and aborts on a nondeterministic repeated canary. Mock local end-to-end paths pass; no real Qwen checkpoint has been run. A model-neutral tokenizer qualifier and six-case Traditional-Chinese/variant/OCR-confusion Unicode fixture freeze snapshot-file hashes and reject normalization, coverage, overlap, or probe-offset drift. The pinned mmBERT run passed all six offset cases with no unknown tokens; two standalone initial SentencePiece markers are retained and excluded only under the explicit duplicate-`(0, 1)` virtual-prefix policy. This clears offset plumbing only, not model quality. PP-UIE is tracked only for annotation assistance because its immutable weight identity and exact-offset contract are unresolved. Supervised training and rights-blocked Otter remain blocked until their recorded prerequisites exist. The scorer reports exact/relaxed and per-type metrics, invalid evidence, OCR CER/loss, raw recoverability, end-to-end recall, decade/layout/quality strata, character/region throughput and recorded peak memory. Candidate mentions/second is diagnostic output density, not a selection metric. This is synthetic-fixture tested; no eligible historical gold set, benchmark score, supervised head winner or model winner exists yet.
+- The NER gold contract now requires two distinct independent reviews and an adjudication, validates corrected/raw exact offsets, and rejects duplicate identities/spans. Schema 1.1 separates model-independent gold region IDs from mapped OCR run/region IDs. The executable benchmark layer adds a separate non-ingestible prediction artifact because one issue-split evaluation spans many OCR runs: every zero- or nonzero-mention result freezes its snippet, issue, model-independent gold region, source OCR run/region and input-text hash. It rejects issue leakage, incomplete or underpowered manifests, moving model revisions, abbreviated code revisions and incomplete supervised/generative provenance; the scorer verifies the exact gold file and scores only the artifact split. A paired comparator checks identical inputs and computes deterministic issue-cluster bootstrap intervals. Rules and GLiNER adapters are implemented. The supervised specification pins official W2NER code and adds training-issue-only MacBERT-DAPT plus same-head mmBERT challengers. A provenance-safe exporter now emits native W2NER views plus deterministic, length-preserving training-only OCR substitutions; it clears data conversion, not head/model selection or training. The structured-generation adapter records prompt/raw-output/finish/token/latency provenance, verifies the live local runtime and model digest, and aborts on a nondeterministic or semantically invalid repeated canary. Real Ollama 0.24.0/Qwen3.5-0.8B Q8 identity and canary checks pass. That endpoint does not reliably enforce the requested schema, so production accepts only strict type/verbatim-surface objects, derives offsets only when the surface occurs exactly once, and wholly abstains on any malformed or ambiguous response. A model-neutral tokenizer qualifier and six-case Traditional-Chinese/variant/OCR-confusion Unicode fixture freeze snapshot-file hashes and reject normalization, coverage, overlap, or probe-offset drift. The pinned mmBERT run passed all six offset cases with no unknown tokens; two standalone initial SentencePiece markers are retained and excluded only under the explicit duplicate-`(0, 1)` virtual-prefix policy. This clears offset plumbing only, not model quality. PP-UIE is tracked only for annotation assistance because its immutable weight identity and exact-offset contract are unresolved. Supervised training and rights-blocked Otter remain blocked until their recorded prerequisites exist. The scorer reports exact/relaxed and per-type metrics, invalid evidence, OCR CER/loss, raw recoverability, end-to-end recall, decade/layout/quality strata, character/region throughput and recorded peak memory. Candidate mentions/second is diagnostic output density, not a selection metric. No eligible historical gold set, benchmark score, supervised head winner or model winner exists yet.
 - A database-driven annotation-packet builder now samples only active OCR selections across women-theme, NER-disagreement, confidence and no-candidate baseline strata. It freezes exact source/derivative/image/OCR-region provenance into a content hash, verifies local image bytes, emits a model-signal-free reviewer view and refuses incomplete finalization. The first 50-unit page-308 packet reproduced ID `5d241438…`. The expanded three-page packet has stable ID `fae8be96…`, 150 units, 9 women-theme and 27 disagreement selections; it correctly remains ineligible because it has fewer than 500 units, one decade and no issue segmentation. This is workflow evidence, not historical gold.
 - The OCR/layout gold contract likewise requires source-image hashes, dimensions, two reviews and adjudication, model-independent convex polygons and unique reading orders. Its scorer refuses mixed revisions or changed images and reports detection F1/IoU, area coverage, matched and reading-order CER, order/kind/direction accuracy, invalid geometry, throughput/memory and page strata. It is synthetic-fixture tested; the historical lossless gold renders remain pending.
 - The selection-driven lossless renderer validates complete named screening decisions and verified cached/S3 source sizes, hashes each full source object, and refuses unsafe PDF composition/rotation. A non-gold page-308 pilot directly decoded the single 6176×8960 JBIG2 raster to PNG without geometric resampling and verified decoded-pixel identity before/after writing; the 2471×3584 screening JPEG is not reused.
@@ -81,13 +87,13 @@ There is no audio or video in the accessible prefix.
 flowchart LR
     S3[(S3 immutable sources)] --> V[Manifest and container validation]
     V --> R[Page rendering: PDF/JBIG2 and DjVu]
-    R --> O1[PP-StructureV3 + PP-OCRv6]
-    R --> O2[PaddleOCR-VL-1.6 challenger/fallback]
+    R --> O1[HunyuanOCR 1.5 spotting_json]
+    R --> O2[HunyuanOCR 1.5 layout_parse]
     O1 --> OA[Versioned OCR/layout artifacts]
     O2 --> OA
     OA --> PG[(PostgreSQL evidence store)]
     OA --> OS[(OpenSearch hybrid index)]
-    PG --> NER[NER, events, relations, entity linking]
+    PG --> NER[Qwen article extraction and local coreference]
     NER --> C[Candidate claims]
     C --> H[Human review]
     H --> A[Reviewed assertions]
@@ -117,12 +123,13 @@ flowchart LR
 
 PaddleOCR versioning must be stated precisely. As of the research cutoff, the toolkit is **PaddleOCR 3.7.0**; its current conventional family is **PP-OCRv6**, its modular document pipeline is **PP-StructureV3**, and its current compact document VLM is **PaddleOCR-VL-1.6 (0.9B)**. “PaddleOCR 3.0” alone is not a model selection.
 
-### 4.1 Candidate comparison
+### 4.1 Candidate comparison retained as research history
 
 | Candidate | Historic/Traditional Chinese | Layout and coordinates | Deployment/license | Decision |
 |---|---|---|---|---|
-| PP-StructureV3 + PP-OCRv6 | Chinese supported; *Shen Bao* accuracy unproven | Best candidate for fine-grained regions, text and table-cell coordinates; modular orientation/layout/recognition | Local CPU/GPU; Apache-2.0 | **Primary evidence-grade benchmark** |
-| PaddleOCR-VL-1.6 | Officially claims improvements on ancient Chinese and rare characters | Strong page parsing/reading order; coordinates are less fine-grained than PP-StructureV3 | 0.9B, GPU preferred, local/API; Apache-2.0 | **Primary difficult-page challenger and fallback** |
+| PP-StructureV3 + PP-OCRv6 | Chinese supported; *Shen Bao* accuracy unproven | Fine-grained regions, text and table-cell coordinates; modular orientation/layout/recognition | Local CPU/GPU; Apache-2.0 | **Historical control; rejected from first build** |
+| HunyuanOCR 1.5 | Targeted Traditional-Chinese tests recovered consequential glyphs that other pilots missed, while also making substitutions elsewhere | Paired `spotting_json` coordinates/transcription and `layout_parse` structure/order | 1B BF16, CUDA required by the pinned runtime | **Sole first-build OCR/layout model; disagreement requires review** |
+| PaddleOCR-VL-1.6 | Officially claims improvements on ancient Chinese and rare characters | Strong page parsing/reading order; coordinates are less fine-grained than PP-StructureV3 | 0.9B, GPU preferred, local/API; Apache-2.0 | Evaluation-only alternative, not the first-build fallback |
 | MinerU 3.3 | Native multilingual OCR; historical vertical Chinese unproven | Strong document parsing and reading-order JSON/visualization | Local CPU/GPU/MPS; custom license derived from Apache 2.0 | **End-to-end parsing challenger; legal review required** |
 | GOT-OCR 2.0 | Chinese-aware compact model | Region/formatted OCR, but not a complete evidence geometry stack | Roughly 0.6–0.7B; Apache-2.0 model card | **Research challenger on hard subset** |
 | Google Document AI Enterprise OCR | Chinese/Hani supported | Managed hierarchy and geometry | Proprietary managed service | **Cloud quality/cost control** |
@@ -133,29 +140,34 @@ PaddleOCR versioning must be stated precisely. As of the research cutoff, the to
 
 Primary documentation: [PaddleOCR repository](https://github.com/PaddlePaddle/PaddleOCR), [PaddleOCR releases](https://github.com/PaddlePaddle/PaddleOCR/releases), [PP-OCRv6 pipeline](https://www.paddleocr.ai/main/en/version3.x/pipeline_usage/OCR.html), [PP-StructureV3](https://www.paddleocr.ai/main/en/version3.x/algorithm/PP-StructureV3/PP-StructureV3.html), [PaddleOCR-VL-1.6](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6), [MinerU](https://github.com/opendatalab/MinerU), [GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0), [olmOCR](https://github.com/allenai/olmocr), [Surya](https://github.com/datalab-to/surya), [Docling](https://github.com/docling-project/docling), and [AWS Textract limits](https://docs.aws.amazon.com/textract/latest/dg/limits.html).
 
-### 4.2 Proposed OCR flow
+### 4.2 Selected OCR flow
 
 ```text
 validated page raster
-  -> PP-StructureV3 layout, region classes, orientation and reading order
-  -> PP-OCRv6 transcription for every text region
-  -> confidence/disagreement rules select difficult regions
-  -> PaddleOCR-VL-1.6 reprocesses those regions or full pages
-  -> retain both hypotheses; never silently overwrite
-  -> human correction/review for gold data and important claims
+  -> HunyuanOCR spotting_json for coordinate-bearing line transcription
+  -> HunyuanOCR layout_parse for structure and proposed reading order
+  -> retain both raw task outputs under one pinned model/config identity
+  -> abstain/review on malformed output, disagreement, or uncertainty
+  -> human correction/review before article-scoped semantics
 ```
 
-Canonical OCR artifacts should use PAGE XML, ALTO XML, or equivalent versioned JSON that retains polygons, hierarchy, reading order, raw output, confidence, model/version, rendering parameters, and correction history. Markdown is a retrieval derivative, not the authoritative format.
+Canonical OCR artifacts use versioned JSON that retains polygons, hierarchy,
+reading order, exact raw model output, confidence provenance state,
+model/version, rendering parameters, and correction history. Markdown is a
+retained layout-model output or retrieval derivative, not the authoritative
+evidence format.
 
 ### 4.3 OCR benchmark gate
 
 Create 150–250 double-reviewed pages stratified across decades, PDF/DjVu, clean/degraded scans, vertical/mixed direction, advertisements, dense classifieds, photographs/captions, tables, rare glyphs, bleed-through, skew, gutters and cropping.
 
-Benchmark:
+The selected Hunyuan pipeline remains the production system under test. The
+following are offline reference comparators only; none is an ingestion
+fallback:
 
-- A: PP-StructureV3 + PP-OCRv6 medium;
-- B: PaddleOCR-VL-1.6;
-- C: modular pipeline plus VL fallback;
+- A: pinned HunyuanOCR 1.5 paired tasks;
+- B: PP-StructureV3 + PP-OCRv6 medium;
+- C: PaddleOCR-VL-1.6;
 - D: MinerU 3.3;
 - E: Google Document AI Enterprise OCR;
 - F: GOT-OCR 2.0 on a 50-page hard subset.
@@ -247,35 +259,36 @@ may be stored only as separate retrieval/linking features.
 | GLiNER-X large, revision `4a4437f…` | 865M multilingual open-type span NER | **Deployable open-span recall challenger**; reported `zh_pud` F1 0.6794 on modern Chinese PUD, which includes Traditional script, but no Republican-era/OCR/project-ontology result |
 | GLiNER-X large v0.5, revision `f41e752…` | Legacy 865M multilingual checkpoint with a distinct universal/Jieba splitter | **Active accuracy challenger**; reported `zh_pud` F1 0.709, the family's strongest published Chinese score; CC-BY-NC-SA-4.0 is recorded but is not a project blocker |
 | NuExtract3, revision `2e9fca8…` | Multimodal schema extraction | **Difficult-case/relation challenger**; require valid JSON, verbatim evidence and exact offset recovery |
-| Qwen3.5-0.8B, revision `2fc0636…` | Small Chinese-capable generative structured NER | **Run as a low-cost local challenger**; canonical Ollama Q8 and optional LM Studio Q8 are distinct systems behind one OpenAI-compatible adapter, with exact schema/surface/offset validation mandatory and target NER evidence absent |
+| Qwen3.5-0.8B, revision `2fc0636…` | Small Chinese-capable generative structured NER | **Excluded from first-build ingestion.** It remains historical smoke evidence only; the Holbein bounded classifier returned the wrong response shape and labels. |
+| Qwen3.5-4B, revision `851bf6e…` | Chinese-capable structured extraction and bounded resolution | **Selected single semantic model.** It passed the frozen semantic canary and the exact Holbein candidate contract. Invalid output abstains; there is no size router or larger-model fallback. |
 | Qwen3.6-27B, revision `6a9e13b…` | Chinese-capable multimodal JSON-schema ceiling | **80 GB-class control only**, not the batch default; no target NER result |
 | GLiNER multi v2.1, revision `443d26d…` | Existing multilingual smoke baseline | **Retain as a measured baseline**; its one-page noisy output is not production quality |
 | GLiNER large v2.5 | Prompted/open-type span NER | **Lower-priority control**; no published Chinese evaluation was found to justify prioritizing it |
 | PP-UIE-0.5B | Chinese/English open-schema IE suggestions | **Annotation-assistance only and currently blocked**; modern clean-news evidence, string output, and no immutable public weight revision/offset contract |
 | UniNER 7B | Generative universal NER | **Reject as production core** due English focus and non-commercial model license |
 
-The exact registry, roles and revisions are committed in `experiments/ner/candidates.json`; model names alone are not reproducible selections. Generic leaderboards do not settle this choice. The closest [historical Chinese newspaper study](https://aclanthology.org/2024.lrec-main.35/) used entirely retyped *Shen Bao*, reporting MacBERT 58.26 and SIKU 56.83 F1; it is target-period evidence but explicitly not OCR evidence. An [EvaHan model-selection comparison](https://aclanthology.org/2025.alp-1.24/) with one SikuBERT encoder reports W2NER 88.48 average F1 versus GlobalPointer 87.33 and CRF 86.33. That is only a 1.15-point W2NER margin over GlobalPointer, and the authors explicitly warn that randomly split augmented samples may leak across those folds. Their public-test W2NER and CRF systems use different encoders, so that result cannot isolate the head. The project therefore has no selected head: it must compare W2NER, GlobalPointer and CRF on one frozen MacBERT backbone. The [official W2NER implementation pinned at `a34ff841…`](https://github.com/ljynlp/W2NER/tree/a34ff841891919001080edefb50e14fa9dc15e1c) is the first implemented exporter path, not a winner. The clean-room `wic-ner-training-export` command now materializes provenance-hashed W2NER views and deterministic training-only, length-preserving OCR substitutions; eligible gold and trained heads remain absent. MacBERT-DAPT is a proposed training-issue-only experiment, not a released model or claimed improvement. The [mmBERT paper](https://arxiv.org/abs/2509.06888) supports a newer multilingual encoder ablation but explicitly reports only a WikiANN NER tie with XLM-R and no target OCR evidence. [Chinese ModernBERT](https://arxiv.org/abs/2510.12285) supplies a newer Chinese-specific encoder ablation, but no NER or target result and a source-mutating default tokenizer keep it behind a stricter offset gate. [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B/tree/2fc06364715b967f1860aea9cf38778875588b17) is now a low-cost, locally served generative challenger because its Chinese competence is plausible, but it must pass the identical gold benchmark and strict verbatim-offset validator. A [2026 historical OCR NER study](https://arxiv.org/abs/2601.00488) supports a clean-room empirical-noise training ablation, but its German VET score is not transferable. [PP-UIE](https://paddlenlp.readthedocs.io/zh/latest/llm/application/information_extraction/README.html) is useful annotation-assistance research, not an exact-offset production arm. Otter's [2026 preprint](https://arxiv.org/abs/2601.06347) is interesting, but absent checkpoint rights and target evidence keep it out of execution. Recent [HisDoc-OCR research](https://aclanthology.org/2026.findings-acl.301/) documents fabricated characters, repetition and semantic drift when general multimodal models read Chinese historical scans. Therefore NuExtract3/Qwen image arms remain separately scored ablations with exact visual/text grounding, never assumed OCR-robust NER.
+Operational model identities and runtime pins are frozen in `config/pipeline-models.toml`; model names alone are not reproducible selections. Generic leaderboards do not settle historical-OCR quality. The closest [historical Chinese newspaper study](https://aclanthology.org/2024.lrec-main.35/) used retyped *Shen Bao*, so it is period evidence but not OCR evidence. The [EvaHan comparison](https://aclanthology.org/2025.alp-1.24/) cannot isolate the NER head under one encoder; W2NER, GlobalPointer, CRF and GLiNER therefore remain evaluation work rather than first-build dependencies. The Qwen3.5-0.8B/Ollama-0.24 experiment is retained only as negative history because it failed the Holbein wrapper and labels. Production uses Qwen3.5-4B/Q4_K_M on pinned Ollama 0.32.1 with native JSON schema, deterministic surface/context localization, and whole-response abstention. Recent [HisDoc-OCR research](https://aclanthology.org/2026.findings-acl.301/) documents fabricated characters, repetition and semantic drift when general multimodal models read Chinese historical scans; image-model extraction remains separately grounded and scored.
 
 The official [GLiNER-X collection](https://huggingface.co/collections/knowledgator/gliner-x) provides three current Apache-2.0 and three legacy v0.5 checkpoints. Current small `d51a098…`, base `a6c7a8f…` and large `4a4437f…` publish `zh_pud` F1 of 0.5792, 0.6152 and 0.6794 respectively. The underlying [Chinese PUD corpus](https://universaldependencies.org/treebanks/zh_pud/index.html) is modern translated news/Wikipedia and visibly includes Traditional characters, so the result is relevant script evidence; it still establishes neither Republican-era vocabulary nor newspaper/OCR quality. Keep current large as the current-release/Stanza arm, base only as its efficiency control if large qualifies or hardware requires it, and small as diagnostic-only. Legacy large v0.5 `f41e752…` reports the family's higher 0.709 and is therefore an active accuracy challenger. Licensing is not a project blocker; record its CC-BY-NC-SA-4.0 provenance and score its universal/Jieba splitter as a distinct system. The first technical smoke test used the explicit multilingual v2.1 checkpoint because its official card identifies it as a 209M multilingual Apache-2.0 model. Its poor unreviewed output on noisy *Shen Bao* OCR confirms that generic model-card claims and confidence scores are not sufficient. High scores such as single-character kinship terms classified as people still occurred. Benchmark future models on corrected gold text and raw OCR separately to distinguish OCR propagation from NER failure.
 
 ### 7.2 Proposed extraction flow
 
 ```text
-article/region OCR with character offsets and polygons
-  -> rules/gazetteers + multilingual/open NER + supervised Chinese NER
-  -> merge candidates without discarding disagreements
-  -> entity-link candidate generation from aliases, variants, transliterations and embeddings
-  -> rerank using date, place, organization, co-reference and graph context
-  -> deterministic/supervised/structured models propose relations over exact mentions
-  -> reject invalid JSON, missing offsets, ungrounded entities and unsupported relations
-  -> separate mention, entity-link and cited-claim review decisions
+raw OCR with immutable text and polygons
+  -> historian activates one coherent article revision and reviewed text versions
+  -> Qwen3.5-4B call 1 receives page images, text, boxes and a closed extraction schema
+  -> strict whole-response validation assigns durable mention/evidence IDs
+  -> Qwen3.5-4B call 2 clusters only those supplied IDs within the article
+  -> invalid or ambiguous output becomes abstention; no model-size fallback
+  -> separate mention, local-cluster and cited-claim review decisions
+  -> reviewed-only Neo4j projection
 ```
 
 Store OCR confidence, mention score, entity-link score and relation score independently. Do not multiply uncalibrated scores into a misleading single probability.
 
-The gold set should report strict and partial span F1 by entity type, candidate recall@k, linking accuracy including NIL, relation F1 conditional on correct evidence, calibration and performance by OCR CER/decade. Evaluate paired corrected-text, raw-OCR and observed-confusion augmentation arms; split by issue/date; add hallucinated-span rate, invalid evidence/offset rate, throughput and peak memory. First compare W2NER, GlobalPointer and CRF on one frozen MacBERT backbone. Then run the target-relevant MacBERT, training-issue-only MacBERT-DAPT, mmBERT and tokenizer-qualified Chinese ModernBERT arms with the selected overlap-capable head and identical search budgets; retain SIKU as a target-period-evaluated control and defer license-gated GujiRoBERTa as an ancient-domain mismatch control. Factor clean against training-only empirical OCR substitutions for each finalist with at least three seeds; length-changing noise requires deterministic edit maps. Select a replacement only with a positive issue-cluster lower confidence bound, at least two raw exact-F1 points, zero invalid offsets and no core-type drop above three points, or document a separately non-inferior speed/cost choice. This separates OCR propagation from NER failure and prevents newspaper-template leakage.
+The following is the empirical replacement tournament, not a prerequisite for the current build. The gold set should report strict and partial span F1 by entity type, candidate recall@k, linking accuracy including NIL, relation F1 conditional on correct evidence, calibration and performance by OCR CER/decade. Evaluate paired corrected-text, raw-OCR and observed-confusion augmentation arms; split by issue/date; add hallucinated-span rate, invalid evidence/offset rate, throughput and peak memory. First compare W2NER, GlobalPointer and CRF on one frozen MacBERT backbone. Then run the target-relevant MacBERT, training-issue-only MacBERT-DAPT, mmBERT and tokenizer-qualified Chinese ModernBERT arms with the selected overlap-capable head and identical search budgets; retain SIKU as a target-period-evaluated control and defer license-gated GujiRoBERTa as an ancient-domain mismatch control. Factor clean against training-only empirical OCR substitutions for each finalist with at least three seeds; length-changing noise requires deterministic edit maps. Select a replacement only with a positive issue-cluster lower confidence bound, at least two raw exact-F1 points, zero invalid offsets and no core-type drop above three points, or document a separately non-inferior speed/cost choice. This separates OCR propagation from NER failure and prevents newspaper-template leakage.
 
-The current production hypothesis is a cascade, subject to that benchmark: deterministic rules/gazetteers; first select W2NER, GlobalPointer or CRF on frozen MacBERT, then run the target-relevant MacBERT/MacBERT-DAPT/mmBERT/tokenizer-qualified-Chinese-ModernBERT encoder tournament with the selected overlap-capable head; add GLiNER-X only if it gains at least three raw-recoverable recall points at no more than five precision points, and route Qwen3.5-0.8B or NuExtract3 only for disagreement, rare types, page-image context and implicit relations. SIKU is a control, not a default, and ancient-domain GujiRoBERTa is deferred. Qwen uses one backend-neutral OpenAI-compatible adapter, but canonical Ollama Q8 and optional LM Studio Q8 are separately scored systems with frozen artifact hashes and serving configurations. Otter remains rights-blocked; PP-UIE suggestions never enter the production union automatically. Every stage can abstain. No model output creates an authority entity or reviewed claim without a separate link/review decision.
+The first runnable system uses one configured Qwen3.5-4B/Q4_K_M service for one combined article extraction call and one separate article-local coreference call. It never creates or renames a canonical entity: code validates exact occurrences and assigns durable IDs, then Qwen may cluster only those supplied IDs or leave them unresolved. There is no 0.8B first pass, 35B fallback, or first-build global resolver. Every stage can abstain, and no model output creates an authority entity or reviewed claim without a separate review decision.
 
 The first controlled GLiNER-X compatibility run strengthens the need for that gate. Its 50-region subset generated 13.4 times as many candidates as GLiNER multi-v2.1, including apparently noisy high-confidence fragments, while the two systems agreed on only two exact span/type candidates. Generic `zh_pud` performance cannot determine the precision/recall tradeoff on this archive. The implementation now records a fixed word-splitter language and a bounded-region scope; automatic language detection is prohibited for these short known-Chinese regions.
 
@@ -432,7 +445,7 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 
 1. Finish human review of the 500-page visual screen and select 150–250 gold pages.
 2. Pilot and approve the drafted annotation guidelines for original characters, normalization, layout and women-centered entities.
-3. Use the implemented selection-driven renderer to create lossless gold pages, then run PP-StructureV3/PP-OCRv6 versus the difficult-page challengers.
+3. Use the implemented selection-driven renderer to create lossless gold pages, then score the pinned Hunyuan `spotting_json` + `layout_parse` pipeline and calibrate its project confidence records.
 4. Use the implemented active-selection annotation packet, OCR/layout and NER gold validators/scorers against double-reviewed annotations; expand from the 50-unit ineligible pilot only after issue/article segmentation.
 5. After NER adjudication, have two relation annotators and an independent adjudicator build the issue-split relation set and run the rules/DeepKE tournament.
 6. Have historians test the implemented mention/entity-resolution and cited-claim queues without promoting current GLiNER smoke outputs.
@@ -440,20 +453,21 @@ Use stable opaque IDs; never use a name label as identity. Every derivative incl
 8. Use the implemented shared export to evaluate LightRAG and Microsoft GraphRAG only after the hybrid baseline is scored.
 9. Have at least two historians author the eligible grounded-generation set, approve a pinned local or privacy-cleared remote model tournament, and run the implemented blind/adjudicated paired comparison before enabling narratives.
 
-## 13. Selected technologies, pending benchmark
+## 13. Selected build technologies and evaluation status
 
 | Layer | Provisional selection | Status |
 |---|---|---|
 | Source/archive | Existing S3 raw prefix + new versioned derivative area | Selected architecture |
 | Validation/rendering | PDF/JBIG2 and DjVu-aware batch pipeline | Screening and source-resolution non-gold pilot implemented; historian-selected gold pending |
-| Evidence OCR | PP-StructureV3 + PP-OCRv6 | Source-resolution pipeline pilot and adjudicated gold contract/scorer implemented; scored historical gold pending |
-| Difficult OCR | PaddleOCR-VL-1.6 | Benchmark fallback candidate; identical-image comparison pending |
+| Layout and OCR | HunyuanOCR 1.5 at the pinned official revision | Sole first-build model using `spotting_json` and `layout_parse`; no fallback; historical gold and calibration pending |
 | Authoritative database | PostgreSQL 17 | Implemented and live-tested locally |
 | Embeddings near evidence | pgvector 0.8.5 + BGE-M3 challenger | Implemented for smoke slice; benchmark pending |
 | Production retrieval | OpenSearch 3.7 CJK + BGE-M3 + RRF | Implemented baseline and smoke metrics; reranker/historian evaluation pending |
 | Graph exploration | Neo4j Community derived projection | Selected for pilot if graph questions justify it |
 | Standards export | CIDOC CRM profile + PROV-O + Web Annotation, validated with Jena/SHACL | Selected architecture |
-| NER | Frozen-backbone W2NER/GlobalPointer/CRF comparison; target-relevant MacBERT/MacBERT-DAPT/mmBERT/qualified Chinese ModernBERT encoder tournament; SIKU control; gated GLiNER-X recall union; locally served Qwen3.5-0.8B and NuExtract3 challengers | Multi-run benchmark harness, issue-cluster comparator, provenance-safe W2NER/noise exporter and backend-neutral exact-offset Qwen adapter are implemented; pinned mmBERT offset qualifier passed, Chinese ModernBERT is custom-tokenizer blocked, ancient-text encoders are deprioritized, and real Qwen plus eligible training/scoring runs remain pending; no winner |
+| Semantic extraction | Qwen3.5-4B Q4_K_M via Ollama 0.32.1, MTP disabled | One multimodal extraction call followed by one separate supplied-ID local-coreference call; invalid responses wholly abstain. |
+| NER evaluation arms | Frozen-backbone W2NER/GlobalPointer/CRF; MacBERT/MacBERT-DAPT/mmBERT/qualified Chinese ModernBERT; SIKU control; GLiNER-X; NuExtract3 | Harness and provenance-safe exporters are implemented; these are not required to finish the first system and no empirical winner is claimed. |
+| Entity resolution | Article-local Qwen3.5-4B coreference only | Cross-document matching and canonical merging are deferred to a later stronger-model design. |
 | Relation/event extraction | Exact-cue rules baseline + MacBERT/DeepKE pair classifier; PRGC and routed NuExtract3 challengers | Evidence-grounded candidate pipeline and frozen scorer/comparator implemented; reviewed linked mentions and historian relation gold absent; no winner |
 | Human review and insights | Transactional PostgreSQL decisions + reviewed-only Neo4j analytical signals | Mention, entity-resolution and cited-claim queues implemented; graph staleness and reversible projection tested; adjudication/reversal pending |
 | Graph-RAG experiment | LightRAG 1.5.4 (`9a45b64…`) | Selected first isolated experiment; shared export implemented |

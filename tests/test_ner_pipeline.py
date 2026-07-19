@@ -155,7 +155,7 @@ class NERPipelineTests(unittest.TestCase):
         self.assertFalse(qwen_arm["decoding_contract"]["thinking"])
         self.assertEqual(
             qwen_arm["status"],
-            "backend_neutral_adapter_implemented_real_model_run_pending",
+            "selected_first_pass_build_default_live_canary_passed_target_quality_unmeasured",
         )
         self.assertEqual(
             qwen_arm["implementation"]["prompt_schema_sha256"],

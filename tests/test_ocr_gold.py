@@ -20,6 +20,7 @@ from wic_history.ocr_gold import (
     OCRGoldPage,
     OCRGoldSet,
     OCRReviewerAnnotation,
+    character_error_counts,
     polygon_iou,
     score_ocr_artifacts,
 )
@@ -151,6 +152,27 @@ def prediction() -> OCRPageArtifact:
 
 
 class OCRGoldTests(unittest.TestCase):
+    def test_character_errors_separate_missing_wrong_and_hallucinated(self):
+        self.assertEqual(
+            character_error_counts("甲乙丙", "甲戊丙"),
+            {
+                "substitutions": 1,
+                "missing_characters": 0,
+                "hallucinated_characters": 0,
+                "total_errors": 1,
+            },
+        )
+        self.assertEqual(
+            character_error_counts("中央大戲院", "中央戲院")["missing_characters"],
+            1,
+        )
+        self.assertEqual(
+            character_error_counts("中央戲院", "中央大戲院")[
+                "hallucinated_characters"
+            ],
+            1,
+        )
+
     def test_convex_polygon_iou(self):
         self.assertAlmostEqual(polygon_iou(box(0, 0, 10, 10), box(5, 0, 15, 10)), 1 / 3)
 
@@ -165,6 +187,8 @@ class OCRGoldTests(unittest.TestCase):
         self.assertEqual(overall["region_kind_accuracy"], 0.5)
         self.assertEqual(overall["text_direction_accuracy"], 1.0)
         self.assertEqual(overall["reading_order_pair_accuracy"], 0.0)
+        self.assertEqual(overall["complete_reading_order_accuracy"], 0.0)
+        self.assertEqual(overall["matched_character_errors"]["substitutions"], 1)
         self.assertEqual(report["by_scan_quality"]["poor"]["pages"], 1)
 
     def test_rejects_prediction_from_a_different_image(self):

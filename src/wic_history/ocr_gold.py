@@ -23,6 +23,61 @@ from .evidence import (
 from .ner_gold import character_error_distance
 
 
+def character_error_counts(reference: str, prediction: str) -> dict[str, int]:
+    """Return one deterministic minimum-edit substitution/deletion/insertion split.
+
+    Deletions are printed characters missing from OCR; insertions are OCR
+    characters absent from the print. Equal-cost alignments prefer a
+    substitution, then deletion, then insertion so reports are reproducible.
+    """
+    rows = len(reference) + 1
+    columns = len(prediction) + 1
+    distance = [[0] * columns for _ in range(rows)]
+    for row in range(rows):
+        distance[row][0] = row
+    for column in range(columns):
+        distance[0][column] = column
+    for row in range(1, rows):
+        for column in range(1, columns):
+            distance[row][column] = min(
+                distance[row - 1][column] + 1,
+                distance[row][column - 1] + 1,
+                distance[row - 1][column - 1]
+                + (reference[row - 1] != prediction[column - 1]),
+            )
+    substitutions = deletions = insertions = 0
+    row, column = len(reference), len(prediction)
+    while row or column:
+        if (
+            row
+            and column
+            and reference[row - 1] == prediction[column - 1]
+            and distance[row][column] == distance[row - 1][column - 1]
+        ):
+            row -= 1
+            column -= 1
+        elif (
+            row
+            and column
+            and distance[row][column] == distance[row - 1][column - 1] + 1
+        ):
+            substitutions += 1
+            row -= 1
+            column -= 1
+        elif row and distance[row][column] == distance[row - 1][column] + 1:
+            deletions += 1
+            row -= 1
+        else:
+            insertions += 1
+            column -= 1
+    return {
+        "substitutions": substitutions,
+        "missing_characters": deletions,
+        "hallucinated_characters": insertions,
+        "total_errors": substitutions + deletions + insertions,
+    }
+
+
 class GoldOCRRegion(StrictModel):
     region_id: UUID
     kind: RegionKind
@@ -304,6 +359,12 @@ def _score_page(
     direction_correct = 0
     direction_total = 0
     matched_intersection_area = 0.0
+    matched_error_counts = {
+        "substitutions": 0,
+        "missing_characters": 0,
+        "hallucinated_characters": 0,
+        "total_errors": 0,
+    }
     for gold_index, predicted_index, _ in matches:
         gold = gold_regions[gold_index]
         predicted = predicted_regions[predicted_index]
@@ -311,6 +372,10 @@ def _score_page(
             gold.transcription, predicted.raw_text
         )
         matched_reference_characters += len(gold.transcription)
+        for field, value in character_error_counts(
+            gold.transcription, predicted.raw_text
+        ).items():
+            matched_error_counts[field] += value
         if gold.kind != RegionKind.UNKNOWN:
             kind_total += 1
             kind_correct += gold.kind == predicted.kind
@@ -341,6 +406,16 @@ def _score_page(
         for region in sorted(predicted_regions, key=lambda item: item.reading_order)
     )
     page_character_errors = character_error_distance(gold_text, predicted_text)
+    page_error_counts = character_error_counts(gold_text, predicted_text)
+    complete_order_correct = (
+        len(matches) == len(gold_regions) == len(predicted_regions)
+        and order_pairs_correct == order_pairs_total
+        and all(
+            gold_regions[gold_index].reading_order
+            == predicted_regions[predicted_index].reading_order
+            for gold_index, predicted_index, _ in matches
+        )
+    )
     gold_polygon_area = sum(polygon_area(region.polygon) for region in gold_regions)
     return {
         "page_id": page.page_id,
@@ -364,8 +439,10 @@ def _score_page(
         "gold_polygon_area": gold_polygon_area,
         "matched_intersection_area": matched_intersection_area,
         "matched_character_errors": matched_character_errors,
+        "matched_error_counts": matched_error_counts,
         "matched_reference_characters": matched_reference_characters,
         "page_character_errors": page_character_errors,
+        "page_error_counts": page_error_counts,
         "page_reference_characters": len(gold_text),
         "predicted_characters": len(predicted_text),
         "kind_correct": kind_correct,
@@ -374,6 +451,7 @@ def _score_page(
         "direction_total": direction_total,
         "order_pairs_correct": order_pairs_correct,
         "order_pairs_total": order_pairs_total,
+        "complete_reading_order_correct": int(complete_order_correct),
     }
 
 
@@ -390,6 +468,19 @@ def _aggregate_page_scores(page_scores: list[dict[str, Any]]) -> dict[str, Any]:
     direction_total = total("direction_total")
     order_pairs_total = total("order_pairs_total")
     gold_polygon_area = total("gold_polygon_area")
+    matched_error_counts = {
+        field: sum(page["matched_error_counts"][field] for page in page_scores)
+        for field in (
+            "substitutions",
+            "missing_characters",
+            "hallucinated_characters",
+            "total_errors",
+        )
+    }
+    page_error_counts = {
+        field: sum(page["page_error_counts"][field] for page in page_scores)
+        for field in matched_error_counts
+    }
     return {
         "pages": len(page_scores),
         "region_detection": _detection_metrics(
@@ -409,11 +500,13 @@ def _aggregate_page_scores(page_scores: list[dict[str, Any]]) -> dict[str, Any]:
             if matched_reference_characters
             else None
         ),
+        "matched_character_errors": matched_error_counts,
         "reading_order_cer": (
             total("page_character_errors") / page_reference_characters
             if page_reference_characters
             else None
         ),
+        "reading_order_character_errors": page_error_counts,
         "reference_characters": page_reference_characters,
         "predicted_characters": total("predicted_characters"),
         "region_kind_accuracy": (
@@ -427,6 +520,11 @@ def _aggregate_page_scores(page_scores: list[dict[str, Any]]) -> dict[str, Any]:
         "reading_order_pair_accuracy": (
             total("order_pairs_correct") / order_pairs_total
             if order_pairs_total
+            else None
+        ),
+        "complete_reading_order_accuracy": (
+            total("complete_reading_order_correct") / len(page_scores)
+            if page_scores
             else None
         ),
     }

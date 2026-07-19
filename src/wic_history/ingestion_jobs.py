@@ -12,12 +12,19 @@ from datetime import timedelta
 from typing import Any, Iterable, Sequence
 from uuid import UUID, uuid4
 
+from .model_config import load_pipeline_model_configuration
 
-PAGE_STAGES = ("render_lossless", "ocr", "embedding", "ner", "entity_link")
+
+PAGE_STAGES = ("render_lossless", "layout", "ocr", "embedding")
+# Retained only to lease and audit pre-existing research batches. New plans do
+# not schedule page-level NER or global entity linking: semantics starts from a
+# reviewed coherent-unit revision via ``wic-e2e``.
+LEGACY_PAGE_STAGES = ("ner", "entity_link")
 AGGREGATE_STAGES = ("search_projection", "rag_export", "graph_projection")
-ALL_STAGES = (*PAGE_STAGES, *AGGREGATE_STAGES)
+ALL_STAGES = (*PAGE_STAGES, *LEGACY_PAGE_STAGES, *AGGREGATE_STAGES)
 STAGE_DEPENDENCY = {
-    "ocr": "render_lossless",
+    "layout": "render_lossless",
+    "ocr": "layout",
     "embedding": "ocr",
     "ner": "ocr",
     "entity_link": "ner",
@@ -25,7 +32,65 @@ STAGE_DEPENDENCY = {
 AGGREGATE_DEPENDENCY_STAGE = {
     "search_projection": "embedding",
     "rag_export": "ocr",
-    "graph_projection": "ner",
+    "graph_projection": "ocr",
+}
+PIPELINE_MODELS = load_pipeline_model_configuration()
+SEMANTIC_MODEL = PIPELINE_MODELS.semantic
+# Retained only to validate and replay already-published legacy artifacts. New
+# production plans cannot select this profile through resolve_stage_configuration.
+GLINER_NER_CONFIGURATION: dict[str, Any] = {
+    "adapter": "rules+gliner",
+    "model": "knowledgator/gliner-x-large",
+    "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
+    "ontology_version": "women-history-zh-v1",
+    "input_variant": "raw_ocr",
+    "max_regions": None,
+    "threshold": 0.45,
+    "batch_size": 2,
+    "word_splitter_language": "zh-hant",
+    "flat_ner": False,
+    "multi_label": True,
+    "dataset_id": None,
+    "split_id": None,
+    "output_root": "artifacts/ingestion-ner",
+    "status": "candidate_only",
+}
+QWEN_NER_CONFIGURATION: dict[str, Any] = {
+    "adapter": "structured_generation",
+    "model": SEMANTIC_MODEL.model_name,
+    "revision": SEMANTIC_MODEL.model_revision,
+    "license": "Apache-2.0",
+    "base_url": SEMANTIC_MODEL.base_url,
+    "served_model": SEMANTIC_MODEL.served_model,
+    "runtime_name": SEMANTIC_MODEL.runtime_name,
+    "runtime_version": SEMANTIC_MODEL.runtime_version,
+    "runtime_executable": str(SEMANTIC_MODEL.runtime_executable),
+    "runtime_executable_sha256": SEMANTIC_MODEL.runtime_executable_sha256,
+    "ollama_manifest_digest": SEMANTIC_MODEL.ollama_manifest_digest,
+    "model_blob_sha256": SEMANTIC_MODEL.model_blob_sha256,
+    "quantization": SEMANTIC_MODEL.quantization,
+    "device": "local-runtime",
+    "seed": SEMANTIC_MODEL.seed,
+    "max_output_tokens": SEMANTIC_MODEL.max_output_tokens,
+    "timeout_seconds": SEMANTIC_MODEL.timeout_seconds,
+    "schema_canary_repetitions": SEMANTIC_MODEL.schema_canary_repetitions,
+    "expected_canary_raw_output_sha256": SEMANTIC_MODEL.expected_canary_raw_output_sha256,
+    "code_revision": "1431e3ab024dca34c9f51c33a7b4294eb715a603",
+    "prompt_schema_revision": SEMANTIC_MODEL.prompt_schema_revision,
+    "response_format_sha256": SEMANTIC_MODEL.response_format_sha256,
+    "region_chunk_size": 8,
+    "request_concurrency": 1,
+    "endpoint_schema_enforcement": True,
+    "validation_mode": "strict_post_validation_whole_response_abstention",
+    "acceleration": SEMANTIC_MODEL.acceleration,
+    "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
+    "ontology_version": "women-history-zh-v1",
+    "input_variant": "raw_ocr",
+    "max_regions": None,
+    "dataset_id": None,
+    "split_id": None,
+    "output_root": "artifacts/ingestion-ner",
+    "status": "candidate_only",
 }
 DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
     "render_lossless": {
@@ -33,41 +98,36 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "evidence_tier": "unreviewed_input",
         "geometric_transform": "none",
     },
+    "layout": {
+        "engine": PIPELINE_MODELS.layout.engine,
+        "pipeline": PIPELINE_MODELS.layout.pipeline,
+        "model": PIPELINE_MODELS.layout.model_name,
+        "revision": PIPELINE_MODELS.layout.model_revision,
+        "toolkit": PIPELINE_MODELS.layout.toolkit_name,
+        "toolkit_revision": PIPELINE_MODELS.layout.toolkit_revision,
+        "language": PIPELINE_MODELS.layout.language,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
+        "output_root": "artifacts/ingestion-layout",
+    },
     "ocr": {
-        "engine": "PaddleOCR",
-        "model": "PP-OCRv6_medium_det+PP-OCRv6_medium_rec",
-        "revision": "paddleocr-3.7.0-official",
-        "language": "ch",
-        "tile_size": 1200,
-        "overlap": 120,
-        "worker_batch_size": 5,
-        "worker_mode": "platform_default",
+        "engine": PIPELINE_MODELS.ocr.engine,
+        "pipeline": PIPELINE_MODELS.ocr.pipeline,
+        "model": PIPELINE_MODELS.ocr.model_name,
+        "revision": PIPELINE_MODELS.ocr.model_revision,
+        "toolkit": PIPELINE_MODELS.ocr.toolkit_name,
+        "toolkit_revision": PIPELINE_MODELS.ocr.toolkit_revision,
+        "language": PIPELINE_MODELS.ocr.language,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
         "output_root": "artifacts/ingestion-ocr",
     },
     "embedding": {
-        "model": "BAAI/bge-m3",
-        "revision": "5617a9f61b028005a4858fdac845db406aefb181",
-        "dimension": 1024,
+        "model": PIPELINE_MODELS.retrieval.passage_embedding.model_name,
+        "revision": PIPELINE_MODELS.retrieval.passage_embedding.model_revision,
+        "dimension": PIPELINE_MODELS.retrieval.passage_embedding.dimension,
         "batch_size": 16,
         "output_root": "artifacts/ingestion-embedding",
     },
-    "ner": {
-        "adapter": "rules+gliner",
-        "model": "knowledgator/gliner-x-large",
-        "revision": "4a4437f439a78d67c87781b42e8c45373d2adcb0",
-        "ontology_version": "women-history-zh-v1",
-        "input_variant": "raw_ocr",
-        "max_regions": None,
-        "threshold": 0.45,
-        "batch_size": 2,
-        "word_splitter_language": "zh-hant",
-        "flat_ner": False,
-        "multi_label": True,
-        "dataset_id": None,
-        "split_id": None,
-        "output_root": "artifacts/ingestion-ner",
-        "status": "candidate_only",
-    },
+    "ner": QWEN_NER_CONFIGURATION,
     "entity_link": {
         "engine": "exact-alias+character-similarity+qwen-candidate-bound",
         "candidate_generator_revision": "1",
@@ -76,17 +136,18 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "reviewed_entities_only": True,
         "nil_required": True,
         "resolver": "qwen",
-        "resolver_base_url": "http://127.0.0.1:11434/v1",
-        "resolver_served_model": "qwen3.5:0.8b",
-        "resolver_model": "Qwen/Qwen3.5-0.8B",
-        "resolver_revision": "2fc06364715b967f1860aea9cf38778875588b17",
-        "resolver_runtime": "ollama",
-        "resolver_runtime_version": "0.24.0",
-        "resolver_ollama_manifest_digest": "sha256:f3817196d142eaf72ce79dfebe53dcb20bd21da87ce13e138a8f8e10a866b3a4",
-        "resolver_quantization": "Q8_0",
-        "resolver_seed": 42,
-        "resolver_max_output_tokens": 256,
-        "resolver_timeout_seconds": 120,
+        "resolver_base_url": SEMANTIC_MODEL.base_url,
+        "resolver_served_model": SEMANTIC_MODEL.served_model,
+        "resolver_model": SEMANTIC_MODEL.model_name,
+        "resolver_revision": SEMANTIC_MODEL.model_revision,
+        "resolver_runtime": SEMANTIC_MODEL.runtime_name,
+        "resolver_runtime_version": SEMANTIC_MODEL.runtime_version,
+        "resolver_ollama_manifest_digest": SEMANTIC_MODEL.ollama_manifest_digest,
+        "resolver_quantization": SEMANTIC_MODEL.quantization,
+        "resolver_seed": SEMANTIC_MODEL.seed,
+        "resolver_max_output_tokens": SEMANTIC_MODEL.max_output_tokens,
+        "resolver_timeout_seconds": SEMANTIC_MODEL.timeout_seconds,
+        "pipeline_model_configuration_sha256": PIPELINE_MODELS.sha256,
         "identity_mutation": False,
         "output_root": "artifacts/ingestion-links",
         "status": "candidate_only",
@@ -108,6 +169,27 @@ DEFAULT_CONFIGURATION: dict[str, dict[str, Any]] = {
         "output_root": "artifacts/ingestion-graph",
     },
 }
+
+
+def resolve_stage_configuration(
+    stage: str, overrides: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Apply overrides to the selected adapter profile without cross-adapter leakage."""
+    supplied = overrides or {}
+    if stage == "ner":
+        adapter = supplied.get("adapter", QWEN_NER_CONFIGURATION["adapter"])
+        if adapter != "structured_generation":
+            raise ValueError(
+                "Production ingestion uses the semantic model selected in "
+                "config/pipeline-models.toml"
+            )
+        base = QWEN_NER_CONFIGURATION
+    else:
+        try:
+            base = DEFAULT_CONFIGURATION[stage]
+        except KeyError as exc:
+            raise ValueError(f"Unsupported stage configuration: {stage}") from exc
+    return {**base, **supplied}
 
 
 @dataclass(frozen=True, slots=True)
@@ -311,10 +393,9 @@ def create_plan(
     )
     all_requested_stages = (*normalized_stages, *normalized_aggregate_stages)
     stage_configuration = {
-        stage: {
-            **DEFAULT_CONFIGURATION[stage],
-            **(configuration or {}).get(stage, {}),
-        }
+        stage: resolve_stage_configuration(
+            stage, (configuration or {}).get(stage, {})
+        )
         for stage in all_requested_stages
     }
     if not name.strip() or not created_by.strip():
@@ -912,6 +993,13 @@ def validate_stage_result(
             raise ValueError(
                 "Stage result requires lowercase SHA-256 field source_object_sha256"
             )
+    elif stage == "layout":
+        _required_uuid(result, "layout_run_id")
+        _required_uuid(result, "derivative_id")
+        _required_count(result, "regions")
+        _required_count(result, "ocr_targets")
+        if result["ocr_targets"] > result["regions"]:
+            raise ValueError("Layout OCR target count cannot exceed all layout regions")
     elif stage == "ocr":
         _required_uuid(result, "ocr_run_id")
         _required_count(result, "regions")
@@ -981,7 +1069,17 @@ def validate_stage_result(
             raise ValueError("RAG export requires manifest_sha256")
     elif stage == "graph_projection":
         _required_uuid(result, "projection_build_id")
-        for field in ("entities", "claims", "mentions", "claim_evidence"):
+        for field in (
+            "entities",
+            "claims",
+            "mentions",
+            "claim_evidence",
+            "events",
+            "event_participants",
+            "event_evidence",
+            "local_identity_clusters",
+            "local_cluster_members",
+        ):
             _required_count(result, field)
         if result.get("reviewed_only") is not True:
             raise ValueError("Graph projection must remain reviewed_only")

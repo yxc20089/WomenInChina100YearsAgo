@@ -28,8 +28,18 @@ ner = [
   "sentence-transformers>=5.0,<6",
   "transformers>=5.5,<6",
 ]
-ocr = ["paddleocr==3.7.0", "paddlepaddle==3.3.1"]
+ocr = [
+  "accelerate>=1.14,<2",
+  "torch>=2.11,<3",
+  "transformers>=5.13,<6",
+]
 test = ["httpx>=0.28,<1", "pytest>=8.4,<9"]
+
+[tool.uv]
+# GLiNER is a dormant research environment on Transformers <5.7; the selected
+# HunyuanOCR runtime requires Transformers 5.13+. They are intentionally
+# resolved as separate environments and are never installed together.
+conflicts = [[{ extra = "ner" }, { extra = "ocr" }]]
 
 [project.scripts]
 wic-corpus = "wic_history.corpus_manifest:main"
@@ -37,6 +47,7 @@ wic-sample = "wic_history.benchmark_sample:main"
 wic-render = "wic_history.render_samples:main"
 wic-gold-render = "wic_history.gold_render:main"
 wic-review = "wic_history.review_server:main"
+wic-layout = "wic_history.layout_pipeline:main"
 wic-ocr = "wic_history.ocr_pipeline:main"
 wic-ocr-score = "wic_history.ocr_gold:main"
 wic-ocr-review-validate = "wic_history.ocr_review:main"
@@ -64,6 +75,7 @@ wic-relation-benchmark = "wic_history.relation_benchmark:main"
 wic-gold-packet = "wic_history.gold_packet:main"
 wic-batch = "wic_history.ingestion_jobs:main"
 wic-worker = "wic_history.ingestion_worker:main"
+wic-e2e = "wic_history.e2e_pipeline:main"
 
 
 [tool.setuptools.packages.find]

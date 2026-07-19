@@ -451,7 +451,16 @@ def review_mention(
             ):
                 raise ReviewConflictError("review_id retry payload differs from the stored decision")
             current = connection.execute(
-                "SELECT mention_status, entity_id FROM evidence.entity_mention WHERE mention_id = %s",
+                """
+                SELECT mention.mention_status,
+                       resolution.proposed_entity_id AS entity_id
+                FROM evidence.entity_mention mention
+                LEFT JOIN evidence.mention_resolution resolution
+                  ON resolution.mention_id = mention.mention_id
+                 AND resolution.review_status = 'reviewed'
+                 AND resolution.superseded_at IS NULL
+                WHERE mention.mention_id = %s
+                """,
                 (mention_id,),
             ).fetchone()
             if current is None:
@@ -466,7 +475,7 @@ def review_mention(
         mention = connection.execute(
             """
             SELECT mention_id, mention_status, entity_id, entity_type,
-                   mention_text, normalized_text
+                   mention_text, normalized_text, evidence_span_id
             FROM evidence.entity_mention WHERE mention_id = %s FOR UPDATE
             """,
             (mention_id,),
@@ -542,7 +551,16 @@ def resolve_entity(
             ):
                 raise ReviewConflictError("review_id retry payload differs from the stored decision")
             current = connection.execute(
-                "SELECT mention_status, entity_id FROM evidence.entity_mention WHERE mention_id = %s",
+                """
+                SELECT mention.mention_status,
+                       resolution.proposed_entity_id AS entity_id
+                FROM evidence.entity_mention mention
+                LEFT JOIN evidence.mention_resolution resolution
+                  ON resolution.mention_id = mention.mention_id
+                 AND resolution.review_status = 'reviewed'
+                 AND resolution.superseded_at IS NULL
+                WHERE mention.mention_id = %s
+                """,
                 (mention_id,),
             ).fetchone()
             if current is None:
@@ -557,7 +575,7 @@ def resolve_entity(
         mention = connection.execute(
             """
             SELECT mention_id, mention_status, entity_id, entity_type,
-                   mention_text, normalized_text
+                   mention_text, normalized_text, evidence_span_id
             FROM evidence.entity_mention WHERE mention_id = %s FOR UPDATE
             """,
             (mention_id,),
@@ -566,13 +584,23 @@ def resolve_entity(
             raise ReviewNotFoundError("mention does not exist")
         if mention["mention_status"] != "reviewed":
             raise ReviewConflictError("entity resolution requires an accepted mention span")
-        if mention["entity_id"] is not None:
-            raise ReviewConflictError("mention already resolves to an entity")
+        active_resolution = connection.execute(
+            """
+            SELECT mention_resolution_id
+            FROM evidence.mention_resolution
+            WHERE mention_id = %s AND review_status = 'reviewed'
+              AND superseded_at IS NULL
+            FOR UPDATE
+            """,
+            (mention_id,),
+        ).fetchone()
+        if active_resolution is not None:
+            raise ReviewConflictError("mention already has an active reviewed resolution")
         candidate = connection.execute(
             """
             SELECT link_candidate_id, mention_id, proposed_entity_id,
                    proposed_authority_uri, proposed_canonical_name,
-                   score, is_nil, features
+                   score, is_nil, features, run_id
             FROM evidence.entity_link_candidate
             WHERE link_candidate_id = %s FOR UPDATE
             """,
@@ -632,11 +660,6 @@ def resolve_entity(
         elif not candidate["is_nil"]:
             raise ReviewConflictError("keep_nil requires selection of the NIL candidate")
 
-        if entity_id is not None:
-            connection.execute(
-                "UPDATE evidence.entity_mention SET entity_id = %s WHERE mention_id = %s",
-                (entity_id, mention_id),
-            )
         previous_value = {key: value for key, value in candidate.items() if key != "features"}
         previous_value["features"] = candidate["features"]
         new_value = {
@@ -662,6 +685,28 @@ def resolve_entity(
                 request.note,
                 json.dumps(previous_value, ensure_ascii=False, default=str),
                 json.dumps(new_value, ensure_ascii=False),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO evidence.mention_resolution (
+                mention_id, proposed_entity_id, is_nil, resolution_scope,
+                run_id, proposal, supporting_evidence_ids,
+                review_status, review_id
+            ) VALUES (
+                %s, %s, %s, 'corpus', %s, %s, %s, 'reviewed', %s
+            )
+            """,
+            (
+                mention_id,
+                entity_id,
+                entity_id is None,
+                candidate["run_id"],
+                "NIL" if entity_id is None else "SAME",
+                [mention["evidence_span_id"]]
+                if mention.get("evidence_span_id") is not None
+                else [],
+                request.review_id,
             ),
         )
     return ReviewResult(

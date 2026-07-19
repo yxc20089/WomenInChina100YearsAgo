@@ -4,11 +4,13 @@ import unittest
 
 from wic_history.ingestion_jobs import (
     AGGREGATE_STAGES,
+    DEFAULT_CONFIGURATION,
     PAGE_STAGES,
     build_parser,
     canonical_sha256,
     normalize_stages,
     normalize_aggregate_stages,
+    resolve_stage_configuration,
     validate_stage_result,
 )
 
@@ -22,13 +24,15 @@ class IngestionJobTests(unittest.TestCase):
 
     def test_stage_order_and_dependencies_are_explicit(self):
         self.assertEqual(
-            normalize_stages(["entity_link", "ner", "render_lossless", "ocr"]),
-            ("render_lossless", "ocr", "ner", "entity_link"),
+            normalize_stages(["embedding", "render_lossless", "ocr", "layout"]),
+            ("render_lossless", "layout", "ocr", "embedding"),
         )
-        with self.assertRaisesRegex(ValueError, "requires ocr"):
+        with self.assertRaisesRegex(ValueError, "Unsupported page stages: ner"):
             normalize_stages(["ner"])
-        with self.assertRaisesRegex(ValueError, "requires ner"):
-            normalize_stages(["render_lossless", "ocr", "entity_link"])
+        with self.assertRaisesRegex(ValueError, "Unsupported page stages: entity_link"):
+            normalize_stages(
+                ["render_lossless", "layout", "ocr", "entity_link"]
+            )
 
     def test_aggregate_stages_require_their_page_inputs(self):
         self.assertEqual(
@@ -48,6 +52,22 @@ class IngestionJobTests(unittest.TestCase):
         self.assertEqual(args.stages, ",".join(PAGE_STAGES))
         self.assertEqual(args.max_pages, 1000)
         self.assertEqual(args.aggregate_stages, "")
+
+    def test_default_ner_is_pinned_local_qwen_4b(self):
+        configuration = DEFAULT_CONFIGURATION["ner"]
+        self.assertEqual(configuration["adapter"], "structured_generation")
+        self.assertEqual(configuration["model"], "Qwen/Qwen3.5-4B")
+        self.assertEqual(configuration["served_model"], "qwen3.5:4b")
+        self.assertEqual(configuration["quantization"], "Q4_K_M")
+        self.assertEqual(configuration["acceleration"], "none")
+        self.assertTrue(configuration["endpoint_schema_enforcement"])
+        self.assertEqual(len(configuration["code_revision"]), 40)
+        self.assertEqual(
+            len(configuration["expected_canary_raw_output_sha256"]), 64
+        )
+
+        with self.assertRaisesRegex(ValueError, "pipeline-models.toml"):
+            resolve_stage_configuration("ner", {"adapter": "rules+gliner"})
 
     def test_terminal_control_commands_require_explicit_scope(self):
         failures = build_parser().parse_args(
@@ -156,6 +176,11 @@ class IngestionJobTests(unittest.TestCase):
                     "claims": 0,
                     "mentions": 0,
                     "claim_evidence": 0,
+                    "events": 0,
+                    "event_participants": 0,
+                    "event_evidence": 0,
+                    "local_identity_clusters": 0,
+                    "local_cluster_members": 0,
                     "reviewed_only": False,
                 },
             )

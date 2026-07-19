@@ -2,9 +2,13 @@
 
 Evidence-first tools and research notes for reconstructing women's history from the digitized *Shen Bao* archive.
 
-The current technical design is in [docs/technical-design.md](docs/technical-design.md).
-The first-build extraction and staged identity-resolution choices are in
-[docs/extraction-and-identity-resolution-decision.md](docs/extraction-and-identity-resolution-decision.md).
+The normative implementation is [the end-to-end first-build contract](docs/e2e-pipeline-contract.md).
+The [technical design](docs/technical-design.md) retains earlier comparisons
+as research history. The active stack is HunyuanOCR 1.5 for both page tasks,
+Qwen3.5-4B for one multimodal extraction call plus one article-local resolution
+call, PostgreSQL as authority, OpenSearch for hybrid retrieval, and Neo4j as a
+reviewed-only projection. There is no model fallback or first-build global
+entity merge.
 
 ## Corpus audit
 
@@ -36,8 +40,10 @@ Run tests without AWS access:
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-For the fully locked development environment, use `uv sync --all-extras` and
-`uv run --extra test pytest -q` instead of setting `PYTHONPATH`.
+For the application/test environment, use
+`uv sync --extra api --extra data --extra test`. Hunyuan uses the separate
+CUDA environment in `environments/hunyuan-ocr`; the dormant GLiNER research
+extra is intentionally not co-installed with its newer Transformers runtime.
 
 Create the deterministic visual-screening page plan after the audit:
 
@@ -75,17 +81,21 @@ object, output-file, and decoded-pixel hashes. An explicitly non-gold plumbing
 check is available as `--pilot-sample-id`; its output can never be counted as
 gold by the manifest summary.
 
-Run OCR against a selected lossless render with its manifest so the CLI verifies
-the image hash, source identity, full source-object hash, and selection tier
-before loading the model:
+Run the two official Hunyuan tasks once through the layout command, then
+materialize OCR only from that exact paired output. The commands verify the
+image, model configuration, raw-output hashes, and layout/OCR agreement:
 
 ```bash
-uv run wic-ocr \
+wic-layout \
   --image artifacts/lossless-pilot/images/v219/p0308.png \
   --render-manifest artifacts/lossless-pilot/lossless_manifest.jsonl \
   --source-uri 's3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf' \
-  --volume 219 --page 308 --year 1925 --language ch \
-  --output artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json
+  --volume 219 --page 308 --year 1925 \
+  --output artifacts/layout/v219-p0308.hunyuan.json
+wic-ocr \
+  --image artifacts/lossless-pilot/images/v219/p0308.png \
+  --layout-artifact artifacts/layout/v219-p0308.hunyuan.json \
+  --output artifacts/ocr/v219-p0308.hunyuan.json
 ```
 
 The manifest selection controls whether the artifact is historian-selected gold
@@ -145,6 +155,21 @@ revisioned coherent units with exact OCR spans. See
 [docs/segmentation-operations.md](docs/segmentation-operations.md) before using
 the export/import/review/activate workflow.
 
+Run semantics only on an active coherent-unit revision whose regions have
+historian-selected reviewed text versions:
+
+```bash
+uv run wic-e2e \
+  --database-url "$DATABASE_URL" \
+  --coherent-unit-revision-id REVISION_UUID \
+  --output-dir artifacts/e2e/REVISION_UUID
+```
+
+For a unit with extracted mentions this makes exactly two Qwen3.5-4B calls:
+combined mention/event extraction, then local ID-bounded resolution. Both calls
+receive hash-verified page images. Local clusters remain candidate evidence;
+there is no canonical entity merge.
+
 ## Local evidence and retrieval stack
 
 Copy `.env.example` to an untracked `.env` and replace its development passwords, then start the selected databases:
@@ -154,32 +179,29 @@ docker compose up -d
 uv run wic-migrate --database-url "$DATABASE_URL"
 ```
 
-Load the audited archive catalog and versioned OCR/NER artifacts:
+Load the audited archive catalog and paired Hunyuan artifacts:
 
 ```bash
 uv run wic-ingest --database-url "$DATABASE_URL" manifest artifacts/corpus-audit/manifest.jsonl
-uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-smoke/v219-p0308.ppocrv6.json
-uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr-pilot/v219-p0308.lossless.ppocrv6.json
-uv run wic-ingest --database-url "$DATABASE_URL" ner artifacts/ner-smoke/v219-p0308.gliner-multi-v2.1.json
-uv run wic-ingest --database-url "$DATABASE_URL" ner \
-  artifacts/ner-pilot/v219-p0308.lossless.gliner-multi-v2.1.first50.json \
-  artifacts/ner-pilot/v219-p0308.lossless.gliner-x.first50.json
+uv run wic-ingest --database-url "$DATABASE_URL" layout artifacts/layout/v219-p0308.hunyuan.json
+uv run wic-ingest --database-url "$DATABASE_URL" ocr artifacts/ocr/v219-p0308.hunyuan.json
 ```
 
 Create an idempotent, dependency-gated ingestion plan before processing pages:
 
 ```bash
 uv run wic-batch --database-url "$DATABASE_URL" plan \
-  --name 'volume 219 page 308 semantic pilot' --created-by researcher \
+  --name 'volume 219 page 308 evidence ingestion' --created-by researcher \
   --volume 219 --page 308 \
-  --aggregate-stages search_projection,rag_export,graph_projection \
-  --configuration '{"ner":{"max_regions":50}}'
+  --aggregate-stages search_projection,rag_export,graph_projection
 uv run wic-batch --database-url "$DATABASE_URL" status --batch-id BATCH_UUID
 ```
 
-The page DAG is `render_lossless -> OCR -> {embedding, NER}`. Optional batch
+The page DAG is `render_lossless -> layout -> OCR -> embedding`. Optional batch
 fan-in jobs add `embedding -> search_projection`, `OCR -> rag_export`, and
-`NER -> graph_projection`. PostgreSQL records
+reviewed PostgreSQL evidence to `graph_projection`. Article semantics is not a
+page job: after reviewed text and coherent-unit activation, `wic-e2e` performs
+the two Qwen calls. PostgreSQL records
 immutable plan/input fingerprints, dependencies, bounded stage configuration,
 leases, retries, artifact checksums, typed completion metadata, and an
 append-only event history. Planning is guarded at 1,000 pages by default; the
@@ -222,8 +244,8 @@ unbounded daemon.
 
 Use `--offline` only when the size-verified source object is already in the
 local source cache. A worker first validates and adopts an exact existing
-artifact when possible; otherwise it invokes the pinned renderer, OCR,
-embedding, or NER stage. Per-job outputs under `artifacts/ingestion-*` are
+artifact when possible; otherwise it invokes the pinned renderer, Hunyuan
+layout/OCR, or embedding stage. Per-job outputs under `artifacts/ingestion-*` are
 generated data and excluded from Git.
 
 Aggregate workers build a batch-specific OpenSearch index before atomically

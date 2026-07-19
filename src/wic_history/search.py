@@ -18,7 +18,8 @@ from .evidence import (
     RetrievalResponse,
     SourcePointer,
 )
-from .embedding_pipeline import BGEEmbedder, DEFAULT_MODEL, DEFAULT_REVISION
+from .embedding_pipeline import BGEEmbedder
+from .model_config import load_pipeline_model_configuration
 
 
 DEFAULT_INDEX = "wic-regions-v2"
@@ -527,8 +528,10 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("--year-start", type=int)
     query.add_argument("--year-end", type=int)
     query.add_argument("--mode", choices=("lexical", "dense", "hybrid"), default="lexical")
-    query.add_argument("--model", default=DEFAULT_MODEL)
-    query.add_argument("--revision", default=DEFAULT_REVISION)
+    query.add_argument(
+        "--model-config",
+        help="Complete model configuration; individual model overrides are not accepted",
+    )
     return parser
 
 
@@ -556,7 +559,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.year_end,
         )
     else:
-        embedder = BGEEmbedder(args.model, args.revision)
+        configuration = load_pipeline_model_configuration(args.model_config)
+        selected = configuration.retrieval.passage_embedding
+        embedder = BGEEmbedder(selected.model_name, selected.model_revision)
         response = (
             dense_search(
                 args.opensearch_url,

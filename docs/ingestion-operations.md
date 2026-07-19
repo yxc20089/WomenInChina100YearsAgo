@@ -9,22 +9,25 @@ aggregate search/RAG/graph workers; production fleet controls remain pending.
 currently contains:
 
 ```text
-render_lossless -> ocr -> embedding
-                       -> ner
+render_lossless -> layout -> ocr -> embedding
 
 embedding -> search_projection
 ocr       -> rag_export
-ner       -> graph_projection
+ocr       -> graph_projection
 ```
+
+`layout` and `ocr` are two official task modes of the same pinned HunyuanOCR
+1.5 model on the same immutable page. Invalid or uncertain output becomes a
+review item; the worker never routes to another OCR model.
 
 Every plan freezes the manifest source identity, page scope, stage order and
 stage configuration. Its canonical SHA-256 `plan_key` makes an identical plan
 idempotent even if a caller changes the human-readable name. Each job records a
 separate input fingerprint, artifact URI, output checksum and typed result.
 
-The scheduler does not make OCR or NER output historical truth. NER completion
-requires `candidate_only=true`, and reviewed entities/claims still pass through
-the separate historian workflow.
+The scheduler does not make OCR output historical truth. Semantic extraction
+is absent from the page DAG: `wic-e2e` starts only after a historian activates
+a coherent-unit revision and selects reviewed text.
 
 ## Safe planning
 
@@ -35,8 +38,7 @@ uv run wic-migrate --database-url "$DATABASE_URL"
 uv run wic-batch --database-url "$DATABASE_URL" plan \
   --name 'v219 p308 bounded pilot' --created-by researcher \
   --volume 219 --page 308 \
-  --aggregate-stages search_projection,rag_export,graph_projection \
-  --configuration '{"ner":{"max_regions":50}}'
+  --aggregate-stages search_projection,rag_export,graph_projection
 ```
 
 The default plan guard is 1,000 pages. The loaded corpus contains 340,511 known
@@ -67,7 +69,7 @@ uv run wic-worker --database-url "$DATABASE_URL" \
 ```
 
 One invocation executes at most one job by default. Opt into bounded polling for
-a stage-specific pool:
+a stage-specific pool. Hunyuan stages must run in the documented OCR runtime:
 
 ```bash
 uv run wic-worker --database-url "$DATABASE_URL" \
@@ -84,7 +86,7 @@ CLI intentionally provides no unbounded mode.
 Run several processes with stage filters to separate CPU/GPU pools. The worker
 maintains its lease in a background heartbeat, validates exact existing output
 before adopting it, resumes a job-local artifact left by a crash, invokes the
-pinned stage when no reusable output exists, persists OCR/NER results to
+pinned stage when no reusable output exists, persists OCR results to
 PostgreSQL, and only then completes the job. `--offline` forbids S3 download and
 therefore requires the size-verified source in `/tmp/wic-source-cache` (or the
 configured cache directory).
@@ -108,12 +110,12 @@ metadata:
 | Stage | Required result fields |
 |---|---|
 | `render_lossless` | `render_sha256` |
+| `layout` | `layout_run_id`, nonnegative `regions`, nonnegative `ocr_targets` |
 | `ocr` | `ocr_run_id`, nonnegative `regions` |
 | `embedding` | `embedding_run_id`, nonnegative `embeddings` |
-| `ner` | `ner_run_id`, nonnegative `mentions`, `candidate_only=true`, and `bounded_regions` exactly equal to the planned `max_regions` |
 
 The scheduler refuses a completion after its lease expires or from a different
-worker. It also refuses structurally valid but plan-inconsistent NER metadata.
+worker. It also refuses structurally valid but plan-inconsistent model metadata.
 
 ## Progress and audit
 

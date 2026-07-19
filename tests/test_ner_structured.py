@@ -246,13 +246,10 @@ class LocalModelServer:
                 source_text = user_payload["source_text"]
                 entities = []
                 if "王女士" in source_text:
-                    start = source_text.index("王女士")
                     entities.append(
                         {
                             "type": "person",
                             "surface": "王女士",
-                            "start": start,
-                            "end": start + 3,
                         }
                     )
                 content = json.dumps(
@@ -316,18 +313,18 @@ class StructuredNERTests(unittest.TestCase):
         self.assertEqual(len(prompt_sha256), 64)
         self.assertEqual(len(STRUCTURED_NER_PROMPT_SCHEMA_SHA256), 64)
 
-    def test_parser_rejects_normalization_unknown_labels_bad_offsets_and_duplicates(
+    def test_parser_rejects_normalization_unknown_labels_absent_and_duplicates(
         self,
     ):
         content = json.dumps(
             {
                 "entities": [
-                    {"type": "place", "surface": "臺北", "start": 0, "end": 2},
-                    {"type": "place", "surface": "台北", "start": 0, "end": 2},
-                    {"type": "unknown", "surface": "王女士", "start": 2, "end": 5},
-                    {"type": "person", "surface": "王女士", "start": True, "end": 5},
-                    {"type": "person", "surface": "王女士", "start": 2, "end": 5},
-                    {"type": "person", "surface": "王女士", "start": 2, "end": 5},
+                    {"type": "place", "surface": "臺北"},
+                    {"type": "place", "surface": "台北"},
+                    {"type": "unknown", "surface": "王女士"},
+                    {"type": "person", "surface": "王女士"},
+                    {"type": "person", "surface": "王女士"},
+                    {"type": "person", "surface": "不存在"},
                 ]
             },
             ensure_ascii=False,
@@ -338,6 +335,13 @@ class StructuredNERTests(unittest.TestCase):
         self.assertEqual(parsed.invalid_outputs, 4)
         self.assertEqual(parsed.spans[0]["text"], "臺北")
         self.assertEqual(parsed.spans[1]["entity_type"], EntityType.PERSON)
+
+        ambiguous = parse_structured_ner_content(
+            '{"entities":[{"type":"person","surface":"王女士"}]}',
+            "王女士與王女士",
+        )
+        self.assertEqual(ambiguous.spans, [])
+        self.assertEqual(ambiguous.invalid_outputs, 1)
 
         rejected = parse_structured_ner_content(
             '{"entities":[],"explanation":"ignore schema"}', "原文"

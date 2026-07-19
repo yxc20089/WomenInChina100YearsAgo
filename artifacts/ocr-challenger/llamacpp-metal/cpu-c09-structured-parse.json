@@ -1,0 +1,58 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T06:14:52.512269+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "cpu",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "f3b4e8e2c7db5c7346b9f28059f7813a7c9b1ff3273434cf79be468a82c551ed",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "structured_parse",
+    "prompt": "提取图中的文字。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1,
+    "seed": 42,
+    "max_tokens": 2048
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png",
+      "image_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
+      "result": {
+        "elapsed_seconds": 2.711860625015106,
+        "finish_reason": "stop",
+        "content": "較上次更受歡迎、英皇時召霍臨宮中、與之談話、並請\n 其作畫、居約六七年、彼離英而遊歷、先至比利士之白\n 魯捨爾、大受當地藝術界之般待、後重至白塞爾、少居",
+        "content_sha256": "0c268f523a28b05ec2ebf815146802b61fb7a925d33672cdbe6d9a0455508be2",
+        "usage": {
+          "completion_tokens": 83,
+          "prompt_tokens": 370,
+          "total_tokens": 453,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 370,
+          "prompt_ms": 2129.006,
+          "prompt_per_token_ms": 5.75407027027027,
+          "prompt_per_second": 173.79002219815257,
+          "predicted_n": 83,
+          "predicted_ms": 565.286,
+          "predicted_per_token_ms": 6.81067469879518,
+          "predicted_per_second": 146.82833114565017
+        },
+        "response_id": "chatcmpl-zN5VzrIhMkD9HfcdUSY5vzoBMSmqxfQ4"
+      }
+    }
+  ],
+  "all_requests_stopped": true
+}

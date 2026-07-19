@@ -1,0 +1,56 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T06:01:35.124137+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "Metal; verify from captured server log"
+  },
+  "model": {
+    "model_gguf_sha256": "f3b4e8e2c7db5c7346b9f28059f7813a7c9b1ff3273434cf79be468a82c551ed",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "layout_parse",
+    "prompt": "提取文档图片中所有内容用markdown格式表示，表格用html格式表达，文档中公式用latex格式表示，请按照阅读顺序组织进行全文解析，并输出版式分析信息。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1,
+    "seed": 42,
+    "max_tokens": 4096
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png",
+      "image_sha256": "7cf0c099b2a607159c5834c2e47980c8f8e14f884b8d41d34b6b95000721c3a4",
+      "result": {
+        "elapsed_seconds": 0.36470941704465076,
+        "finish_reason": "stop",
+        "content": "[{\"layout_type\":\"paragraph\",\"bbox\":\"(7,38),(952,38),(952,998),(7,998)\"},{\"layout_type\":\"page\",\"bbox\":\"(7,1),(958,1),(958,1),(7,1)\"}]",
+        "content_sha256": "4ab5d83c2d99cccce75434e7a71e1070cf1c741ead5f1e029f1a1243a0a55079",
+        "usage": {
+          "completion_tokens": 54,
+          "prompt_tokens": 406,
+          "total_tokens": 460,
+          "prompt_tokens_details": {
+            "cached_tokens": 365
+          }
+        },
+        "timings": {
+          "cache_n": 365,
+          "prompt_n": 41,
+          "prompt_ms": 29.284,
+          "prompt_per_token_ms": 0.7142439024390244,
+          "prompt_per_second": 1400.0819560169377,
+          "predicted_n": 54,
+          "predicted_ms": 316.704,
+          "predicted_per_token_ms": 5.864888888888889,
+          "predicted_per_second": 170.5062140042437
+        },
+        "response_id": "chatcmpl-mZF5yzXT5GOKPPDfOtKZ4sH6nTtqHglx"
+      }
+    }
+  ]
+}

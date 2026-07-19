@@ -1,9 +1,30 @@
 # Historical-Chinese OCR and layout benchmark
 
-The provisional evidence-extraction candidate is PP-StructureV3 + PP-OCRv6;
-PaddleOCR-VL-1.6 is the difficult-region challenger. MinerU remains an
-end-to-end parsing challenger subject to license review. These are benchmark
-roles, not quality conclusions.
+The selected learned OCR/layout model is HunyuanOCR 1.5, using its paired
+official `spotting_json` and `layout_parse` tasks. The production reference is
+the official CUDA/BF16 path. Earlier Paddle/PP-OCR artifacts remain comparison
+evidence; they are not an inference fallback or authority in the selected
+pipeline.
+
+The Apple Silicon llama.cpp/Metal path is locally accelerated but remains an
+experiment because its current 1.5 conversion and parity gates fail. Run the
+provenance-capturing client only against an explicitly launched test server:
+
+```bash
+.venv/bin/python experiments/ocr/llamacpp_hunyuan_smoke.py \
+  --task spotting_json \
+  --acceleration metal \
+  --model-gguf .cache/hunyuan-llamacpp/gguf/hyocr-f16.gguf \
+  --mmproj-gguf .cache/hunyuan-llamacpp/gguf/mmproj-hyocr-f16.gguf \
+  --llama-server .cache/hunyuan-llamacpp/llama.cpp/build/bin/llama-server \
+  --output artifacts/ocr-challenger/llamacpp-metal/smoke.json \
+  artifacts/ocr-challenger/suite-v219-p0308/C09_vertical_clean.png
+```
+
+The client records image/model hashes, exact project prompt, decoding
+parameters, finish reason, usage, timings, runtime build, and raw output. See
+[`hunyuanocr-1.5-hardware.md`](hunyuanocr-1.5-hardware.md) for the verified
+Metal placement, CPU control, conversion blocker, and deployment decision.
 
 The gold policy is
 [`docs/annotation-guidelines.md`](../../docs/annotation-guidelines.md). The

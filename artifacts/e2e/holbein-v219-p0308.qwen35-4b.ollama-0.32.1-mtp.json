@@ -1,0 +1,117 @@
+{
+  "schema_version": "holbein-e2e-model-step-v1",
+  "created_at": "2026-07-18T21:50:13.595904+00:00",
+  "scope": "executable design example; not a benchmark or gold annotation",
+  "source": {
+    "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+    "source_object_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+    "page_id": "d1faa016-c303-4586-a535-3e7a70e0fbea",
+    "page_number": 308,
+    "volume_number": 219,
+    "publication_year": 1925,
+    "image_uri": "artifacts/lossless-pilot/images/v219/p0308.png",
+    "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+    "evidence_tier": "non_gold_lossless_pilot",
+    "ocr_run_id": "cc2310a1-c174-4598-8360-1742da5d0262",
+    "region_id": "0d7fdcfe-0a26-4e5f-9c06-60808eff5612",
+    "region_text": "較上次更受歡迎英皇時召霍臨宮中與之談話並",
+    "region_polygon": {
+      "points": [
+        {
+          "x": 2946.0,
+          "y": 3240.0
+        },
+        {
+          "x": 3031.0,
+          "y": 3240.0
+        },
+        {
+          "x": 3026.0,
+          "y": 4440.0
+        },
+        {
+          "x": 2940.0,
+          "y": 4440.0
+        }
+      ]
+    }
+  },
+  "model": "qwen3.5:4b",
+  "conditions": {
+    "temperature": 0,
+    "seed": 42,
+    "thinking": false,
+    "structured_output": "native_ollama_json_schema",
+    "offsets_supplied_by_model": false
+  },
+  "candidates": [
+    {
+      "candidate_id": "C1",
+      "surface": "英皇",
+      "start": 7,
+      "end": 9,
+      "left_context": "較上次更受歡迎",
+      "right_context": "時召霍臨宮中與之"
+    },
+    {
+      "candidate_id": "C2",
+      "surface": "霍",
+      "start": 11,
+      "end": 12,
+      "left_context": "更受歡迎英皇時召",
+      "right_context": "臨宮中與之談話並"
+    },
+    {
+      "candidate_id": "C3",
+      "surface": "霍臨",
+      "start": 11,
+      "end": 13,
+      "left_context": "更受歡迎英皇時召",
+      "right_context": "宮中與之談話並"
+    },
+    {
+      "candidate_id": "C4",
+      "surface": "宮中",
+      "start": 13,
+      "end": 15,
+      "left_context": "歡迎英皇時召霍臨",
+      "right_context": "與之談話並"
+    }
+  ],
+  "model_result": {
+    "elapsed_seconds": 3.7420464170281775,
+    "raw_content": "{\"decisions\":[{\"candidate_id\":\"C1\",\"label\":\"ROLE_TITLE\"},{\"candidate_id\":\"C2\",\"label\":\"PERSON_REFERENCE\"},{\"candidate_id\":\"C3\",\"label\":\"NOT_ENTITY\"},{\"candidate_id\":\"C4\",\"label\":\"GENERIC_LOCATION\"}]}",
+    "raw_content_sha256": "db1d69c54af1507d204cc87cc0914714292ae3cbb68f423ad6acf6ba8fe65e68",
+    "response": {
+      "decisions": [
+        {
+          "candidate_id": "C1",
+          "label": "ROLE_TITLE"
+        },
+        {
+          "candidate_id": "C2",
+          "label": "PERSON_REFERENCE"
+        },
+        {
+          "candidate_id": "C3",
+          "label": "NOT_ENTITY"
+        },
+        {
+          "candidate_id": "C4",
+          "label": "GENERIC_LOCATION"
+        }
+      ]
+    },
+    "json_parse_error": null,
+    "ollama_metrics": {
+      "total_duration": 3730238000,
+      "load_duration": 1980055916,
+      "prompt_eval_count": 463,
+      "prompt_eval_duration": 707471000,
+      "eval_count": 51,
+      "eval_duration": 1040435999
+    }
+  },
+  "validation_errors": [],
+  "accepted_for_ingestion": true
+}

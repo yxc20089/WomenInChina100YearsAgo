@@ -1,0 +1,143 @@
+{
+  "schema_version": "1.1",
+  "artifact_id": "5a2d449c-3fac-51f2-b002-f1e0186b6b25",
+  "source_ocr_run_id": "cc2310a1-c174-4598-8360-1742da5d0262",
+  "input_variant": "raw_ocr",
+  "input_sha256": "618d8ed80c29aee246e26556a746ea0dc478972443ccb4c8afacf34d0eb76e9d",
+  "dataset_id": "holbein-v219-p0308-e2e",
+  "split_id": "design-example",
+  "ontology_version": "entity-schema-v0.1",
+  "adapter_id": "bounded-candidate-qwen3.5-4b",
+  "prompt_schema_revision": "4d97137a2bff223464334609684c824cdd0e89c32a486258cc0696dec98755c9",
+  "run": {
+    "schema_version": "1.0",
+    "run_id": "d9baa32e-910f-53a7-9dde-751efe66179a",
+    "kind": "ner",
+    "engine": "Ollama",
+    "model_name": "qwen3.5:4b",
+    "model_revision": "sha256:81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490",
+    "software_version": "ollama-0.24.0",
+    "configuration": {
+      "temperature": 0,
+      "seed": 42,
+      "thinking": false,
+      "structured_output": "native_ollama_json_schema",
+      "offsets_supplied_by_model": false,
+      "model_raw_content_sha256": "db1d69c54af1507d204cc87cc0914714292ae3cbb68f423ad6acf6ba8fe65e68",
+      "validation_policy": "whole_response_rejection",
+      "scope": "executable_design_example_not_benchmark_or_gold"
+    },
+    "started_at": "2026-07-18T21:20:08.651054Z",
+    "completed_at": "2026-07-18T21:20:21.640716Z"
+  },
+  "mentions": [
+    {
+      "mention_id": "0dfd1a67-676a-51de-aa9e-50ac65505bce",
+      "entity_type": "role_title",
+      "text": "英皇",
+      "normalized_text": null,
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "0d7fdcfe-0a26-4e5f-9c06-60808eff5612",
+        "polygon": {
+          "points": [
+            {
+              "x": 2946.0,
+              "y": 3240.0
+            },
+            {
+              "x": 3031.0,
+              "y": 3240.0
+            },
+            {
+              "x": 3026.0,
+              "y": 4440.0
+            },
+            {
+              "x": 2940.0,
+              "y": 4440.0
+            }
+          ]
+        },
+        "text_start": 7,
+        "text_end": 9
+      },
+      "confidence": null,
+      "run_id": "d9baa32e-910f-53a7-9dde-751efe66179a",
+      "attributes": {
+        "candidate_id": "C1",
+        "classification_label": "ROLE_TITLE",
+        "mention_form": "title_reference",
+        "left_context": "較上次更受歡迎",
+        "right_context": "時召霍臨宮中與之",
+        "offset_authority": "deterministic_python_codepoint_index",
+        "model_raw_content_sha256": "db1d69c54af1507d204cc87cc0914714292ae3cbb68f423ad6acf6ba8fe65e68",
+        "example_scope": "non_gold_lossless_pilot"
+      }
+    },
+    {
+      "mention_id": "01fdbd6e-6f82-59ea-9c33-54eeaef65a3b",
+      "entity_type": "person",
+      "text": "霍",
+      "normalized_text": null,
+      "source": {
+        "source_uri": "s3://ccaa-us-east-1-504133794192/sb_raw/申报影印本219.pdf",
+        "source_sha256": "32f8021750cd0fa3ac961f1835681600e3f730d1b78f35e60947cf3f5e7bdfff",
+        "derivative_id": "d5ce3a23-0cce-4308-bdce-98f9db44fa12",
+        "image_sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e",
+        "evidence_tier": "non_gold_lossless_pilot",
+        "volume_number": 219,
+        "publication_year": 1925,
+        "page_number": 308,
+        "region_id": "0d7fdcfe-0a26-4e5f-9c06-60808eff5612",
+        "polygon": {
+          "points": [
+            {
+              "x": 2946.0,
+              "y": 3240.0
+            },
+            {
+              "x": 3031.0,
+              "y": 3240.0
+            },
+            {
+              "x": 3026.0,
+              "y": 4440.0
+            },
+            {
+              "x": 2940.0,
+              "y": 4440.0
+            }
+          ]
+        },
+        "text_start": 11,
+        "text_end": 12
+      },
+      "confidence": null,
+      "run_id": "d9baa32e-910f-53a7-9dde-751efe66179a",
+      "attributes": {
+        "candidate_id": "C2",
+        "classification_label": "PERSON_REFERENCE",
+        "mention_form": "shortened_surname",
+        "left_context": "更受歡迎英皇時召",
+        "right_context": "臨宮中與之談話並",
+        "offset_authority": "deterministic_python_codepoint_index",
+        "model_raw_content_sha256": "db1d69c54af1507d204cc87cc0914714292ae3cbb68f423ad6acf6ba8fe65e68",
+        "example_scope": "non_gold_lossless_pilot",
+        "resolution_scope_required": "reviewed_coherent_unit_or_article",
+        "do_not_register_as_global_alias": true
+      }
+    }
+  ],
+  "warnings": [
+    "This is a non-gold lossless pilot and all stored mentions remain candidates.",
+    "霍 requires reviewed article/coherent-unit context before entity resolution."
+  ]
+}

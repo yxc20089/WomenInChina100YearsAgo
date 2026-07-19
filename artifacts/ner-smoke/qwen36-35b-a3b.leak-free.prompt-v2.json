@@ -1,0 +1,831 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-07-18T20:42:37.636952+00:00",
+  "model": "qwen3.6:35b",
+  "base_url": "http://127.0.0.1:11434",
+  "conditions": {
+    "temperature": 0,
+    "seed": 42,
+    "num_ctx": 8192,
+    "thinking": false,
+    "structured_output": "native_ollama_json_schema"
+  },
+  "scope": "technical smoke suite; not an accuracy benchmark",
+  "evaluation_controls": {
+    "expected_answers_excluded_from_model_input": true,
+    "case_notes_excluded_from_model_input": true,
+    "fixture_specific_answers_excluded_from_system_prompt": true
+  },
+  "extraction_cases": [
+    {
+      "elapsed_seconds": 11.317839750030544,
+      "raw_content": "{\n  \"mentions\": [\n    {\n      \"surface\": \"霍爾平\",\n      \"start\": 0,\n      \"end\": 3,\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"surface\": \"Hans Holbein\",\n      \"start\": 4,\n      \"end\": 16,\n      \"category\": \"person_name\",\n      \"form\": \"latin_name\"\n    },\n    {\n      \"surface\": \"英國\",\n      \"start\": 17,\n      \"end\": 19,\n      \"category\": \"place_name\",\n      \"form\": \"named_entity\"\n    },\n    {\n      \"surface\": \"英皇\",\n      \"start\": 20,\n      \"end\": 22,\n      \"category\": \"person_reference\",\n      \"form\": \"title_reference\"\n    },\n    {\n      \"surface\": \"霍\",\n      \"start\": 23,\n      \"end\": 24,\n      \"category\": \"person_reference\",\n      \"form\": \"shortened_surname\"\n    }\n  ],\n  \"local_coreference\": [\n    {\n      \"anaphor_start\": 23,\n      \"antecedent_start\": 0,\n      \"decision\": \"SAME_LOCAL\"\n    }\n  ]\n}",
+      "response": {
+        "mentions": [
+          {
+            "surface": "霍爾平",
+            "start": 0,
+            "end": 3,
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "surface": "Hans Holbein",
+            "start": 4,
+            "end": 16,
+            "category": "person_name",
+            "form": "latin_name"
+          },
+          {
+            "surface": "英國",
+            "start": 17,
+            "end": 19,
+            "category": "place_name",
+            "form": "named_entity"
+          },
+          {
+            "surface": "英皇",
+            "start": 20,
+            "end": 22,
+            "category": "person_reference",
+            "form": "title_reference"
+          },
+          {
+            "surface": "霍",
+            "start": 23,
+            "end": 24,
+            "category": "person_reference",
+            "form": "shortened_surname"
+          }
+        ],
+        "local_coreference": [
+          {
+            "anaphor_start": 23,
+            "antecedent_start": 0,
+            "decision": "SAME_LOCAL"
+          }
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 11304392625,
+        "load_duration": 82387542,
+        "prompt_eval_count": 597,
+        "prompt_eval_duration": 1343175125,
+        "eval_count": 318,
+        "eval_duration": 9732296326
+      },
+      "id": "holbein_local_reference",
+      "text": "霍爾平（Hans Holbein）為英國著名畫家。英皇時召霍臨宮中作畫。",
+      "notes": "Must extract exact 霍, never 霍臨; local 霍 -> 霍爾平.",
+      "offset_validation_errors": [
+        "mention[2] surface mismatch: '英國' != '為英'",
+        "mention[3] surface mismatch: '英皇' != '著名'",
+        "mention[4] surface mismatch: '霍' != '家'"
+      ]
+    },
+    {
+      "elapsed_seconds": 9.091994791990146,
+      "raw_content": "{\n  \"mentions\": [\n    {\n      \"surface\": \"孫文\",\n      \"start\": 0,\n      \"end\": 2,\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"surface\": \"逸仙\",\n      \"start\": 4,\n      \"end\": 6,\n      \"category\": \"person_name\",\n      \"form\": \"alternate_name\"\n    },\n    {\n      \"surface\": \"孫中山\",\n      \"start\": 10,\n      \"end\": 13,\n      \"category\": \"person_name\",\n      \"form\": \"alternate_name\"\n    }\n  ],\n  \"local_coreference\": [\n    {\n      \"anaphor_start\": 4,\n      \"antecedent_start\": 0,\n      \"decision\": \"SAME_LOCAL\"\n    },\n    {\n      \"anaphor_start\": 10,\n      \"antecedent_start\": 0,\n      \"decision\": \"SAME_LOCAL\"\n    }\n  ]\n}",
+      "response": {
+        "mentions": [
+          {
+            "surface": "孫文",
+            "start": 0,
+            "end": 2,
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "surface": "逸仙",
+            "start": 4,
+            "end": 6,
+            "category": "person_name",
+            "form": "alternate_name"
+          },
+          {
+            "surface": "孫中山",
+            "start": 10,
+            "end": 13,
+            "category": "person_name",
+            "form": "alternate_name"
+          }
+        ],
+        "local_coreference": [
+          {
+            "anaphor_start": 4,
+            "antecedent_start": 0,
+            "decision": "SAME_LOCAL"
+          },
+          {
+            "anaphor_start": 10,
+            "antecedent_start": 0,
+            "decision": "SAME_LOCAL"
+          }
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 9091303209,
+        "load_duration": 76393792,
+        "prompt_eval_count": 582,
+        "prompt_eval_duration": 1321098125,
+        "eval_count": 248,
+        "eval_duration": 7576393243
+      },
+      "id": "sun_names",
+      "text": "孫文，字逸仙，後以孫中山之名著稱。",
+      "notes": "Three person-name occurrences refer to one person in this text.",
+      "offset_validation_errors": [
+        "mention[2] surface mismatch: '孫中山' != '中山之'"
+      ]
+    },
+    {
+      "elapsed_seconds": 8.193509707984049,
+      "raw_content": "{\n  \"mentions\": [\n    {\n      \"surface\": \"霍女士\",\n      \"start\": 0,\n      \"end\": 3,\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"surface\": \"上海\",\n      \"start\": 3,\n      \"end\": 5,\n      \"category\": \"place_name\",\n      \"form\": \"named_entity\"\n    },\n    {\n      \"surface\": \"霍先生\",\n      \"start\": 11,\n      \"end\": 14,\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"surface\": \"北京\",\n      \"start\": 14,\n      \"end\": 16,\n      \"category\": \"place_name\",\n      \"form\": \"named_entity\"\n    }\n  ],\n  \"local_coreference\": []\n}",
+      "response": {
+        "mentions": [
+          {
+            "surface": "霍女士",
+            "start": 0,
+            "end": 3,
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "surface": "上海",
+            "start": 3,
+            "end": 5,
+            "category": "place_name",
+            "form": "named_entity"
+          },
+          {
+            "surface": "霍先生",
+            "start": 11,
+            "end": 14,
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "surface": "北京",
+            "start": 14,
+            "end": 16,
+            "category": "place_name",
+            "form": "named_entity"
+          }
+        ],
+        "local_coreference": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 8192839208,
+        "load_duration": 75354750,
+        "prompt_eval_count": 586,
+        "prompt_eval_duration": 1328278625,
+        "eval_count": 219,
+        "eval_duration": 6683073419
+      },
+      "id": "two_huos",
+      "text": "霍女士在上海任教。另一位霍先生在北京任職，二人並無親屬關係。",
+      "notes": "Two distinct person references; do not corefer them.",
+      "offset_validation_errors": [
+        "mention[1] surface mismatch: '上海' != '在上'",
+        "mention[2] surface mismatch: '霍先生' != '位霍先'",
+        "mention[3] surface mismatch: '北京' != '生在'"
+      ]
+    },
+    {
+      "elapsed_seconds": 1.9421366670285352,
+      "raw_content": "{\n  \"mentions\": [],\n  \"local_coreference\": []\n}",
+      "response": {
+        "mentions": [],
+        "local_coreference": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 1941468500,
+        "load_duration": 74780500,
+        "prompt_eval_count": 578,
+        "prompt_eval_duration": 1312167958,
+        "eval_count": 18,
+        "eval_duration": 522210083
+      },
+      "id": "common_phrase_negative",
+      "text": "愛寵情人，不僅悅目娛心。",
+      "notes": "No named entities.",
+      "offset_validation_errors": []
+    },
+    {
+      "elapsed_seconds": 5.084666749986354,
+      "raw_content": "{\n  \"mentions\": [\n    {\n      \"surface\": \"王女士\",\n      \"start\": 0,\n      \"end\": 3,\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"surface\": \"上海女子學校\",\n      \"start\": 6,\n      \"end\": 12,\n      \"category\": \"school_name\",\n      \"form\": \"full_name\"\n    }\n  ],\n  \"local_coreference\": []\n}",
+      "response": {
+        "mentions": [
+          {
+            "surface": "王女士",
+            "start": 0,
+            "end": 3,
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "surface": "上海女子學校",
+            "start": 6,
+            "end": 12,
+            "category": "school_name",
+            "form": "full_name"
+          }
+        ],
+        "local_coreference": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 5083977375,
+        "load_duration": 78053250,
+        "prompt_eval_count": 574,
+        "prompt_eval_duration": 1271666542,
+        "eval_count": 120,
+        "eval_duration": 3662890247
+      },
+      "id": "teacher_school",
+      "text": "王女士任教於上海女子學校。",
+      "notes": "Person reference 王女士 and school 上海女子學校.",
+      "offset_validation_errors": []
+    },
+    {
+      "elapsed_seconds": 6.427722499996889,
+      "raw_content": "{\n  \"mentions\": [\n    {\n      \"surface\": \"王氏\",\n      \"start\": 0,\n      \"end\": 2,\n      \"category\": \"person_reference\",\n      \"form\": \"shortened_surname\"\n    },\n    {\n      \"surface\": \"王氏\",\n      \"start\": 6,\n      \"end\": 8,\n      \"category\": \"person_reference\",\n      \"form\": \"shortened_surname\"\n    }\n  ],\n  \"local_coreference\": [\n    {\n      \"anaphor_start\": 6,\n      \"antecedent_start\": 0,\n      \"decision\": \"INSUFFICIENT\"\n    }\n  ]\n}",
+      "response": {
+        "mentions": [
+          {
+            "surface": "王氏",
+            "start": 0,
+            "end": 2,
+            "category": "person_reference",
+            "form": "shortened_surname"
+          },
+          {
+            "surface": "王氏",
+            "start": 6,
+            "end": 8,
+            "category": "person_reference",
+            "form": "shortened_surname"
+          }
+        ],
+        "local_coreference": [
+          {
+            "anaphor_start": 6,
+            "antecedent_start": 0,
+            "decision": "INSUFFICIENT"
+          }
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 6427036500,
+        "load_duration": 75418166,
+        "prompt_eval_count": 592,
+        "prompt_eval_duration": 1323744042,
+        "eval_count": 162,
+        "eval_duration": 4940223166
+      },
+      "id": "repeated_wang_uncertain",
+      "text": "王氏創辦女學。王氏在同頁另一則啟事中捐款，文中未說明是否同一人。",
+      "notes": "Two exact 王氏 occurrences; identity is insufficient.",
+      "offset_validation_errors": [
+        "mention[1] surface mismatch: '王氏' != '。王'"
+      ]
+    }
+  ],
+  "candidate_classification_cases": [
+    {
+      "elapsed_seconds": 10.008341083012056,
+      "raw_content": "{\n  \"selections\": [\n    {\n      \"candidate_id\": \"C1\",\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"candidate_id\": \"C2\",\n      \"category\": \"person_name\",\n      \"form\": \"latin_name\"\n    },\n    {\n      \"candidate_id\": \"C3\",\n      \"category\": \"place_name\",\n      \"form\": \"named_entity\"\n    },\n    {\n      \"candidate_id\": \"C5\",\n      \"category\": \"person_reference\",\n      \"form\": \"title_reference\"\n    },\n    {\n      \"candidate_id\": \"C6\",\n      \"category\": \"person_reference\",\n      \"form\": \"shortened_surname\"\n    }\n  ],\n  \"coreference\": [\n    {\n      \"left_candidate_id\": \"C1\",\n      \"right_candidate_id\": \"C2\",\n      \"decision\": \"SAME_LOCAL\"\n    },\n    {\n      \"left_candidate_id\": \"C1\",\n      \"right_candidate_id\": \"C6\",\n      \"decision\": \"SAME_LOCAL\"\n    }\n  ]\n}",
+      "response": {
+        "selections": [
+          {
+            "candidate_id": "C1",
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "candidate_id": "C2",
+            "category": "person_name",
+            "form": "latin_name"
+          },
+          {
+            "candidate_id": "C3",
+            "category": "place_name",
+            "form": "named_entity"
+          },
+          {
+            "candidate_id": "C5",
+            "category": "person_reference",
+            "form": "title_reference"
+          },
+          {
+            "candidate_id": "C6",
+            "category": "person_reference",
+            "form": "shortened_surname"
+          }
+        ],
+        "coreference": [
+          {
+            "left_candidate_id": "C1",
+            "right_candidate_id": "C2",
+            "decision": "SAME_LOCAL"
+          },
+          {
+            "left_candidate_id": "C1",
+            "right_candidate_id": "C6",
+            "decision": "SAME_LOCAL"
+          }
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 10007693250,
+        "load_duration": 76879041,
+        "prompt_eval_count": 728,
+        "prompt_eval_duration": 1554121708,
+        "eval_count": 270,
+        "eval_duration": 8250565949
+      },
+      "id": "bounded_holbein",
+      "text": "霍爾平（Hans Holbein）為英國著名畫家。英皇時召霍臨宮中作畫。",
+      "candidates": [
+        {
+          "id": "C1",
+          "surface": "霍爾平",
+          "start": 0,
+          "end": 3
+        },
+        {
+          "id": "C2",
+          "surface": "Hans Holbein",
+          "start": 4,
+          "end": 16
+        },
+        {
+          "id": "C3",
+          "surface": "英國",
+          "start": 18,
+          "end": 20
+        },
+        {
+          "id": "C4",
+          "surface": "畫家",
+          "start": 22,
+          "end": 24
+        },
+        {
+          "id": "C5",
+          "surface": "英皇",
+          "start": 25,
+          "end": 27
+        },
+        {
+          "id": "C6",
+          "surface": "霍",
+          "start": 29,
+          "end": 30
+        },
+        {
+          "id": "C7",
+          "surface": "霍臨",
+          "start": 29,
+          "end": 31
+        },
+        {
+          "id": "C8",
+          "surface": "宮中",
+          "start": 31,
+          "end": 33
+        }
+      ],
+      "expected_selected_ids": [
+        "C1",
+        "C2",
+        "C3",
+        "C5",
+        "C6"
+      ],
+      "expected_coreference": [
+        {
+          "left_candidate_id": "C1",
+          "right_candidate_id": "C2",
+          "decision": "SAME_LOCAL"
+        },
+        {
+          "left_candidate_id": "C1",
+          "right_candidate_id": "C6",
+          "decision": "SAME_LOCAL"
+        }
+      ],
+      "validation_errors": [],
+      "bare_selected_ids": null,
+      "bare_selection_matches_expected": false
+    },
+    {
+      "elapsed_seconds": 8.804717790975701,
+      "raw_content": "{\n  \"selections\": [\n    {\n      \"candidate_id\": \"C1\",\n      \"category\": \"person_name\",\n      \"form\": \"full_name\"\n    },\n    {\n      \"candidate_id\": \"C3\",\n      \"category\": \"person_name\",\n      \"form\": \"alternate_name\"\n    },\n    {\n      \"candidate_id\": \"C4\",\n      \"category\": \"person_name\",\n      \"form\": \"alternate_name\"\n    }\n  ],\n  \"coreference\": [\n    {\n      \"left_candidate_id\": \"C1\",\n      \"right_candidate_id\": \"C3\",\n      \"decision\": \"SAME_LOCAL\"\n    },\n    {\n      \"left_candidate_id\": \"C1\",\n      \"right_candidate_id\": \"C4\",\n      \"decision\": \"SAME_LOCAL\"\n    },\n    {\n      \"left_candidate_id\": \"C3\",\n      \"right_candidate_id\": \"C4\",\n      \"decision\": \"SAME_LOCAL\"\n    }\n  ]\n}",
+      "response": {
+        "selections": [
+          {
+            "candidate_id": "C1",
+            "category": "person_name",
+            "form": "full_name"
+          },
+          {
+            "candidate_id": "C3",
+            "category": "person_name",
+            "form": "alternate_name"
+          },
+          {
+            "candidate_id": "C4",
+            "category": "person_name",
+            "form": "alternate_name"
+          }
+        ],
+        "coreference": [
+          {
+            "left_candidate_id": "C1",
+            "right_candidate_id": "C3",
+            "decision": "SAME_LOCAL"
+          },
+          {
+            "left_candidate_id": "C1",
+            "right_candidate_id": "C4",
+            "decision": "SAME_LOCAL"
+          },
+          {
+            "left_candidate_id": "C3",
+            "right_candidate_id": "C4",
+            "decision": "SAME_LOCAL"
+          }
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 8804035542,
+        "load_duration": 76149833,
+        "prompt_eval_count": 597,
+        "prompt_eval_duration": 1337144583,
+        "eval_count": 237,
+        "eval_duration": 7275944382
+      },
+      "id": "bounded_sun_names",
+      "text": "孫文，字逸仙，後以孫中山之名著稱。",
+      "candidates": [
+        {
+          "id": "C1",
+          "surface": "孫文",
+          "start": 0,
+          "end": 2
+        },
+        {
+          "id": "C2",
+          "surface": "字逸仙",
+          "start": 3,
+          "end": 6
+        },
+        {
+          "id": "C3",
+          "surface": "逸仙",
+          "start": 4,
+          "end": 6
+        },
+        {
+          "id": "C4",
+          "surface": "孫中山",
+          "start": 9,
+          "end": 12
+        }
+      ],
+      "expected_selected_ids": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "expected_coreference": [
+        {
+          "left_candidate_id": "C1",
+          "right_candidate_id": "C3",
+          "decision": "SAME_LOCAL"
+        },
+        {
+          "left_candidate_id": "C1",
+          "right_candidate_id": "C4",
+          "decision": "SAME_LOCAL"
+        }
+      ],
+      "validation_errors": [],
+      "bare_selected_ids": null,
+      "bare_selection_matches_expected": false
+    },
+    {
+      "elapsed_seconds": 1.9026094999862835,
+      "raw_content": "{\n  \"selections\": [],\n  \"coreference\": []\n}",
+      "response": {
+        "selections": [],
+        "coreference": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 1901949042,
+        "load_duration": 78540375,
+        "prompt_eval_count": 565,
+        "prompt_eval_duration": 1267716667,
+        "eval_count": 18,
+        "eval_duration": 522187707
+      },
+      "id": "bounded_common_phrase_negative",
+      "text": "愛寵情人，不僅悅目娛心。",
+      "candidates": [
+        {
+          "id": "C1",
+          "surface": "愛寵",
+          "start": 0,
+          "end": 2
+        },
+        {
+          "id": "C2",
+          "surface": "情人",
+          "start": 2,
+          "end": 4
+        },
+        {
+          "id": "C3",
+          "surface": "愛寵情人",
+          "start": 0,
+          "end": 4
+        }
+      ],
+      "expected_selected_ids": [],
+      "expected_coreference": [],
+      "validation_errors": [],
+      "bare_selected_ids": null,
+      "bare_selection_matches_expected": false
+    },
+    {
+      "elapsed_seconds": 5.4741118749952875,
+      "raw_content": "{\n  \"selections\": [\n    {\n      \"candidate_id\": \"C1\",\n      \"category\": \"person_reference\",\n      \"form\": \"shortened_surname\"\n    },\n    {\n      \"candidate_id\": \"C2\",\n      \"category\": \"person_reference\",\n      \"form\": \"shortened_surname\"\n    }\n  ],\n  \"coreference\": [\n    {\n      \"left_candidate_id\": \"C1\",\n      \"right_candidate_id\": \"C2\",\n      \"decision\": \"INSUFFICIENT\"\n    }\n  ]\n}",
+      "response": {
+        "selections": [
+          {
+            "candidate_id": "C1",
+            "category": "person_reference",
+            "form": "shortened_surname"
+          },
+          {
+            "candidate_id": "C2",
+            "category": "person_reference",
+            "form": "shortened_surname"
+          }
+        ],
+        "coreference": [
+          {
+            "left_candidate_id": "C1",
+            "right_candidate_id": "C2",
+            "decision": "INSUFFICIENT"
+          }
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 5473420667,
+        "load_duration": 80501542,
+        "prompt_eval_count": 549,
+        "prompt_eval_duration": 1231592000,
+        "eval_count": 134,
+        "eval_duration": 4085053830
+      },
+      "id": "bounded_repeated_wang",
+      "text": "王氏創辦女學。王氏在同頁另一則啟事中捐款，文中未說明是否同一人。",
+      "candidates": [
+        {
+          "id": "C1",
+          "surface": "王氏",
+          "start": 0,
+          "end": 2
+        },
+        {
+          "id": "C2",
+          "surface": "王氏",
+          "start": 7,
+          "end": 9
+        }
+      ],
+      "expected_selected_ids": [
+        "C1",
+        "C2"
+      ],
+      "expected_coreference": [
+        {
+          "left_candidate_id": "C1",
+          "right_candidate_id": "C2",
+          "decision": "INSUFFICIENT"
+        }
+      ],
+      "validation_errors": [],
+      "bare_selected_ids": null,
+      "bare_selection_matches_expected": false
+    }
+  ],
+  "resolution_cases": [
+    {
+      "elapsed_seconds": 1.971990416990593,
+      "raw_content": "{\n  \"decision\": \"INSUFFICIENT\",\n  \"supporting_evidence_ids\": [],\n  \"contradiction_evidence_ids\": []\n}",
+      "response": {
+        "decision": "INSUFFICIENT",
+        "supporting_evidence_ids": [],
+        "contradiction_evidence_ids": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 1971326167,
+        "load_duration": 81745042,
+        "prompt_eval_count": 362,
+        "prompt_eval_duration": 803099500,
+        "eval_count": 35,
+        "eval_duration": 1043302751
+      },
+      "id": "isolated_surname_not_global_alias",
+      "left": {
+        "evidence": [
+          {
+            "id": "L1",
+            "surface": "霍"
+          }
+        ]
+      },
+      "right": {
+        "evidence": [
+          {
+            "id": "R1",
+            "surface": "霍爾平"
+          },
+          {
+            "id": "R2",
+            "latin_name": "Hans Holbein"
+          }
+        ]
+      },
+      "expected": "INSUFFICIENT",
+      "matches_expected_decision": true,
+      "bare_decision_matches_expected": false
+    },
+    {
+      "elapsed_seconds": 2.998963999969419,
+      "raw_content": "{\n  \"decision\": \"SAME\",\n  \"supporting_evidence_ids\": [\n    \"L1\",\n    \"L2\",\n    \"R1\",\n    \"R2\",\n    \"R3\"\n  ],\n  \"contradiction_evidence_ids\": []\n}",
+      "response": {
+        "decision": "SAME",
+        "supporting_evidence_ids": [
+          "L1",
+          "L2",
+          "R1",
+          "R2",
+          "R3"
+        ],
+        "contradiction_evidence_ids": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 2998276708,
+        "load_duration": 78247000,
+        "prompt_eval_count": 393,
+        "prompt_eval_duration": 868713416,
+        "eval_count": 66,
+        "eval_duration": 1998562541
+      },
+      "id": "reviewed_sun_aliases",
+      "left": {
+        "evidence": [
+          {
+            "id": "L1",
+            "surface": "孫文"
+          },
+          {
+            "id": "L2",
+            "source_claim": "字逸仙"
+          }
+        ]
+      },
+      "right": {
+        "evidence": [
+          {
+            "id": "R1",
+            "surface": "孫中山"
+          },
+          {
+            "id": "R2",
+            "authority_id": "reviewed:sun-yat-sen"
+          },
+          {
+            "id": "R3",
+            "authority_alias": "孫文"
+          }
+        ]
+      },
+      "expected": "SAME",
+      "matches_expected_decision": true,
+      "bare_decision_matches_expected": false
+    },
+    {
+      "elapsed_seconds": 2.441954249981791,
+      "raw_content": "{\n  \"decision\": \"DIFFERENT\",\n  \"supporting_evidence_ids\": [],\n  \"contradiction_evidence_ids\": [\n    \"L2\",\n    \"R2\"\n  ]\n}",
+      "response": {
+        "decision": "DIFFERENT",
+        "supporting_evidence_ids": [],
+        "contradiction_evidence_ids": [
+          "L2",
+          "R2"
+        ]
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 2441233250,
+        "load_duration": 78124541,
+        "prompt_eval_count": 378,
+        "prompt_eval_duration": 816120916,
+        "eval_count": 50,
+        "eval_duration": 1501979830
+      },
+      "id": "explicit_distinct_wangs",
+      "left": {
+        "evidence": [
+          {
+            "id": "L1",
+            "surface": "王氏"
+          },
+          {
+            "id": "L2",
+            "source_claim": "與另一王氏並非同一人"
+          }
+        ]
+      },
+      "right": {
+        "evidence": [
+          {
+            "id": "R1",
+            "surface": "王氏"
+          },
+          {
+            "id": "R2",
+            "source_claim": "與前述王氏並非同一人"
+          }
+        ]
+      },
+      "expected": "DIFFERENT",
+      "matches_expected_decision": true,
+      "bare_decision_matches_expected": false
+    },
+    {
+      "elapsed_seconds": 1.9972396250232123,
+      "raw_content": "{\n  \"decision\": \"INSUFFICIENT\",\n  \"supporting_evidence_ids\": [],\n  \"contradiction_evidence_ids\": []\n}",
+      "response": {
+        "decision": "INSUFFICIENT",
+        "supporting_evidence_ids": [],
+        "contradiction_evidence_ids": []
+      },
+      "json_parse_error": null,
+      "ollama_metrics": {
+        "total_duration": 1996686292,
+        "load_duration": 80075500,
+        "prompt_eval_count": 382,
+        "prompt_eval_duration": 823881209,
+        "eval_count": 35,
+        "eval_duration": 1052277956
+      },
+      "id": "same_name_conflicting_profiles",
+      "left": {
+        "evidence": [
+          {
+            "id": "L1",
+            "surface": "陳淑英"
+          },
+          {
+            "id": "L2",
+            "occupation": "教師",
+            "place": "上海"
+          }
+        ]
+      },
+      "right": {
+        "evidence": [
+          {
+            "id": "R1",
+            "surface": "陳淑英"
+          },
+          {
+            "id": "R2",
+            "occupation": "醫師",
+            "place": "廣州"
+          }
+        ]
+      },
+      "expected": "INSUFFICIENT",
+      "matches_expected_decision": true,
+      "bare_decision_matches_expected": false
+    }
+  ]
+}

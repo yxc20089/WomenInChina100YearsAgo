@@ -1,0 +1,55 @@
+{
+  "schema_version": "hunyuan-layout-proxy-diagnostic-v1",
+  "status": "diagnostic_not_qualified",
+  "semantic_boundary_authority": "none",
+  "purpose": "Exhaustive overlapping transport windows for testing Hunyuan-owned region proposals; viewport edges are not content boundaries.",
+  "source": {
+    "path": "artifacts/lossless-pilot/images/v219/p0308.png",
+    "sha256": "4a87398f84cb9cc80ee0f06232dc6cd020a1d582b25ef9d423f596c2c2478754",
+    "width": 6176,
+    "height": 8960
+  },
+  "proxy": {
+    "path": "artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-2240.normal-polarity.png",
+    "sha256": "7ea968112adf723d3d4e4f769a749ceca64762f105d518e95c4df9c97ccf1f90",
+    "width": 1544,
+    "height": 2240,
+    "source_pixels_per_proxy_pixel": 4,
+    "polarity_transform": "invert_rgb_255_minus_channel",
+    "geometry_transform": "uniform_downscale_0.25_no_rotation"
+  },
+  "viewports": [
+    {
+      "id": "q00",
+      "path": "artifacts/ocr-challenger/layout-proxy/viewports2240-normal/q00.png",
+      "sha256": "20c0b402cedbf11eae308ba029cb1f3aa63ee75da9ed4836cf55cee63d1d3789",
+      "proxy_box_xywh": [0, 0, 900, 1248],
+      "ownership_core_proxy_xyxy": [0, 0, 772, 1120]
+    },
+    {
+      "id": "q01",
+      "path": "artifacts/ocr-challenger/layout-proxy/viewports2240-normal/q01.png",
+      "sha256": "7ae69e9d8927e0a3fc3010858247e9fe77eee75e15a1670261489f5fc5fdbc3e",
+      "proxy_box_xywh": [644, 0, 900, 1248],
+      "ownership_core_proxy_xyxy": [772, 0, 1544, 1120]
+    },
+    {
+      "id": "q10",
+      "path": "artifacts/ocr-challenger/layout-proxy/viewports2240-normal/q10.png",
+      "sha256": "fda8ad900b8bdc283e808e2dec6b7cd76d4fe9ea424d63ee2b5d444b6b8649bb",
+      "proxy_box_xywh": [0, 992, 900, 1248],
+      "ownership_core_proxy_xyxy": [0, 1120, 772, 2240]
+    },
+    {
+      "id": "q11",
+      "path": "artifacts/ocr-challenger/layout-proxy/viewports2240-normal/q11.png",
+      "sha256": "efd705fc09c51681e0703e78cbbface596286b02e77d1cbbf1128a0ba9b78341",
+      "proxy_box_xywh": [644, 992, 900, 1248],
+      "ownership_core_proxy_xyxy": [772, 1120, 1544, 2240]
+    }
+  ],
+  "acceptance_result": {
+    "accepted": false,
+    "reason": "Hunyuan region outputs failed strict JSON, coordinate, or page-coverage gates in the recorded llama.cpp and Transformers runs."
+  }
+}

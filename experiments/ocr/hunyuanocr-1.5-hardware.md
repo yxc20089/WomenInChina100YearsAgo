@@ -111,6 +111,40 @@ The negative-control and whole-page layout gates nevertheless failed:
   tokens, but still repeated the date/header until the 512-token cap. Resizing
   fixes visual-token cost, not whole-page layout quality.
 
+The crop-region architecture still assigns region determination to Hunyuan;
+deterministic ruling-line detection is not the selected substitute. Follow-up
+tests separated Hunyuan's three relevant task/runtime cases:
+
+- the source scan is white-on-black, so a reversible black-on-white polarity
+  transform is required for the layout proxy and must be recorded alongside
+  the proxy-to-source coordinate transform;
+- the official Transformers BF16 checkpoint completed the dedicated `layout`
+  task on a 772 x 1,120 normalized proxy, but its boxes covered only about 22%
+  of the visibly dense lower-left half of the page;
+- the same checkpoint's `spotting_json` task returned valid JSON for that proxy
+  but covered only the rightmost portion of the page;
+- on a readable 900 x 1,248 viewport, `layout` emitted inverted and out-of-range
+  boxes, while `spotting_json` emitted one inverted box after otherwise valid
+  items;
+- a custom region-only prompt was ignored and collapsed into repetitive OCR,
+  so prompt editing is not an accepted repair;
+- llama.cpp/Metal truncated all four 900 x 1,248 viewport `layout` calls at
+  2,048 tokens, and its `spotting_json` response on a 480 x 700 dense viewport
+  was malformed and repetitive.
+
+These are coverage and output-contract failures, not evidence that a geometric
+detector should silently replace Hunyuan. Until a Hunyuan region run satisfies
+strict JSON, coordinate, coverage, and visual-review gates, page ingestion must
+abstain at region discovery.
+
+The exact diagnostic inputs and transforms are recorded in the
+[`normal-polarity viewport manifest`](../../artifacts/ocr-challenger/layout-proxy/v219-p0308.normal-polarity-viewports.manifest.json).
+Representative raw outputs are the
+[`Transformers 4,096-token layout run`](../../artifacts/ocr-challenger/transformers-mps/bf16-layout-proxy-1120-normal-polarity-4096.json),
+[`Transformers spotting run`](../../artifacts/ocr-challenger/transformers-mps/bf16-spotting-proxy-1120-normal-polarity.json),
+[`Transformers readable-viewport spotting run`](../../artifacts/ocr-challenger/transformers-mps/bf16-spotting-viewport-q00-normal-4096.json), and
+[`llama.cpp four-viewport layout run`](../../artifacts/ocr-challenger/llamacpp-metal/bf16-layout-viewports2240-normal.json).
+
 See the immutable raw runs in
 [`fixed-suite-structured-parse.json`](../../artifacts/ocr-challenger/llamacpp-metal/fixed-suite-structured-parse.json),
 [`exact-crops-spotting-json.json`](../../artifacts/ocr-challenger/llamacpp-metal/exact-crops-spotting-json.json),
@@ -196,9 +230,10 @@ For now:
    requests;
 3. do not use whole-page Hunyuan `layout_parse`: it fails at both source and
    proxy resolution;
-4. retain the immutable lossless page, use a downsampled proxy only for
-   confidence-bearing ruling-line/column proposals, and map padded crop boxes
-   back to source pixels before Hunyuan OCR;
+4. retain Hunyuan as the only learned crop-region authority; exhaustive
+   overlapping viewports may bound input size but do not themselves claim
+   semantic boundaries, and the current Hunyuan region path remains
+   unqualified because the tested outputs fail coverage or coordinate gates;
 5. keep official CUDA BF16 only as a cross-backend reference and keep the GGUF
    conversion caveat attached to every run;
 6. do not try DFlash until the crop pipeline is frozen, because speculative

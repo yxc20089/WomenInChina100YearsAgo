@@ -1,0 +1,61 @@
+{
+  "schema_version": "hunyuanocr-llamacpp-smoke-v1",
+  "created_at": "2026-07-19T07:26:42.994420+00:00",
+  "runtime": {
+    "endpoint": "http://127.0.0.1:18080",
+    "model_alias": "HYVL-BF16",
+    "llama_server_version": "version: 10068 (571d0d54)\nbuilt with AppleClang 17.0.0.17000603 for Darwin arm64",
+    "acceleration_requested": "metal",
+    "acceleration_verification": "verify device placement in llama-server log"
+  },
+  "model": {
+    "model_gguf_sha256": "1728022dbbfefc9e0e1017a0246ebceacdb97351fb191c95e20176ff25708b42",
+    "mmproj_gguf_sha256": "4cfd75fc001e7d03e36fdd26a0b36b2d5a2af6922d7800f99ca1673a104559a2"
+  },
+  "request": {
+    "task": "layout",
+    "prompt": "按照阅读顺序解析图中的版式信息。",
+    "temperature": 0,
+    "top_p": 1,
+    "top_k": 1,
+    "repetition_penalty": 1.08,
+    "seed": 42,
+    "max_tokens": 2048,
+    "client_concurrency": 1,
+    "cache_prompt": false
+  },
+  "results": [
+    {
+      "image": "artifacts/ocr-challenger/layout-proxy/v219-p0308.long-side-1120.normal-polarity.png",
+      "image_sha256": "d1bed082e7053e5a6b5e94313ca1d1c9867aa8c840ab34f80d7edc0365004831",
+      "result": {
+        "elapsed_seconds": 14.368417666992173,
+        "finish_reason": "length",
+        "content": "[{\"layout_type\":\"header\",\"bbox\":\"(36,46),(931,46),(931,62),(36,62)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(26,70),(964,70),(964,103),(26,103)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,103),(961,103),(961,158),(37,158)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,158),(961,158),(961,217),(37,217)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,217),(961,217),(961,278),(37,278)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,278),(961,278),(961,338),(37,338)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,338),(961,338),(961,397),(37,397)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,398),(961,398),(961,457),(37,457)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,457),(961,457),(961,526),(37,526)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,526),(961,526),(961,586),(37,586)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,586),(961,586),(961,646),(37,646)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,646),(961,646),(961,706),(37,706)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,706),(961,706),(961,766),(37,766)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,766),(961,766),(961,825),(37,825)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,825),(961,825),(961,885),(37,885)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(37,885),(961,885),(961,944),(37,944)\"},{\"layout_type\":\"figure\",\"bbox\":\"(266,76),(484,76),(484,282),(266,282)\"},{\"layout_type\":\"figure\",\"bbox\":\"(498,76),(583,76),(583,129),(498,129)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,129),(961,129),(961,188),(498,188)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,188),(961,188),(961,248),(498,248)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,248),(961,248),(961,307),(498,307)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,307),(961,307),(961,366),(498,366)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,366),(961,366),(961,425),(498,425)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,425),(961,425),(961,484),(498,484)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,484),(961,484),(961,543),(498,543)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,543),(961,543),(961,602),(498,602)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,602),(961,602),(961,661),(498,661)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,661),(961,661),(961,720),(498,720)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,720),(961,720),(961,779),(498,779)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,779),(961,779),(961,838),(498,838)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,838),(961,838),(961,898),(498,898)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,898),(961,898),(961,959),(498,959)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,959),(961,959),(961,1000),(498,1000)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(742,76),(957,76),(957,100),(742,100)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,100),(961,100),(961,158),(498,158)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,158),(961,158),(961,217),(498,217)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,217),(961,217),(961,276),(498,276)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,276),(961,276),(961,336),(498,336)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,336),(961,336),(961,395),(498,395)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,395),(961,395),(961,454),(498,454)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,454),(961,454),(961,513),(498,513)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,513),(961,513),(961,572),(498,572)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,572),(961,572),(961,631),(498,631)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,631),(961,631),(961,690),(498,690)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,690),(961,690),(961,749),(498,749)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,749),(961,749),(961,808),(498,808)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,808),(961,808),(961,867),(498,867)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,867),(961,867),(961,937),(498,937)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,937),(961,937),(961,1000),(498,1000)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(742,650),(957,650),(957,670),(742,670)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,1000),(961,1000),(961,158),(498,158)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,158),(961,158),(961,217),(498,217)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,217),(961,217),(961,276),(498,276)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,276),(961,276),(961,336),(498,336)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,336),(961,336),(961,395),(498,395)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,395),(961,395),(961,454),(498,454)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,454),(961,454),(961,513),(498,513)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,513),(961,513),(961,572),(498,572)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,572),(961,572),(961,631),(498,631)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,631),(961,631),(961,690),(498,690)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,690),(961,690),(961,749),(498,749)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,749),(961,749),(961,808),(498,808)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,808),(961,808),(961,867),(498,867)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,867),(961,867),(961,937),(498,937)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,937),(961,937),(961,996),(498,996)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(742,650),(957,650),(957,670),(742,670)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,1000),(961,1000),(961,158),(498,158)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,158),(961,158),(961,217),(498,217)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,217),(961,217),(961,276),(498,276)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,276),(961,276),(961,336),(498,336)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,336),(961,336),(961,395),(498,395)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,395),(961,395),(961,454),(498,454)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,454),(961,454),(961,513),(498,513)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,513),(961,513),(961,572),(498,572)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,572),(961,572),(961,631),(498,631)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,631),(961,631),(961,690),(498,690)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,690),(961,690),(961,749),(498,749)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(498,749),(961,749),(961,808),(498,808)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"",
+        "content_sha256": "1cfdd1bbbf0f56a33ef622ff7915bc285d8a0f8d71d920968a1de92c7994e626",
+        "usage": {
+          "completion_tokens": 2048,
+          "prompt_tokens": 890,
+          "total_tokens": 2938,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 890,
+          "prompt_ms": 1069.295,
+          "prompt_per_token_ms": 1.2014550561797754,
+          "prompt_per_second": 832.324101393909,
+          "predicted_n": 2048,
+          "predicted_ms": 13269.598,
+          "predicted_per_token_ms": 6.4792958984375,
+          "predicted_per_second": 154.3377576321453
+        },
+        "response_id": "chatcmpl-jTmt0eVlhLthF2ZEXh1R5aUwU2mE9mwS"
+      }
+    }
+  ],
+  "batch_elapsed_seconds": 14.37256858299952,
+  "all_requests_stopped": false
+}

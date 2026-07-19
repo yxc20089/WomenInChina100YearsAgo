@@ -21,6 +21,7 @@ from urllib.request import Request, urlopen
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "pipeline-models.toml"
+LAYOUT_DETECTION_PROMPT = "按照阅读顺序解析图中的版式信息。"
 
 
 def sha256_file(path: Path) -> str:
@@ -31,15 +32,19 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_prompts(config_path: Path) -> dict[str, str]:
+def load_ocr_settings(config_path: Path) -> tuple[dict[str, str], float]:
     with config_path.open("rb") as source:
         config = tomllib.load(source)
     selected = config["ocr"]
-    return {
-        selected["spotting_task"]: selected["spotting_prompt"],
-        selected["layout_task"]: selected["layout_prompt"],
-        "structured_parse": "提取图中的文字。",
-    }
+    return (
+        {
+            selected["spotting_task"]: selected["spotting_prompt"],
+            selected["layout_task"]: selected["layout_prompt"],
+            "layout": LAYOUT_DETECTION_PROMPT,
+            "structured_parse": "提取图中的文字。",
+        },
+        float(selected["repetition_penalty"]),
+    )
 
 
 def image_part(path: Path) -> dict[str, Any]:
@@ -58,6 +63,7 @@ def call_server(
     prompt: str,
     max_tokens: int,
     cache_prompt: bool,
+    repetition_penalty: float,
 ) -> dict[str, Any]:
     body = {
         "model": model,
@@ -74,7 +80,7 @@ def call_server(
         "temperature": 0,
         "top_p": 1,
         "top_k": 1,
-        "repetition_penalty": 1,
+        "repetition_penalty": repetition_penalty,
         "seed": 42,
         "stream": False,
         # llama-server otherwise reuses a matching KV prefix from an earlier
@@ -127,10 +133,19 @@ def main() -> int:
     parser.add_argument("--model", default="HYVL")
     parser.add_argument(
         "--task",
-        choices=("structured_parse", "spotting_json", "layout_parse"),
+        choices=("structured_parse", "spotting_json", "layout", "layout_parse"),
         default="spotting_json",
     )
+    parser.add_argument(
+        "--prompt",
+        help="explicit experimental prompt override; the exact text is recorded",
+    )
     parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument(
+        "--repetition-penalty",
+        type=float,
+        help="override the configured Hunyuan repetition penalty",
+    )
     parser.add_argument(
         "--concurrency",
         type=int,
@@ -162,8 +177,13 @@ def main() -> int:
     for path in paths:
         if not path.is_file():
             parser.error(f"image does not exist: {path}")
-    prompts = load_prompts(args.config.resolve())
-    prompt = prompts[args.task]
+    prompts, configured_repetition_penalty = load_ocr_settings(args.config.resolve())
+    prompt = args.prompt or prompts[args.task]
+    repetition_penalty = (
+        args.repetition_penalty
+        if args.repetition_penalty is not None
+        else configured_repetition_penalty
+    )
 
     def run_one(path: Path) -> dict[str, Any]:
         return call_server(
@@ -173,6 +193,7 @@ def main() -> int:
             prompt,
             args.max_tokens,
             args.cache_prompt,
+            repetition_penalty,
         )
 
     batch_started = time.perf_counter()
@@ -215,7 +236,7 @@ def main() -> int:
             "temperature": 0,
             "top_p": 1,
             "top_k": 1,
-            "repetition_penalty": 1,
+            "repetition_penalty": repetition_penalty,
             "seed": 42,
             "max_tokens": args.max_tokens,
             "client_concurrency": args.concurrency,

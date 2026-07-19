@@ -1,0 +1,36 @@
+{
+  "schema_version": "hunyuanocr-transformers-smoke-v1",
+  "created_at": "2026-07-19T07:37:43.910452+00:00",
+  "runtime": {
+    "torch_version": "2.13.0",
+    "device": "mps",
+    "dtype": "bfloat16",
+    "attention": "eager"
+  },
+  "model": {
+    "path": "/Users/berta/Projects/WomenInChina100YearsAgo/.cache/hunyuan-llamacpp/HunyuanOCR",
+    "model_safetensors_sha256": "632a1e082c4dd5a3284cf1ffcdba2fdaa06f435762c58c2f34aff0f3bd6c0249"
+  },
+  "request": {
+    "task": "layout",
+    "prompt": "按照阅读顺序解析图中的版式信息。",
+    "max_new_tokens": 4096,
+    "repetition_penalty": 1.08
+  },
+  "image": {
+    "path": "/Users/berta/Projects/WomenInChina100YearsAgo/artifacts/ocr-challenger/layout-proxy/viewports2240-normal/q00.png",
+    "sha256": "20c0b402cedbf11eae308ba029cb1f3aa63ee75da9ed4836cf55cee63d1d3789",
+    "width": 900,
+    "height": 1248
+  },
+  "result": {
+    "content": "[{\"layout_type\":\"header\",\"bbox\":\"(102,96),(838,96),(838,113),(102,113)\"},{\"layout_type\":\"header\",\"bbox\":\"(851,98),(977,98),(977,114),(851,114)\"},{\"layout_type\":\"doc_title\",\"bbox\":\"(43,126),(421,126),(421,111),(43,111)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(61,175),(411,175),(411,192),(61,192)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(60,198),(420,198),(420,216),(60,216)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(59,221),(414,221),(414,239),(59,239)\"},{\"layout_type\":\"para_title\",\"bbox\":\"(67,242),(412,242),(412,280),(67,280)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(64,285),(418,285),(418,303),(64,303)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(63,308),(413,308),(413,326),(63,326)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(62,329),(419,329),(419,347),(62,347)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(61,350),(422,350),(422,367),(61,367)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(60,369),(423,369),(423,386),(60,386)\"},{\"layout_type\":\"para_title\",\"bbox\":\"(65,398),(415,398),(415,437),(65,437)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(58,442),(416,442),(416,460),(58,460)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(57,463),(417,463),(417,481),(57,481)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(56,483),(416,483),(416,501),(56,501)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(55,503),(416,503),(416,521),(55,521)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(54,523),(416,523),(416,541),(54,541)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(53,543),(416,543),(416,561),(53,561)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(52,562),(416,562),(416,580),(52,580)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(51,581),(416,581),(416,599),(51,599)\"},{\"layout_type\":\"paragraph\",\"bbox\":\"(50,600),(416,600),(416,618),(50,618)\"},{\"layout_type\":\"figure\",\"bbox\":\"(456,656),(999,656),(999,1000),(456,1000)\"},{\"layout_type\":\"figure\",\"bbox\":\"(452,1011),(999,1011),(999,1000),(452,1000)\"},{\"layout_type\":\"figure\",\"bbox\":\"(450,1056),(999,1056),(999,1000),(450,1000)\"}]",
+    "content_sha256": "4b8ec475c2408d4412d0ceb839d14a0ba9e1839277caae2987d4bc6b4c6a37ac",
+    "prompt_tokens": 1147,
+    "generated_tokens": 665
+  },
+  "timings": {
+    "loading_seconds": 1.7154735410003923,
+    "generation_seconds": 25.002746250014752
+  }
+}

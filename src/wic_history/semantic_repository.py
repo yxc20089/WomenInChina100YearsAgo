@@ -21,6 +21,12 @@ from .reviewed_text_materializer import (
     ReviewedSpanInput,
     materialize_reviewed_article,
 )
+from .semantic_inputs import (
+    CoherentTextBundle as CoherentTextBundle,
+    CoherentTextSegment as CoherentTextSegment,
+    PageImageReference as PageImageReference,
+    semantic_multimodal_input_sha256 as semantic_multimodal_input_sha256,
+)
 from .semantic_tasks import (
     EventFrameResponse,
     LiteralInput,
@@ -54,45 +60,6 @@ def _clients() -> tuple[Any, Any]:
     except ImportError as exc:  # pragma: no cover - minimal installations
         raise RuntimeError("Install the data extra: uv sync --extra data") from exc
     return psycopg, dict_row
-
-
-@dataclass(frozen=True, slots=True)
-class CoherentTextSegment:
-    sequence_number: int
-    region_id: UUID
-    page_id: UUID
-    text_version_id: UUID
-    selection_id: UUID
-    text_start: int
-    text_end: int
-    composite_start: int
-    composite_end: int
-    text: str
-    role: str
-    polygon: Any
-
-
-@dataclass(frozen=True, slots=True)
-class PageImageReference:
-    page_id: UUID
-    derivative_id: UUID
-    image_uri: str
-    image_sha256: str
-    media_type: str
-    width: int
-    height: int
-    region_ids: tuple[UUID, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class CoherentTextBundle:
-    coherent_unit_revision_id: UUID
-    content: str
-    input_sha256: str
-    segments: tuple[CoherentTextSegment, ...]
-    page_images: tuple[PageImageReference, ...]
-    content_sha256: str = ""
-    multimodal_input_sha256: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,40 +101,6 @@ class EventInputBundle:
     triggers: tuple[TriggerInput, ...]
     literals: tuple[LiteralInput, ...]
     evidence_span_ids: tuple[UUID, ...]
-
-
-def semantic_multimodal_input_sha256(bundle: CoherentTextBundle) -> str:
-    """Hash every text-segment and page-image field visible to the semantic model."""
-    identity = {
-        "reviewed_text_input_sha256": bundle.input_sha256,
-        "segments": [
-            {
-                "region_id": str(item.region_id),
-                "page_id": str(item.page_id),
-                "text_version_id": str(item.text_version_id),
-                "text_start": item.text_start,
-                "text_end": item.text_end,
-                "text": item.text,
-                "role": item.role,
-                "polygon": item.polygon,
-            }
-            for item in bundle.segments
-        ],
-        "page_images": [
-            {
-                "page_id": str(item.page_id),
-                "derivative_id": str(item.derivative_id),
-                "image_uri": item.image_uri,
-                "image_sha256": item.image_sha256,
-                "media_type": item.media_type,
-                "width": item.width,
-                "height": item.height,
-                "region_ids": [str(value) for value in item.region_ids],
-            }
-            for item in bundle.page_images
-        ],
-    }
-    return _canonical_sha256(identity)
 
 
 def _map_boundary(operations: list[dict[str, Any]], boundary: int) -> int:

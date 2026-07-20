@@ -18,7 +18,7 @@ from .coherent_search import (
 )
 from .coherent_search_contracts import JsonValue
 from .evidence import Polygon, SourcePointer
-from .semantic_repository import CoherentTextBundle, CoherentTextSegment
+from .semantic_inputs import CoherentTextBundle, CoherentTextSegment
 
 Document = tuple[Mapping[str, JsonValue], Sequence[Mapping[str, JsonValue]]]
 _OBJECT_MAPPING = TypeAdapter(dict[str, object])
@@ -185,7 +185,7 @@ def build_coherent_manifest(
                 _integer(citation["end_char"], "document end"),
                 _string(citation["exported_text"], "text"),
                 _string(citation["role"], "role"),
-                citation["polygon"],
+                Polygon.model_validate(citation["polygon"]),
             )
             for citation in citations
         )

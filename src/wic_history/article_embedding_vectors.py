@@ -126,20 +126,47 @@ class BGEArticleEncoder:
         return values.tolist()
 
 
-def window_configuration(encoder: ArticleEncoder) -> WindowConfiguration:
-    effective = min(encoder.tokenizer_limit, encoder.model_limit)
+# token limits of the pinned BGE-M3 revision's tokenizer (immutable at the
+# revision pinned in config/pipeline-models.toml); a revision change there
+# must update these together
+PINNED_TOKENIZER_LIMIT: Final = 8190
+PINNED_MODEL_LIMIT: Final = 8190
+
+
+def _window_configuration(tokenizer_limit: int, model_limit: int) -> WindowConfiguration:
+    effective = min(tokenizer_limit, model_limit)
     if effective <= 0:
         raise InconsistentArticleEmbeddingRunError(
             UUID(int=0), "tokenizer and model limits must be positive"
         )
     return WindowConfiguration(
         POLICY,
-        encoder.tokenizer_limit,
-        encoder.model_limit,
+        tokenizer_limit,
+        model_limit,
         effective,
         min(effective - 1, max(1, int(effective * OVERLAP_RATIO))),
         DIMENSION,
     )
+
+
+def window_configuration(encoder: ArticleEncoder) -> WindowConfiguration:
+    return _window_configuration(encoder.tokenizer_limit, encoder.model_limit)
+
+
+def pinned_window_configuration() -> WindowConfiguration:
+    """The plan-time window configuration for the pinned model revision.
+
+    Derived by the same formula the worker applies to the real tokenizer, so
+    plan and execution can only diverge if the pinned revision's tokenizer
+    itself differs from the pinned limits — which fails closed at the
+    worker's configuration-hash check.
+    """
+    return _window_configuration(PINNED_TOKENIZER_LIMIT, PINNED_MODEL_LIMIT)
+
+
+def window_configuration_sha256(configuration: WindowConfiguration) -> str:
+    encoded = json.dumps(asdict(configuration), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode()).hexdigest()
 
 
 def _normalize(vector: list[float]) -> tuple[float, ...]:
@@ -191,8 +218,7 @@ def article_identity(
     request: ArticleEmbeddingRequest,
     configuration: WindowConfiguration,
 ) -> ArticleIdentity:
-    encoded = json.dumps(asdict(configuration), sort_keys=True, separators=(",", ":"))
-    configuration_sha256 = hashlib.sha256(encoded.encode()).hexdigest()
+    configuration_sha256 = window_configuration_sha256(configuration)
     name = ":".join(
         (
             str(article.revision_id),

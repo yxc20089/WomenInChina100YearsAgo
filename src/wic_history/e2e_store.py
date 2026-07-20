@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Any, Iterable, Literal
 from uuid import UUID, uuid4
+
+_LOGGER = logging.getLogger(__name__)
 
 
 TextVariant = Literal[
@@ -940,8 +943,6 @@ def review_and_select_text_version(
 
     selection_id: UUID | None = None
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
-        if decision == "accept":
-            coherent_jobs.lock_coherent_mutation(connection)
         version = connection.execute(
             """
             SELECT text_version_id, region_id, variant, text_sha256, review_status
@@ -1000,8 +1001,28 @@ def review_and_select_text_version(
                     note,
                 ),
             ).fetchone()["selection_id"]
-            coherent_jobs.enqueue_coherent_jobs(
-                connection, created_by=reviewer, max_revisions=100_000
+    if decision == "accept":
+        # The review action is already committed; coherent search planning
+        # follows best-effort OUTSIDE the historian's transaction. A planning
+        # failure (damaged article, revision-guard overflow, unavailable
+        # lock) must never roll back or block a review decision — recovery
+        # is `wic-batch`-style coherent backfill.
+        try:
+            with psycopg.connect(database_url, row_factory=dict_row) as connection:
+                result = coherent_jobs.enqueue_coherent_jobs(
+                    connection, created_by=reviewer, max_revisions=100_000
+                )
+            for revision_id, reason in result.skipped:
+                _LOGGER.warning(
+                    "coherent unit %s skipped from search planning: %s",
+                    revision_id,
+                    reason,
+                )
+        except Exception:
+            _LOGGER.exception(
+                "coherent search planning failed after review %s; "
+                "run coherent backfill to recover",
+                review_id,
             )
     return TextReviewResult(str(review_id), str(text_version_id), desired, str(selection_id) if selection_id else None)
 

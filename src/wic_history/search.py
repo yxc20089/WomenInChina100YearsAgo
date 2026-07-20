@@ -30,6 +30,7 @@ from .coherent_search_cli import (
     run_coherent_query,
 )
 from .model_config import load_pipeline_model_configuration
+from .search_runtime import pinned_coherent_query_identity as _coherent_identity
 
 
 DEFAULT_INDEX = "wic-regions-v2"
@@ -561,9 +562,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 CoherentProjectionArguments(
                     database_url=args.database_url,
                     opensearch_url=args.opensearch_url,
-                    model_name=args.model,
-                    model_revision=args.revision,
-                    configuration_sha256=args.configuration_sha256,
+                    model_name=_coherent_identity().model_name,
+                    model_revision=_coherent_identity().model_revision,
+                    configuration_sha256=_coherent_identity().configuration_sha256,
                     snapshot_sha256=args.snapshot_sha256,
                 )
             )
@@ -585,9 +586,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 year_start=args.year_start,
                 year_end=args.year_end,
                 mode=args.mode,
-                model_name=args.model,
-                model_revision=args.revision,
-                configuration_sha256=args.configuration_sha256,
+                model_name=_coherent_identity().model_name,
+                model_revision=_coherent_identity().model_revision,
+                configuration_sha256=_coherent_identity().configuration_sha256,
             )
         )
     if args.mode == "lexical":

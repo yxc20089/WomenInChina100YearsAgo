@@ -26,12 +26,10 @@ if TYPE_CHECKING:
 
 REVIEWED_COHERENT_UNIT: Final = "reviewed_coherent_unit"
 COHERENT_PROJECTION_PINS_ERROR: Final = (
-    "coherent projection requires --model, --revision, "
-    "--configuration-sha256, and --snapshot-sha256"
+    "coherent projection requires --snapshot-sha256"
 )
 COHERENT_QUERY_PINS_ERROR: Final = (
-    "coherent dense/hybrid query requires --model, --revision, "
-    "and --configuration-sha256"
+    "coherent dense/hybrid query is missing its pinned embedding identity"
 )
 
 
@@ -69,9 +67,6 @@ def register_coherent_project_arguments(parser: argparse.ArgumentParser) -> None
         choices=("region", REVIEWED_COHERENT_UNIT),
         default="region",
     )
-    _ = parser.add_argument("--model")
-    _ = parser.add_argument("--revision")
-    _ = parser.add_argument("--configuration-sha256")
     _ = parser.add_argument("--snapshot-sha256")
 
 
@@ -82,9 +77,6 @@ def register_coherent_query_arguments(parser: argparse.ArgumentParser) -> None:
         choices=("region", REVIEWED_COHERENT_UNIT),
         default="region",
     )
-    _ = parser.add_argument("--model")
-    _ = parser.add_argument("--revision")
-    _ = parser.add_argument("--configuration-sha256")
 
 
 def run_coherent_projection(args: CoherentProjectionArguments) -> int:

@@ -244,18 +244,46 @@ def build_coherent_unit_documents(
     rows: Iterable[dict[str, Any]],
 ) -> list[tuple[dict[str, Any], list[dict[str, Any]]]]:
     """Group approved spans by immutable coherent-unit revision."""
+    documents, skipped = build_coherent_unit_documents_isolated(rows)
+    if skipped:
+        revision_id, reason = skipped[0]
+        raise ValueError(f"coherent unit {revision_id} is unmaterializable: {reason}")
+    return documents
+
+
+def build_coherent_unit_documents_isolated(
+    rows: Iterable[dict[str, Any]],
+) -> tuple[
+    list[tuple[dict[str, Any], list[dict[str, Any]]]], list[tuple[str, str]]
+]:
+    """Group approved spans by revision, isolating per-article failures.
+
+    An article whose reviewed text cannot be materialized (ambiguous
+    alignment, hash mismatch, span-cardinality drift) is returned in the
+    skipped list with its reason instead of failing the whole export: a
+    single damaged article must abstain into review, never block operations
+    over the rest of the corpus.
+    """
     output: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
+    skipped: list[tuple[str, str]] = []
+
+    def emit(revision_rows: list[dict[str, Any]]) -> None:
+        try:
+            output.append(_coherent_unit_document(revision_rows))
+        except ValueError as error:  # ReviewedTextMaterializationError included
+            skipped.append((str(revision_rows[0]["revision_id"]), str(error)))
+
     current_revision: Any = None
     revision_rows: list[dict[str, Any]] = []
     for row in rows:
         if current_revision is not None and row["revision_id"] != current_revision:
-            output.append(_coherent_unit_document(revision_rows))
+            emit(revision_rows)
             revision_rows = []
         current_revision = row["revision_id"]
         revision_rows.append(row)
     if revision_rows:
-        output.append(_coherent_unit_document(revision_rows))
-    return output
+        emit(revision_rows)
+    return output, skipped
 
 
 EXPORT_SQL = """

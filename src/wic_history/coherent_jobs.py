@@ -6,7 +6,14 @@ from dataclasses import asdict, dataclass
 from typing import Final, final
 from uuid import UUID, uuid4
 
-from .article_embedding_vectors import DIMENSION, POLICY
+from importlib.metadata import version as _package_version
+
+from .article_embedding_vectors import (
+    DIMENSION,
+    POLICY,
+    pinned_window_configuration,
+    window_configuration_sha256,
+)
 from .coherent_search import COHERENT_ALIAS, COHERENT_INDEX_PREFIX, coherent_index_body
 from .coherent_search_contracts import JsonValue
 from .coherent_job_database import (
@@ -16,27 +23,36 @@ from .coherent_job_database import (
 )
 from .coherent_job_hashing import coherent_sha256
 from .model_config import load_pipeline_model_configuration
-from .rag_experiment import REVIEWED_UNIT_EXPORT_SQL, build_coherent_unit_documents
+from .rag_experiment import (
+    REVIEWED_UNIT_EXPORT_SQL,
+    build_coherent_unit_documents_isolated,
+)
 
 
 _RETRIEVAL_MODEL: Final = (
     load_pipeline_model_configuration().retrieval.passage_embedding
 )
 _MAPPING_SHA256: Final = coherent_sha256(coherent_index_body())
+# plan-time window configuration and hash come from the same code path the
+# worker verifies against at run time; the engine version binds whatever is
+# installed when the plan is created (a stale plan under a bumped engine
+# fails closed at the worker and is re-planned, instead of every job failing
+# against a hardcoded version string)
+_PINNED_WINDOW: Final = pinned_window_configuration()
 COHERENT_CONFIGURATION: Final[dict[str, str | int | bool]] = {
     "engine": "sentence-transformers",
-    "engine_version": "5.6.0",
+    "engine_version": _package_version("sentence-transformers"),
     "runtime": "transformers-cpu",
     "model": _RETRIEVAL_MODEL.model_name,
     "revision": _RETRIEVAL_MODEL.model_revision,
     "dimension": DIMENSION,
     "normalize_embeddings": True,
     "window_policy": POLICY,
-    "tokenizer_limit": 8190,
-    "model_limit": 8190,
-    "effective_limit": 8190,
-    "overlap_tokens": 1023,
-    "embedding_configuration_sha256": "3ca671bf5e5d01b8e9016c28c9e39cbc0c194099c7fd109506896647967b8903",
+    "tokenizer_limit": _PINNED_WINDOW.tokenizer_limit,
+    "model_limit": _PINNED_WINDOW.model_limit,
+    "effective_limit": _PINNED_WINDOW.effective_limit,
+    "overlap_tokens": _PINNED_WINDOW.overlap_tokens,
+    "embedding_configuration_sha256": window_configuration_sha256(_PINNED_WINDOW),
     "alias": COHERENT_ALIAS,
     "index_prefix": COHERENT_INDEX_PREFIX,
     "projection_kind": "opensearch_coherent_unit",
@@ -66,6 +82,7 @@ class CoherentPlanResult:
     revisions: int
     jobs: int
     created: bool
+    skipped: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,13 +115,29 @@ def coherent_plan_key(revisions: tuple[ActiveRevision, ...]) -> str:
     return coherent_sha256(payload)
 
 
-def load_active_documents(
+def load_active_documents_with_skipped(
     connection: DatabaseConnection,
-) -> list[tuple[dict[str, JsonValue], list[dict[str, JsonValue]]]]:
+) -> tuple[
+    list[tuple[dict[str, JsonValue], list[dict[str, JsonValue]]]],
+    list[tuple[str, str]],
+]:
+    """Materialize the active corpus, isolating unmaterializable articles.
+
+    A damaged article (ambiguous alignment, hash mismatch) is excluded from
+    the snapshot and reported in the skipped list — it abstains into review
+    instead of failing corpus-wide planning and projection.
+    """
     rows = connection.execute(
         REVIEWED_UNIT_EXPORT_SQL, {"volume_number": None, "page_number": None}
     ).fetchall()
-    return build_coherent_unit_documents(rows)
+    return build_coherent_unit_documents_isolated(rows)
+
+
+def load_active_documents(
+    connection: DatabaseConnection,
+) -> list[tuple[dict[str, JsonValue], list[dict[str, JsonValue]]]]:
+    documents, _skipped = load_active_documents_with_skipped(connection)
+    return documents
 
 
 def active_revisions(
@@ -131,14 +164,14 @@ def enqueue_coherent_jobs(
     if not created_by.strip() or max_revisions < 1:
         raise CoherentJobError("created_by and a positive max_revisions are required")
     lock_coherent_mutation(connection)
-    documents = load_active_documents(connection)
+    documents, skipped = load_active_documents_with_skipped(connection)
     revisions = active_revisions(documents)
     if len(revisions) > max_revisions:
         raise CoherentJobError(
             f"Coherent backfill found {len(revisions)} revisions above the {max_revisions} revision guard"
         )
     if not revisions:
-        return CoherentPlanResult(None, None, 0, 0, False)
+        return CoherentPlanResult(None, None, 0, 0, False, tuple(skipped))
     plan_key = coherent_plan_key(revisions)
     batch_id = uuid4()
     inserted = connection.execute(
@@ -169,6 +202,7 @@ def enqueue_coherent_jobs(
             len(revisions),
             len(revisions) + 1,
             False,
+            tuple(skipped),
         )
     parent_ids: list[UUID] = []
     for revision in revisions:
@@ -230,7 +264,7 @@ def enqueue_coherent_jobs(
             [(job_id, created_by.strip()) for job_id in (*parent_ids, projection_id)],
         )
     return CoherentPlanResult(
-        str(batch_id), plan_key, len(revisions), len(revisions) + 1, True
+        str(batch_id), plan_key, len(revisions), len(revisions) + 1, True, tuple(skipped)
     )
 
 

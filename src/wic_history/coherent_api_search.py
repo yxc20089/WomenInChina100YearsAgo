@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +20,7 @@ from .coherent_search import (
     coherent_hybrid_search,
     coherent_lexical_search,
 )
-from .search_runtime import PinnedQueryEmbedder
+from .search_runtime import PinnedQueryEmbedder, pinned_coherent_query_identity
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -29,6 +28,7 @@ if TYPE_CHECKING:
     from .evidence import RetrievalResponse
 
 
+_PINNED_IDENTITY: Final = pinned_coherent_query_identity()
 PINNED_IDENTITY_DETAIL: Final = (
     "Coherent dense search requires pinned embedding model, revision, and configuration"
 )
@@ -94,9 +94,11 @@ def run_coherent_api_search(
         limit=request.limit,
         year_min=request.year_start,
         year_max=request.year_end,
-        model_name=os.environ.get("COHERENT_EMBEDDING_MODEL"),
-        model_revision=os.environ.get("COHERENT_EMBEDDING_REVISION"),
-        configuration_sha256=os.environ.get("COHERENT_EMBEDDING_CONFIGURATION_SHA256"),
+        # identity comes only from config/pipeline-models.toml, never from
+        # the environment (sole-source-of-model-identity invariant)
+        model_name=_PINNED_IDENTITY.model_name,
+        model_revision=_PINNED_IDENTITY.model_revision,
+        configuration_sha256=_PINNED_IDENTITY.configuration_sha256,
     )
 
     def lexical() -> CoherentSearchResult:

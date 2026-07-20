@@ -31,14 +31,7 @@ class SearchProjectionTests(unittest.TestCase):
     def test_cli_defaults_to_region_and_accepts_coherent_unit(self):
         default = build_parser().parse_args(["query", "女學生"])
         coherent = build_parser().parse_args(
-            [
-                "query",
-                "女子教育",
-                "--unit",
-                "reviewed_coherent_unit",
-                "--configuration-sha256",
-                "f" * 64,
-            ]
+            ["query", "女子教育", "--unit", "reviewed_coherent_unit"]
         )
 
         self.assertEqual(default.unit, "region")
@@ -50,12 +43,6 @@ class SearchProjectionTests(unittest.TestCase):
                 "project",
                 "--unit",
                 "reviewed_coherent_unit",
-                "--model",
-                "BAAI/bge-m3",
-                "--revision",
-                "revision",
-                "--configuration-sha256",
-                "f" * 64,
                 "--snapshot-sha256",
                 "e" * 64,
             ]
@@ -77,28 +64,31 @@ class SearchProjectionTests(unittest.TestCase):
 
         self.assertEqual(
             str(raised.exception),
-            "coherent projection requires --model, --revision, "
-            "--configuration-sha256, and --snapshot-sha256",
+            "coherent projection requires --snapshot-sha256",
         )
 
-    def test_coherent_dense_query_cli_reports_exact_missing_pins_error(self):
-        with self.assertRaises(SystemExit) as raised:
-            main(
-                [
-                    "query",
-                    "女子教育",
-                    "--unit",
-                    "reviewed_coherent_unit",
-                    "--mode",
-                    "dense",
-                ]
+    def test_cli_rejects_model_identity_overrides(self):
+        # model identity comes only from config/pipeline-models.toml
+        with self.assertRaises(SystemExit):
+            build_parser().parse_args(
+                ["query", "女子教育", "--unit", "reviewed_coherent_unit",
+                 "--revision", "bogus"]
+            )
+        with self.assertRaises(SystemExit):
+            build_parser().parse_args(
+                ["query", "女子教育", "--unit", "reviewed_coherent_unit",
+                 "--configuration-sha256", "f" * 64]
             )
 
-        self.assertEqual(
-            str(raised.exception),
-            "coherent dense/hybrid query requires --model, --revision, "
-            "and --configuration-sha256",
-        )
+    def test_coherent_query_identity_is_resolved_from_pinned_configuration(self):
+        from wic_history.model_config import load_pipeline_model_configuration
+        from wic_history.search_runtime import pinned_coherent_query_identity
+
+        identity = pinned_coherent_query_identity()
+        pinned = load_pipeline_model_configuration().retrieval.passage_embedding
+        self.assertEqual(identity.model_name, pinned.model_name)
+        self.assertEqual(identity.model_revision, pinned.model_revision)
+        self.assertRegex(identity.configuration_sha256, "^[0-9a-f]{64}$")
 
     def test_mapping_has_cjk_text_and_versioned_dense_vector(self):
         properties = region_index_body()["mappings"]["properties"]

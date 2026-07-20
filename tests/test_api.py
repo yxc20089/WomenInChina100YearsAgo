@@ -217,12 +217,26 @@ class APITests(unittest.TestCase):
             self.assertEqual(response.json()["mode"], mode)
             search.assert_called_once()
 
-    def test_coherent_dense_search_requires_complete_pinned_identity(self):
-        with patch.dict(
-            os.environ,
-            {"COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3"},
-            clear=True,
-        ):
+    def test_coherent_dense_search_ignores_environment_identity(self):
+        # model identity comes only from config/pipeline-models.toml;
+        # environment overrides must have no effect
+        retrieval = RetrievalResponse(
+            schema_version="1.1",
+            query="女子教育",
+            mode=RetrievalMode.DENSE,
+            hits=[],
+        )
+        bogus = {
+            "COHERENT_EMBEDDING_MODEL": "some/other-model",
+            "COHERENT_EMBEDDING_REVISION": "bogus-revision",
+            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "0" * 64,
+        }
+        with patch.dict(os.environ, bogus, clear=True), patch(
+            "wic_history.coherent_api_search.coherent_dense_search",
+            return_value=retrieval,
+        ), patch(
+            "wic_history.coherent_api_search.PinnedQueryEmbedder"
+        ) as embedder_type:
             response = TestClient(create_app()).post(
                 "/api/search",
                 json={
@@ -232,13 +246,14 @@ class APITests(unittest.TestCase):
                 },
             )
 
-        self.assertEqual(response.status_code, 503)
-        self.assertEqual(
-            response.json()["detail"],
-            (
-                "Coherent dense search requires pinned embedding model, "
-                "revision, and configuration"
-            ),
+        self.assertEqual(response.status_code, 200)
+        from wic_history.search_runtime import pinned_coherent_query_identity
+
+        identity = pinned_coherent_query_identity()
+        embedder_type.assert_called_once_with(
+            identity.model_name,
+            identity.model_revision,
+            identity.configuration_sha256,
         )
 
     def test_coherent_query_embedder_is_reused_and_exposed_on_app_state(self):
@@ -248,12 +263,7 @@ class APITests(unittest.TestCase):
             mode=RetrievalMode.DENSE,
             hits=[],
         )
-        environment = {
-            "COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3",
-            "COHERENT_EMBEDDING_REVISION": "model-revision",
-            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "f" * 64,
-        }
-        with patch.dict(os.environ, environment, clear=True), patch(
+        with patch(
             "wic_history.coherent_api_search.coherent_dense_search",
             return_value=retrieval,
         ) as search, patch(
@@ -274,8 +284,13 @@ class APITests(unittest.TestCase):
             ]
 
         self.assertEqual([response.status_code for response in responses], [200, 200])
+        from wic_history.search_runtime import pinned_coherent_query_identity
+
+        identity = pinned_coherent_query_identity()
         embedder_type.assert_called_once_with(
-            "BAAI/bge-m3", "model-revision", "f" * 64
+            identity.model_name,
+            identity.model_revision,
+            identity.configuration_sha256,
         )
         self.assertIs(app.state.coherent_embedder, embedder_type.return_value)
         self.assertTrue(
@@ -283,53 +298,6 @@ class APITests(unittest.TestCase):
                 call.args[2] is embedder_type.return_value
                 for call in search.call_args_list
             )
-        )
-
-    def test_coherent_cached_embedder_still_requires_current_pinned_identity(self):
-        retrieval = RetrievalResponse(
-            schema_version="1.1",
-            query="女子教育",
-            mode=RetrievalMode.DENSE,
-            hits=[],
-        )
-        environment = {
-            "COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3",
-            "COHERENT_EMBEDDING_REVISION": "model-revision",
-            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "f" * 64,
-        }
-        with patch(
-            "wic_history.coherent_api_search.coherent_dense_search",
-            return_value=retrieval,
-        ), patch("wic_history.coherent_api_search.PinnedQueryEmbedder"):
-            app = create_app()
-            client = TestClient(app)
-            with patch.dict(os.environ, environment, clear=True):
-                first = client.post(
-                    "/api/search",
-                    json={
-                        "query": "女子教育",
-                        "mode": "dense",
-                        "corpus": "reviewed_coherent_unit",
-                    },
-                )
-            with patch.dict(os.environ, {}, clear=True):
-                second = client.post(
-                    "/api/search",
-                    json={
-                        "query": "女子教育",
-                        "mode": "dense",
-                        "corpus": "reviewed_coherent_unit",
-                    },
-                )
-
-        self.assertEqual(first.status_code, 200)
-        self.assertEqual(second.status_code, 503)
-        self.assertEqual(
-            second.json()["detail"],
-            (
-                "Coherent dense search requires pinned embedding model, "
-                "revision, and configuration"
-            ),
         )
 
     def test_generation_endpoints_reject_coherent_corpus(self):

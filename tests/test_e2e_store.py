@@ -234,7 +234,7 @@ def test_local_identity_review_is_terminal_idempotent_and_keeps_members(
     assert state["members"] == 2
 
 
-def test_accepted_text_reselection_locks_and_enqueues_in_one_transaction(
+def test_accepted_text_reselection_commits_before_best_effort_enqueue(
     monkeypatch,
 ) -> None:
     from wic_history import coherent_jobs, e2e_store
@@ -277,25 +277,19 @@ def test_accepted_text_reselection_locks_and_enqueues_in_one_transaction(
                 return Result({"selection_id": selection_id})
             return Result()
 
-    connection = Connection()
-
     class Psycopg:
         @staticmethod
         def connect(*_args, **_kwargs):
-            return connection
+            return Connection()
 
     monkeypatch.setattr(e2e_store, "_clients", lambda: (Psycopg, object()))
     monkeypatch.setattr(
         coherent_jobs,
-        "lock_coherent_mutation",
-        lambda received: order.append("lock") if received is connection else None,
-    )
-    monkeypatch.setattr(
-        coherent_jobs,
         "enqueue_coherent_jobs",
-        lambda received, **_kwargs: (
-            order.append("enqueue") if received is connection else None
-        ),
+        lambda _connection, **_kwargs: (
+            order.append("enqueue"),
+            coherent_jobs.CoherentPlanResult(None, None, 0, 0, False),
+        )[1],
     )
 
     result = review_and_select_text_version(
@@ -306,4 +300,65 @@ def test_accepted_text_reselection_locks_and_enqueues_in_one_transaction(
     )
 
     assert result.selection_id == str(selection_id)
-    assert order == ["enter", "lock", "select", "selection", "enqueue", "exit"]
+    # the historian's transaction commits BEFORE search planning starts, and
+    # planning runs on its own connection
+    assert order == ["enter", "select", "selection", "exit", "enter", "enqueue", "exit"]
+
+
+def test_accepted_text_review_survives_coherent_planning_failure(
+    monkeypatch,
+) -> None:
+    from wic_history import coherent_jobs, e2e_store
+
+    text_version_id = uuid4()
+    selection_id = uuid4()
+
+    class Result:
+        def __init__(self, row=None):
+            self.row = row
+
+        def fetchone(self):
+            return self.row
+
+    class Connection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def execute(self, sql, _params):
+            if "FROM evidence.text_version" in sql:
+                return Result(
+                    {
+                        "text_version_id": text_version_id,
+                        "region_id": uuid4(),
+                        "variant": "corrected",
+                        "text_sha256": "a" * 64,
+                        "review_status": "candidate",
+                    }
+                )
+            if "INSERT INTO evidence.region_text_selection" in sql:
+                return Result({"selection_id": selection_id})
+            return Result()
+
+    class Psycopg:
+        @staticmethod
+        def connect(*_args, **_kwargs):
+            return Connection()
+
+    def broken_enqueue(_connection, **_kwargs):
+        raise RuntimeError("a damaged article must never block a review")
+
+    monkeypatch.setattr(e2e_store, "_clients", lambda: (Psycopg, object()))
+    monkeypatch.setattr(coherent_jobs, "enqueue_coherent_jobs", broken_enqueue)
+
+    result = review_and_select_text_version(
+        "postgresql://unused",
+        text_version_id,
+        decision="accept",
+        reviewer="historian",
+    )
+
+    assert result.review_status == "reviewed"
+    assert result.selection_id == str(selection_id)

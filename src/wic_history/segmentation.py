@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
+from .coherent_jobs import enqueue_coherent_jobs, lock_coherent_mutation
 
 METHOD = "reading_order_window"
 METHOD_VERSION = "1"
@@ -716,6 +717,7 @@ def activate_segmentation(
         raise ValueError("selected_by is required")
     psycopg, dict_row, _ = _psycopg()
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        lock_coherent_mutation(connection)
         review = connection.execute(
             """
             SELECT review.review_id, review.run_id, review.decision,
@@ -752,6 +754,9 @@ def activate_segmentation(
                 """,
                 (existing["selection_id"],),
             ).fetchone()["count"]
+            enqueue_coherent_jobs(
+                connection, created_by=selected_by, max_revisions=100_000
+            )
             return SegmentationActivationResult(
                 str(existing["selection_id"]), str(existing["run_id"]),
                 str(existing["page_id"]), str(review_id), 0, approved_units, True,
@@ -928,6 +933,9 @@ def activate_segmentation(
                         item["text_start"], item["text_end"], item["role"],
                     ),
                 )
+        enqueue_coherent_jobs(
+            connection, created_by=selected_by, max_revisions=100_000
+        )
     return SegmentationActivationResult(
         str(selection_id), str(review["run_id"]), str(review["page_id"]),
         str(review_id), superseded, len(by_article), False,

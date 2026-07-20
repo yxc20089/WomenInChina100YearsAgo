@@ -12,6 +12,7 @@ from datetime import timedelta
 from typing import Any, Iterable, Sequence
 from uuid import UUID, uuid4
 
+from .coherent_jobs import COHERENT_STAGES, backfill_coherent_jobs
 from .model_config import load_pipeline_model_configuration
 
 
@@ -21,7 +22,7 @@ PAGE_STAGES = ("render_lossless", "layout", "ocr", "embedding")
 # reviewed coherent-unit revision via ``wic-e2e``.
 LEGACY_PAGE_STAGES = ("ner", "entity_link")
 AGGREGATE_STAGES = ("search_projection", "rag_export", "graph_projection")
-ALL_STAGES = (*PAGE_STAGES, *LEGACY_PAGE_STAGES, *AGGREGATE_STAGES)
+ALL_STAGES = (*PAGE_STAGES, *LEGACY_PAGE_STAGES, *AGGREGATE_STAGES, *COHERENT_STAGES)
 STAGE_DEPENDENCY = {
     "layout": "render_lossless",
     "ocr": "layout",
@@ -939,7 +940,8 @@ def complete_job(
     with psycopg.connect(database_url) as connection:
         job = connection.execute(
             """
-            SELECT stage, configuration
+            SELECT stage, configuration, input_fingerprint,
+                   coherent_unit_revision_id
             FROM pipeline.ingestion_job
             WHERE job_id = %s AND status IN ('leased', 'running')
               AND lease_owner = %s AND lease_expires_at > now()
@@ -949,7 +951,7 @@ def complete_job(
         ).fetchone()
         if job is None:
             raise ValueError("Job lease is absent, expired, or owned by another worker")
-        validate_stage_result(job[0], job[1], result_data)
+        validate_stage_result(job[0], job[1], result_data, job[2], job[3])
         row = connection.execute(
             """
             UPDATE pipeline.ingestion_job
@@ -996,7 +998,11 @@ def _required_count(result: dict[str, Any], field: str) -> None:
 
 
 def validate_stage_result(
-    stage: str, configuration: dict[str, Any], result: dict[str, Any]
+    stage: str,
+    configuration: dict[str, Any],
+    result: dict[str, Any],
+    input_fingerprint: str | None = None,
+    coherent_unit_revision_id: UUID | None = None,
 ) -> None:
     """Reject completion metadata that contradicts the immutable job contract."""
     if stage == "render_lossless":
@@ -1023,6 +1029,36 @@ def validate_stage_result(
     elif stage == "embedding":
         _required_uuid(result, "embedding_run_id")
         _required_count(result, "embeddings")
+    elif stage == "coherent_unit_embedding":
+        _required_uuid(result, "revision_id")
+        _required_count(result, "embeddings_inserted")
+        _required_count(result, "embeddings_reused")
+        stale_noop = result.get("stale_noop")
+        active = result.get("active")
+        if type(stale_noop) is not bool or type(active) is not bool:
+            raise ValueError("Coherent embedding requires an explicit stale_noop receipt")
+        if coherent_unit_revision_id is not None and result["revision_id"] != str(
+            coherent_unit_revision_id
+        ):
+            raise ValueError("Coherent embedding revision differs from its leased job")
+        if input_fingerprint is not None and result.get("input_fingerprint") != input_fingerprint:
+            raise ValueError("Coherent embedding fingerprint differs from its leased job")
+        if result.get("planned_input_sha256") != configuration.get(
+            "planned_input_sha256"
+        ) or result.get("planned_content_sha256") != configuration.get(
+            "planned_content_sha256"
+        ):
+            raise ValueError("Coherent embedding receipt differs from its planned content")
+        total = result["embeddings_inserted"] + result["embeddings_reused"]
+        if stale_noop:
+            if active or total != 0 or result.get("reconciliation_scheduled") is not True:
+                raise ValueError("Stale coherent embedding receipt is inconsistent")
+            if not re.fullmatch(
+                r"[0-9a-f]{64}", str(result.get("reconciliation_plan_key", ""))
+            ):
+                raise ValueError("Stale coherent embedding requires reconciliation")
+        elif not active or total != 1:
+            raise ValueError("Active coherent embedding requires exactly one artifact")
     elif stage == "ner":
         _required_uuid(result, "ner_run_id")
         for field in (
@@ -1077,6 +1113,34 @@ def validate_stage_result(
         _required_count(result, "documents_indexed")
         if not str(result.get("index_name", "")).startswith("wic-regions-"):
             raise ValueError("Search projection requires managed index_name")
+    elif stage == "coherent_unit_search_projection":
+        _required_uuid(result, "projection_build_id")
+        _required_count(result, "documents_indexed")
+        if not str(result.get("index_name", "")).startswith(
+            "wic-coherent-units-build-"
+        ):
+            raise ValueError("Coherent projection requires its dedicated index prefix")
+        if not re.fullmatch(
+            r"[0-9a-f]{64}", str(result.get("source_snapshot_sha256", ""))
+        ):
+            raise ValueError("Coherent projection requires source_snapshot_sha256")
+        planned_snapshot = configuration.get("planned_snapshot_sha256")
+        planned_count = configuration.get("planned_revision_count")
+        if (
+            input_fingerprint is not None
+            and result["source_snapshot_sha256"] != input_fingerprint
+        ) or result.get("planned_snapshot_sha256") != planned_snapshot:
+            raise ValueError("Coherent projection receipt differs from its planned snapshot")
+        if (
+            not isinstance(planned_count, int)
+            or isinstance(planned_count, bool)
+            or planned_count < 1
+            or result["documents_indexed"] != planned_count
+            or result.get("planned_revision_count") != planned_count
+        ):
+            raise ValueError("Coherent projection requires exact positive planned coverage")
+        if result.get("published") is not True:
+            raise ValueError("Coherent projection receipt must confirm publication")
     elif stage == "rag_export":
         _required_count(result, "documents")
         _required_count(result, "exported_regions")
@@ -1521,6 +1585,9 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("--job-id", type=UUID, required=True)
     replay.add_argument("--requested-by", required=True)
     replay.add_argument("--reason", required=True)
+    backfill = subparsers.add_parser("coherent-backfill")
+    backfill.add_argument("--created-by", required=True)
+    backfill.add_argument("--max-revisions", type=int, default=1000)
     return parser
 
 
@@ -1592,12 +1659,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             cancelled_by=args.cancelled_by,
             reason=args.reason,
         )
-    else:
+    elif args.command == "replay":
         result = replay_failed_job(
             args.database_url,
             args.job_id,
             requested_by=args.requested_by,
             reason=args.reason,
+        )
+    else:
+        result = backfill_coherent_jobs(
+            args.database_url,
+            created_by=args.created_by,
+            max_revisions=args.max_revisions,
         )
     payload = (
         [asdict(item) for item in result]

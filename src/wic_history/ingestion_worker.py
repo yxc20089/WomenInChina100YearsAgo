@@ -13,8 +13,27 @@ from typing import Any, Callable, Sequence
 from uuid import UUID
 
 from .corpus_manifest import build_s3_client
+from .coherent_jobs import (
+    COHERENT_CONFIGURATION,
+    ActiveRevision,
+    CoherentJobError,
+    CoherentJobContext,
+    _active_documents,
+    _active_revisions,
+    coherent_plan_key,
+    execute_coherent_embedding,
+    load_coherent_job_context,
+)
+from .coherent_search import (
+    CoherentEmbedding,
+    CoherentSource,
+    FrozenProjectionManifest,
+    ProjectionArticle,
+    project_coherent_units,
+    restore_coherent_alias,
+)
 from .embedding_pipeline import embed_regions
-from .evidence import EntityLinkArtifact, LayoutPageArtifact, NERArtifact, OCRPageArtifact
+from .evidence import EntityLinkArtifact, LayoutPageArtifact, NERArtifact, OCRPageArtifact, Polygon, SourcePointer
 from .graph import project_reviewed_graph
 from .gold_render import (
     ingestion_candidate,
@@ -53,6 +72,7 @@ from .repository import (
     ingest_ocr_artifact,
 )
 from .search import project_regions
+from .semantic_repository import CoherentTextBundle, CoherentTextSegment
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,12 +242,26 @@ def load_aggregate_context(
 
 def load_execution_context(
     database_url: str, lease: JobLease
-) -> PageJobContext | AggregateJobContext:
+) -> PageJobContext | AggregateJobContext | CoherentJobContext:
+    if lease.stage in {
+        "coherent_unit_embedding",
+        "coherent_unit_search_projection",
+    }:
+        return load_coherent_job_context(database_url, lease.job_id)
     if lease.scope_kind == "page":
         return load_job_context(database_url, lease.job_id)
     if lease.scope_kind == "batch":
         return load_aggregate_context(database_url, lease.job_id)
     raise ValueError(f"Unsupported job scope_kind: {lease.scope_kind}")
+
+
+def ensure_coherent_snapshot(
+    planned_fingerprint: str, revisions: tuple[ActiveRevision, ...]
+) -> None:
+    if not revisions:
+        raise CoherentJobError("Coherent projection active snapshot is empty")
+    if coherent_plan_key(revisions) != planned_fingerprint:
+        raise CoherentJobError("Coherent projection active snapshot is stale")
 
 
 def resolve_workspace_path(workspace_root: Path, value: str | Path) -> Path:
@@ -1730,9 +1764,176 @@ def execute_graph_projection(
     )
 
 
+def _coherent_manifest(connection: Any, documents: list[tuple[dict[str, Any], list[dict[str, Any]]]]) -> FrozenProjectionManifest:
+    revision_ids = [UUID(document["id"]) for document, _ in documents]
+    expected_identity = {
+        UUID(document["id"]): (
+            document["metadata"]["input_sha256"],
+            document["metadata"]["content_sha256"],
+        )
+        for document, _ in documents
+    }
+    page_rows = connection.execute(
+        "SELECT region_id, page_id FROM evidence.ocr_region WHERE region_id = ANY(%s::uuid[])",
+        ([UUID(citation["region_id"]) for _, citations in documents for citation in citations],),
+    ).fetchall()
+    page_ids = {row["region_id"]: row["page_id"] for row in page_rows}
+    embedding_rows = connection.execute(
+        """SELECT embedding.target_id, embedding.model_name,
+                  embedding.model_revision, embedding.input_sha256,
+                  embedding.content_sha256, embedding.configuration_sha256,
+                  embedding.embedding::text AS vector
+           FROM retrieval.embedding embedding
+           JOIN evidence.processing_run run USING (run_id)
+           WHERE embedding.target_kind = 'coherent_unit_revision'
+             AND embedding.target_id = ANY(%s::uuid[])
+             AND embedding.model_name = %s AND embedding.model_revision = %s
+             AND run.status = 'completed'
+             AND embedding.configuration_sha256 = %s
+             AND run.configuration->>'policy' = %s
+             AND (run.configuration->>'dimension')::integer = %s""",
+        (
+            revision_ids,
+            COHERENT_CONFIGURATION["model"],
+            COHERENT_CONFIGURATION["revision"],
+            COHERENT_CONFIGURATION["embedding_configuration_sha256"],
+            COHERENT_CONFIGURATION["window_policy"],
+            COHERENT_CONFIGURATION["dimension"],
+        ),
+    ).fetchall()
+    embedding_rows = [
+        row
+        for row in embedding_rows
+        if expected_identity.get(row["target_id"])
+        == (row["input_sha256"], row["content_sha256"])
+    ]
+    if len(embedding_rows) != len(revision_ids):
+        raise CoherentJobError(
+            "Coherent projection requires exact complete embedding coverage"
+        )
+    embeddings = {
+        row["target_id"]: CoherentEmbedding(
+            row["target_id"], "coherent_unit_revision", row["model_name"],
+            row["model_revision"], row["input_sha256"], row["content_sha256"],
+            row["configuration_sha256"],
+            tuple(float(value) for value in row["vector"].strip("[]").split(",")),
+        )
+        for row in embedding_rows
+    }
+    if len(embeddings) != len(embedding_rows):
+        raise CoherentJobError("Coherent projection found duplicate exact embeddings")
+    articles: list[ProjectionArticle] = []
+    for document, citations in documents:
+        revision_id = UUID(document["id"])
+        metadata = document["metadata"]
+        segments = tuple(
+            CoherentTextSegment(
+                citation["sequence_number"], UUID(citation["region_id"]),
+                page_ids[UUID(citation["region_id"])], UUID(citation["selected_text_version_id"]),
+                UUID(citation["text_selection_id"]), citation["region_text_start"],
+                citation["region_text_end"], citation["start_char"], citation["end_char"],
+                citation["exported_text"], citation["role"], citation["polygon"],
+            )
+            for citation in citations
+        )
+        bundle = CoherentTextBundle(
+            revision_id, document["text"], metadata["input_sha256"], segments, (),
+            metadata["content_sha256"], "",
+        )
+        sources = tuple(
+            CoherentSource(
+                citation["sequence_number"],
+                SourcePointer(
+                    source_uri=citation["source_uri"], source_sha256=citation["source_sha256"],
+                    page_id=page_ids[UUID(citation["region_id"])],
+                    derivative_id=UUID(citation["derivative_id"]),
+                    image_uri=citation["source_image_uri"], image_sha256=citation["source_image_sha256"],
+                    evidence_tier=citation["evidence_tier"], volume_number=citation["volume_number"],
+                    publication_year=citation["publication_year"], page_number=citation["page_number"],
+                    region_id=UUID(citation["region_id"]),
+                    text_version_id=UUID(citation["selected_text_version_id"]),
+                    text_selection_id=UUID(citation["text_selection_id"]),
+                    polygon=Polygon.model_validate(citation["polygon"]),
+                    text_start=citation["region_text_start"], text_end=citation["region_text_end"],
+                ),
+            )
+            for citation in citations
+        )
+        articles.append(ProjectionArticle(UUID(metadata["coherent_unit_id"]), document["title"], bundle, sources))
+    return FrozenProjectionManifest.freeze(tuple(articles), tuple(embeddings[item] for item in revision_ids))
+
+
+def execute_coherent_projection(
+    database_url: str, context: CoherentJobContext, *, opensearch_url: str
+) -> StageExecution:
+    psycopg, dict_row = _psycopg()
+    from psycopg.types.json import Jsonb
+
+    projected = None
+    revision_count = 0
+    try:
+        with psycopg.connect(database_url, row_factory=dict_row) as connection:
+            if any(
+                context.configuration.get(key) != value
+                for key, value in COHERENT_CONFIGURATION.items()
+            ) or context.configuration.get("planned_snapshot_sha256") != context.input_fingerprint:
+                raise CoherentJobError("Coherent projection configuration is not pinned")
+            connection.execute(
+                "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))",
+                ("wic-coherent-active-snapshot-v1",),
+            )
+            documents = _active_documents(connection)
+            revisions = _active_revisions(documents)
+            revision_count = len(revisions)
+            ensure_coherent_snapshot(context.input_fingerprint, revisions)
+            manifest = _coherent_manifest(connection, documents)
+            ensure_coherent_snapshot(
+                context.input_fingerprint,
+                _active_revisions(_active_documents(connection)),
+            )
+            projected = project_coherent_units(opensearch_url, manifest)
+            if (
+                projected.documents_indexed != revision_count
+                or projected.documents_indexed < 1
+                or projected.source_snapshot_sha256 != manifest.snapshot_sha256
+            ):
+                raise CoherentJobError(
+                    "Coherent projection core returned a misleading receipt"
+                )
+            connection.execute(
+            """INSERT INTO retrieval.projection_build (
+                   build_id, projection_kind, source_schema_version, configuration,
+                   status, completed_at, artifact_uri, source_snapshot_sha256,
+                   document_count, published_at
+               ) VALUES (%s, 'opensearch_coherent_unit', '1.0', %s, 'completed',
+                         now(), %s, %s, %s, now())""",
+            (
+                UUID(projected.build_id), Jsonb(dict(COHERENT_CONFIGURATION)),
+                f"opensearch://{projected.index_name}", context.input_fingerprint,
+                projected.documents_indexed,
+            ),
+            )
+    except BaseException:
+        if projected is not None:
+            restore_coherent_alias(opensearch_url, projected)
+        raise
+    result = {
+        "projection_build_id": projected.build_id, "index_name": projected.index_name,
+        "documents_indexed": projected.documents_indexed,
+        "source_snapshot_sha256": context.input_fingerprint,
+        "projection_manifest_sha256": projected.source_snapshot_sha256,
+        "planned_snapshot_sha256": context.input_fingerprint,
+        "planned_revision_count": revision_count,
+        "published": True,
+    }
+    return StageExecution(
+        f"opensearch://{projected.index_name}", canonical_sha256(result), result, False
+    )
+
+
 def execute_stage(
     database_url: str,
-    context: PageJobContext | AggregateJobContext,
+    context: PageJobContext | AggregateJobContext | CoherentJobContext,
     workspace_root: Path,
     *,
     cache_dir: Path,
@@ -1745,6 +1946,18 @@ def execute_stage(
     neo4j_user: str,
     neo4j_password: str | None,
 ) -> StageExecution:
+    if isinstance(context, CoherentJobContext):
+        if context.stage == "coherent_unit_embedding":
+            execution = execute_coherent_embedding(database_url, context)
+            return StageExecution(
+                execution.artifact_uri, execution.output_sha256,
+                execution.result, execution.adopted,
+            )
+        if context.stage == "coherent_unit_search_projection":
+            return execute_coherent_projection(
+                database_url, context, opensearch_url=opensearch_url
+            )
+        raise ValueError(f"No coherent worker exists for stage {context.stage}")
     if isinstance(context, AggregateJobContext):
         if context.stage == "search_projection":
             return execute_search_projection(

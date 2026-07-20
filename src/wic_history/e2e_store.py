@@ -936,8 +936,12 @@ def review_and_select_text_version(
     desired = {"accept": "reviewed", "reject": "rejected", "needs_review": "candidate"}[
         decision
     ]
+    from . import coherent_jobs
+
     selection_id: UUID | None = None
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        if decision == "accept":
+            coherent_jobs.lock_coherent_mutation(connection)
         version = connection.execute(
             """
             SELECT text_version_id, region_id, variant, text_sha256, review_status
@@ -996,6 +1000,9 @@ def review_and_select_text_version(
                     note,
                 ),
             ).fetchone()["selection_id"]
+            coherent_jobs.enqueue_coherent_jobs(
+                connection, created_by=reviewer, max_revisions=100_000
+            )
     return TextReviewResult(str(review_id), str(text_version_id), desired, str(selection_id) if selection_id else None)
 
 

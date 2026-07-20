@@ -63,6 +63,43 @@ class SearchProjectionTests(unittest.TestCase):
 
         self.assertEqual(args.snapshot_sha256, "e" * 64)
 
+    def test_coherent_projection_cli_reports_exact_missing_pins_error(self):
+        with self.assertRaises(SystemExit) as raised:
+            main(
+                [
+                    "project",
+                    "--database-url",
+                    "postgresql://unused",
+                    "--unit",
+                    "reviewed_coherent_unit",
+                ]
+            )
+
+        self.assertEqual(
+            str(raised.exception),
+            "coherent projection requires --model, --revision, "
+            "--configuration-sha256, and --snapshot-sha256",
+        )
+
+    def test_coherent_dense_query_cli_reports_exact_missing_pins_error(self):
+        with self.assertRaises(SystemExit) as raised:
+            main(
+                [
+                    "query",
+                    "女子教育",
+                    "--unit",
+                    "reviewed_coherent_unit",
+                    "--mode",
+                    "dense",
+                ]
+            )
+
+        self.assertEqual(
+            str(raised.exception),
+            "coherent dense/hybrid query requires --model, --revision, "
+            "and --configuration-sha256",
+        )
+
     def test_mapping_has_cjk_text_and_versioned_dense_vector(self):
         properties = region_index_body()["mappings"]["properties"]
         self.assertEqual(properties["raw_text"]["analyzer"], "cjk")

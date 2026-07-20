@@ -19,17 +19,17 @@ from .evidence import (
     SourcePointer,
 )
 from .embedding_pipeline import BGEEmbedder
-from .coherent_search import (
-    CoherentProjectionError,
-    SearchSpec,
-    coherent_dense_search,
-    coherent_hybrid_search,
-    coherent_lexical_search,
-    project_coherent_units,
+from .coherent_search import CoherentProjectionError
+from .coherent_search_cli import (
+    CoherentProjectionArguments,
+    CoherentQueryArguments,
+    REVIEWED_COHERENT_UNIT,
+    register_coherent_project_arguments,
+    register_coherent_query_arguments,
+    run_coherent_projection,
+    run_coherent_query,
 )
 from .model_config import load_pipeline_model_configuration
-from .search_manifest import CoherentProjectionPins, load_coherent_projection_manifest
-from .search_runtime import PinnedQueryEmbedder
 
 
 DEFAULT_INDEX = "wic-regions-v2"
@@ -535,15 +535,7 @@ def build_parser() -> argparse.ArgumentParser:
     project.add_argument("--index", default=DEFAULT_INDEX)
     project.add_argument("--alias", default=DEFAULT_ALIAS)
     project.add_argument("--recreate", action="store_true")
-    project.add_argument(
-        "--unit",
-        choices=("region", "reviewed_coherent_unit"),
-        default="region",
-    )
-    project.add_argument("--model")
-    project.add_argument("--revision")
-    project.add_argument("--configuration-sha256")
-    project.add_argument("--snapshot-sha256")
+    register_coherent_project_arguments(project)
     query = subparsers.add_parser("query")
     query.add_argument("query")
     query.add_argument("--index", default=DEFAULT_ALIAS)
@@ -551,14 +543,7 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("--year-start", type=int)
     query.add_argument("--year-end", type=int)
     query.add_argument("--mode", choices=("lexical", "dense", "hybrid"), default="lexical")
-    query.add_argument(
-        "--unit",
-        choices=("region", "reviewed_coherent_unit"),
-        default="region",
-    )
-    query.add_argument("--model")
-    query.add_argument("--revision")
-    query.add_argument("--configuration-sha256")
+    register_coherent_query_arguments(query)
     query.add_argument(
         "--model-config",
         help="Complete model configuration for region dense/hybrid search",
@@ -571,31 +556,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "project":
         if not args.database_url:
             raise SystemExit("DATABASE_URL or --database-url is required")
-        if args.unit == "reviewed_coherent_unit":
-            if not all(
-                (
-                    args.model,
-                    args.revision,
-                    args.configuration_sha256,
-                    args.snapshot_sha256,
+        if args.unit == REVIEWED_COHERENT_UNIT:
+            return run_coherent_projection(
+                CoherentProjectionArguments(
+                    database_url=args.database_url,
+                    opensearch_url=args.opensearch_url,
+                    model_name=args.model,
+                    model_revision=args.revision,
+                    configuration_sha256=args.configuration_sha256,
+                    snapshot_sha256=args.snapshot_sha256,
                 )
-            ):
-                raise SystemExit(
-                    "coherent projection requires --model, --revision, "
-                    "--configuration-sha256, and --snapshot-sha256"
-                )
-            manifest = load_coherent_projection_manifest(
-                args.database_url,
-                CoherentProjectionPins(
-                    args.model,
-                    args.revision,
-                    args.configuration_sha256,
-                    args.snapshot_sha256,
-                ),
             )
-            result = project_coherent_units(args.opensearch_url, manifest)
-            print(json.dumps(asdict(result), ensure_ascii=False))
-            return 0
         result = project_regions(
             args.database_url,
             args.opensearch_url,
@@ -605,34 +576,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(json.dumps(asdict(result), ensure_ascii=False))
         return 0
-    if args.unit == "reviewed_coherent_unit":
-        spec = SearchSpec(
-            args.query,
-            limit=args.limit,
-            year_min=args.year_start,
-            year_max=args.year_end,
-            model_name=args.model,
-            model_revision=args.revision,
-            configuration_sha256=args.configuration_sha256,
+    if args.unit == REVIEWED_COHERENT_UNIT:
+        return run_coherent_query(
+            CoherentQueryArguments(
+                opensearch_url=args.opensearch_url,
+                query=args.query,
+                limit=args.limit,
+                year_start=args.year_start,
+                year_end=args.year_end,
+                mode=args.mode,
+                model_name=args.model,
+                model_revision=args.revision,
+                configuration_sha256=args.configuration_sha256,
+            )
         )
-        if args.mode == "lexical":
-            response = coherent_lexical_search(args.opensearch_url, spec)
-        else:
-            if not all((args.model, args.revision, args.configuration_sha256)):
-                raise SystemExit(
-                    "coherent dense/hybrid query requires --model, --revision, "
-                    "and --configuration-sha256"
-                )
-            embedder = PinnedQueryEmbedder(
-                args.model, args.revision, args.configuration_sha256
-            )
-            response = (
-                coherent_dense_search(args.opensearch_url, spec, embedder)
-                if args.mode == "dense"
-                else coherent_hybrid_search(args.opensearch_url, spec, embedder)
-            )
-        print(response.model_dump_json(indent=2))
-        return 0
     if args.mode == "lexical":
         response = lexical_search(
             args.opensearch_url,

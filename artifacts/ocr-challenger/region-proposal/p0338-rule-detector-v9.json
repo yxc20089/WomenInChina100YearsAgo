@@ -1,0 +1,189 @@
+{
+ "schema_version": "rule-detector-v7",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "image": "artifacts/ingestion-pages/jobs/588db16d-b702-492a-9aae-cb8d6a907c8c/images/v202/p0338.png",
+ "counts": {
+  "rejected_short": 643,
+  "thin_rule": 6,
+  "medium_rule": 8,
+  "rejected_text_signature": 4,
+  "rejected_embedded": 1,
+  "rejected_discontinuous": 16,
+  "rough_rule": 3,
+  "dotted_rule": 1,
+  "rescued_thin_rule": 2,
+  "rescued_dotted_rule": 1
+ },
+ "rules": {
+  "h": [
+   [
+    2478,
+    3049,
+    492,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    528,
+    "medium_rule"
+   ],
+   [
+    114,
+    5933,
+    1833,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    3138,
+    "thin_rule"
+   ],
+   [
+    92,
+    5933,
+    4431,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    5693,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    6970,
+    "thin_rule"
+   ],
+   [
+    4990,
+    5933,
+    7320,
+    "thin_rule"
+   ],
+   [
+    2258,
+    3583,
+    7332,
+    "medium_rule"
+   ],
+   [
+    114,
+    5933,
+    8278,
+    "medium_rule"
+   ]
+  ],
+  "v": [
+   [
+    528,
+    8278,
+    114,
+    "medium_rule"
+   ],
+   [
+    1312,
+    5145,
+    177,
+    "thin_rule"
+   ],
+   [
+    4978,
+    6062,
+    1128,
+    "dotted_rule"
+   ],
+   [
+    528,
+    1833,
+    3970,
+    "rough_rule"
+   ],
+   [
+    528,
+    1833,
+    4096,
+    "rough_rule"
+   ],
+   [
+    6970,
+    8278,
+    5459,
+    "dotted_rule"
+   ],
+   [
+    528,
+    8282,
+    5914,
+    "medium_rule"
+   ],
+   [
+    528,
+    8282,
+    5933,
+    "medium_rule"
+   ]
+  ]
+ },
+ "cells": [
+  [
+   4087,
+   517,
+   5929,
+   1839
+  ],
+  [
+   117,
+   524,
+   3910,
+   1833
+  ],
+  [
+   115,
+   1819,
+   5929,
+   3151
+  ],
+  [
+   113,
+   3129,
+   5930,
+   4446
+  ],
+  [
+   111,
+   4422,
+   5929,
+   5702
+  ],
+  [
+   110,
+   5685,
+   5927,
+   7022
+  ],
+  [
+   5508,
+   7006,
+   5923,
+   7383
+  ],
+  [
+   109,
+   7004,
+   5519,
+   8287
+  ],
+  [
+   5505,
+   7373,
+   5930,
+   8289
+  ]
+ ],
+ "score_vs_gold": null
+}

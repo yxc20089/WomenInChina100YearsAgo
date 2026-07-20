@@ -42,6 +42,28 @@ SCHEMA_VERSION = "rule-detector-v7"
 def classify_full(m, frame_zone=False):
     if not m or not m.get("present"):
         return ("no_ink", "")
+    # dotted/perforated hairline (operator, 2026-07-19: "the lines are
+    # thinner and the gap measurement should be proportionally smaller"):
+    # a row of many collinear dots too thin to be characters. p90 thickness
+    # is the discriminator — text pseudo-lines never measure below ~22px
+    # (p10=22, n=811 p0308 candidates); dotted rules measure 6-9px.
+    nobj = m.get("n_objects") or 1
+    ext = (m.get("all_obj_hi") or 0) - (m.get("all_obj_lo") or 0)
+    if (m["length"] < 500 and nobj >= 8 and ext >= 600
+            and (m["p90_thickness"] or 99) <= 10
+            and (m.get("obj_span_coverage") or 0) >= 0.4
+            and m["straightness_std"] is not None and m["straightness_std"] <= 4.0
+            and m["flank_ink"] <= 0.30 and (m.get("flank_min") or 0) <= 0.25):
+        return ("dotted_rule", "perforated hairline")
+    # ornamental motif chain (p0367 borders): rows of larger cast stamps.
+    # Discriminator is SPARSITY — motif chains cover 0.35-0.41 of their
+    # extent, text pseudo-lines >=0.60 (p10, n=145 long candidates).
+    if (m["length"] < 500 and nobj >= 10 and ext >= 1200
+            and (m.get("obj_span_coverage") or 1) <= 0.52
+            and (m["median_thickness"] or 99) <= 16
+            and m["straightness_std"] is not None and m["straightness_std"] <= 4.0
+            and m["flank_ink"] <= 0.30 and (m.get("flank_min") or 0) <= 0.25):
+        return ("motif_rule", "ornament chain")
     if m["length"] < 500:
         return ("rejected_short", "")
     if m["straightness_std"] is None or m["straightness_std"] > 4.0:
@@ -137,7 +159,7 @@ def walk(ink, axis, center_perp, col, direction,
     return last
 
 
-RULE_CLASSES = ("thin_rule", "medium_rule", "thick_band", "rough_rule")
+RULE_CLASSES = ("thin_rule", "medium_rule", "thick_band", "rough_rule", "dotted_rule", "motif_rule")
 
 TITLE_BOXES = []  # doc_title boxes dilated by 120px, set by main()
 
@@ -196,7 +218,14 @@ def rescue_fragments(src, ink, fragments, accepted, counts, mask_boxes, image_bo
                     best = (pos, cls, m)
             if best:
                 pos, cls, m = best
-                olo, ohi = clo + m["obj_offset_lo"], clo + m["obj_offset_hi"]
+                if cls == "motif_rule":
+                    # cluster unions are sparse by construction — the
+                    # sparsity-gated class may never come from rescue
+                    continue
+                if cls == "dotted_rule":
+                    olo, ohi = clo + m["all_obj_lo"], clo + m["all_obj_hi"]
+                else:
+                    olo, ohi = clo + m["obj_offset_lo"], clo + m["obj_offset_hi"]
                 dup = any(abs(p - pos) <= 60 and min(hi, ohi) > max(lo, olo)
                           for lo, hi, p, _cls in accepted[axis])
                 if (not dup and not title_contained(axis, pos, olo, ohi)
@@ -214,22 +243,41 @@ def masked(lo, hi, perp, axis, mask_boxes, image_boxes):
             or coverage(lo, hi, perp, axis, image_boxes) > 0.4)
 
 
-def detect(src, ink, mask_boxes, image_boxes):
+def detect(src, ink, mask_boxes, image_boxes, chain_views=False):
     ink4 = ((src[::4, ::4] > 128).astype(np.uint8)) * 255
-    segs = cv2.HoughLinesP(ink4, 1, math.pi / 180, 60, minLineLength=50, maxLineGap=18)
-    segs = [] if segs is None else [x[0].tolist() for x in segs]
+    # candidate hypotheses from three views: raw ink, and directionally
+    # closed ink (Hough barely fires on sparse motif/dotted chains — p0367's
+    # 5400px mid divider yielded one 288px fragment; closing 20 quarter-px
+    # gaps makes chains vote). Measurement always runs on the ORIGINAL ink,
+    # so closing adds hypotheses, never evidence.
+    views = [(ink4, "hv")]
+    if chain_views:
+        close_h = cv2.morphologyEx(ink4, cv2.MORPH_CLOSE,
+                                   cv2.getStructuringElement(cv2.MORPH_RECT, (21, 1)))
+        close_v = cv2.morphologyEx(ink4, cv2.MORPH_CLOSE,
+                                   cv2.getStructuringElement(cv2.MORPH_RECT, (1, 21)))
+        views += [(close_h, "h"), (close_v, "v")]
     h_s, v_s = [], []
-    for x1, y1, x2, y2 in segs:
-        ang = math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
-        if ang <= 4 or ang >= 176:
-            h_s.append([x1, y1, x2, y2])
-        elif abs(ang - 90) <= 4:
-            v_s.append([x1, y1, x2, y2])
+    h_closed, v_closed = [], []
+    for img, want in views:
+        segs = cv2.HoughLinesP(img, 1, math.pi / 180, 60, minLineLength=50, maxLineGap=18)
+        closed = img is not ink4
+        for x1, y1, x2, y2 in ([] if segs is None else [x[0].tolist() for x in segs]):
+            ang = math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
+            if (ang <= 4 or ang >= 176) and "h" in want:
+                (h_closed if closed else h_s).append([x1, y1, x2, y2])
+            elif abs(ang - 90) <= 4 and "v" in want:
+                (v_closed if closed else v_s).append([x1, y1, x2, y2])
     counts = Counter()
     accepted = {"h": [], "v": []}
     fragments = {"h": [], "v": []}
-    for axis, ch in (("h", chain_segments(h_s, "h", 7, 22, 60)),
-                     ("v", chain_segments(v_s, "v", 7, 22, 60))):
+    # closed-view candidates exist to surface chain classes; a solid-class
+    # match from a closed view is a shifted duplicate of a raw candidate
+    for axis, ch, chain_only in (
+            ("h", chain_segments(h_s, "h", 7, 22, 60), False),
+            ("v", chain_segments(v_s, "v", 7, 22, 60), False),
+            ("h", chain_segments(h_closed, "h", 7, 22, 60), True),
+            ("v", chain_segments(v_closed, "v", 7, 22, 60), True)):
         for lo, hi, perp, _ in ch:
             LO, HI, P = int(lo * 4), int(hi * 4), int(perp * 4)
             if masked(LO, HI, P, axis, mask_boxes, image_boxes):
@@ -238,8 +286,22 @@ def detect(src, ink, mask_boxes, image_boxes):
             m = measure_line(ink, axis, P, LO, HI, band=40)
             dim = src.shape[0] if axis == "h" else src.shape[1]
             cls, _why = classify_full(m, frame_zone=(P < 250 or P > dim - 250))
+            if chain_only and cls in RULE_CLASSES and cls not in ("dotted_rule", "motif_rule"):
+                counts["closed_view_solid_skipped"] += 1
+                continue
             counts[cls] += 1
             if cls in RULE_CLASSES:
+                if cls in ("dotted_rule", "motif_rule"):
+                    # a dotted/motif rule IS its row of dots: the multi-object
+                    # extent is the physical extent; the solid-ink walker
+                    # cannot ride dots and is skipped
+                    sLO = LO + m["all_obj_lo"]
+                    sHI = LO + m["all_obj_hi"]
+                    if not title_contained(axis, P, sLO, sHI):
+                        accepted[axis].append([sLO, sHI, P, cls])
+                    else:
+                        counts["masked_title_contained"] += 1
+                    continue
                 # seed = the measured continuous object, not the loose Hough span
                 sLO = LO + m["obj_offset_lo"]
                 sHI = LO + m["obj_offset_hi"]
@@ -249,11 +311,26 @@ def detect(src, ink, mask_boxes, image_boxes):
                 nlo = walk(ink, axis, P, sLO, -1)
                 nhi = walk(ink, axis, P, sHI, +1)
                 accepted[axis].append([nlo, nhi, P, cls])
-            elif (cls == "rejected_short" and m.get("present")
+            elif (not chain_only and cls == "rejected_short" and m.get("present")
                   and m["length"] >= 80 and (m["median_thickness"] or 99) <= 28
                   and m["fill"] >= 0.7
                   and m["straightness_std"] is not None and m["straightness_std"] <= 4.0):
                 fragments[axis].append((P, LO + m["obj_offset_lo"], LO + m["obj_offset_hi"]))
+    # chain classes mark isolated boundary ornament only. Catalog dot-leaders
+    # (p0308 baidai ad) match the gates but come in STACKS: measured leader
+    # pitch 118px vs the closest real boundary pair 128px (p0367 box edge +
+    # mid divider), so parallel chain siblings within 120px are typography.
+    for axis in ("h", "v"):
+        chains = [r for r in accepted[axis] if r[3] in ("motif_rule", "dotted_rule")]
+        drop = set()
+        for i, a in enumerate(chains):
+            for b in chains[i + 1:]:
+                if abs(a[2] - b[2]) <= 120 and min(a[1], b[1]) - max(a[0], b[0]) > 0:
+                    drop.add(id(a))
+                    drop.add(id(b))
+        if drop:
+            counts["chain_leader_stack_dropped"] += len(drop)
+            accepted[axis] = [r for r in accepted[axis] if id(r) not in drop]
     rescue_fragments(src, ink, fragments, accepted, counts, mask_boxes, image_boxes)
     return accepted, counts
 
@@ -321,12 +398,36 @@ def snap_all(accepted, snap=520, tol=60):
     return accepted
 
 
-def cells_from(accepted, shape, S=4, min_dim_src=180):  # noqa: C901
+def wall_geometry(accepted, ink):
+    """Re-measure each final wall to recover its true centerline: physical
+    rules warp (p0308 zhabei drifts 3246-3315 over 1400px), and a wall cut
+    at one straight coordinate clips content on warped pages (operator
+    report, three pages). Returns per-wall curve samples in source px."""
+    walls = []
+    for axis in ("h", "v"):
+        for lo, hi, p, cls in accepted[axis]:
+            m = measure_line(ink, axis, p, lo, hi, band=70)
+            curve = None
+            if m and m.get("present") and m.get("centerline"):
+                curve = [[lo + a, pp] for a, pp in m["centerline"]]
+            walls.append({"axis": axis, "lo": lo, "hi": hi, "P": p, "cls": cls,
+                          "curve": curve})
+    return walls
+
+
+def cells_from(walls, shape, S=4, min_dim_src=180):  # noqa: C901
     sep = np.zeros((shape[0] // S, shape[1] // S), np.uint8)
-    for lo, hi, p, _ in accepted["h"]:
-        cv2.line(sep, (int(lo / S) - 6, int(p / S)), (int(hi / S) + 6, int(p / S)), 255, 3)
-    for lo, hi, p, _ in accepted["v"]:
-        cv2.line(sep, (int(p / S), int(lo / S) - 6), (int(p / S), int(hi / S) + 6), 255, 3)
+    for w in walls:
+        lo, hi, p = w["lo"], w["hi"], w["P"]
+        if w["curve"]:
+            pts = [[lo - 24, w["curve"][0][1]]] + w["curve"] + [[hi + 24, w["curve"][-1][1]]]
+        else:
+            pts = [[lo - 24, p], [hi + 24, p]]
+        if w["axis"] == "h":
+            arr = np.array([[a // S, pp // S] for a, pp in pts], np.int32)
+        else:
+            arr = np.array([[pp // S, a // S] for a, pp in pts], np.int32)
+        cv2.polylines(sep, [arr], False, 255, 3)
     sep[0:2, :] = sep[-2:, :] = 255
     sep[:, 0:2] = sep[:, -2:] = 255
     n, lab, stats, _ = cv2.connectedComponentsWithStats((sep == 0).astype(np.uint8), connectivity=4)
@@ -335,26 +436,36 @@ def cells_from(accepted, shape, S=4, min_dim_src=180):  # noqa: C901
         x, y, w, h, _area = stats[i]
         if min(w, h) * S < min_dim_src or w * h < 0.0004 * lab.size:
             continue
-        # the background/margin component has a near-page bbox; it is free
-        # space around the grid, not a crop region
-        if w * h > 0.5 * lab.size:
+        # the background/margin component is a thin RING around the grid: a
+        # near-page bbox that its own pixels barely fill. A legitimate large
+        # cell (p0367's half-page ad) fills its bbox solidly.
+        if w * h > 0.5 * lab.size and _area / (w * h) < 0.5:
             continue
         cells.append([int(x) * S, int(y) * S, int(x + w) * S, int(y + h) * S])
-    # crops share their boundary line: snap each cell edge onto the wall
-    # centerline it abuts, so adjacent crops meet with no padding between
+    # crops cover their boundary line: each edge abutting a wall extends to
+    # the wall's local extreme (toward the cell) so no content is clipped and
+    # adjacent crops meet with no padding — under warp they overlap slightly
+    # instead of sharing one exact coordinate
+    def local_range(w, a1, a2):
+        if not w["curve"]:
+            return w["P"], w["P"]
+        perps = [pp for a, pp in w["curve"] if a1 - 32 <= a <= a2 + 32] or [pp for _, pp in w["curve"]]
+        return min(perps), max(perps)
+
     for c in cells:
-        for lo, hi, p, _cls in accepted["v"]:
-            if min(c[3], hi) > max(c[1], lo):
-                if 0 < abs(c[0] - p) <= 20:
-                    c[0] = p
-                if 0 < abs(c[2] - p) <= 20:
-                    c[2] = p
-        for lo, hi, p, _cls in accepted["h"]:
-            if min(c[2], hi) > max(c[0], lo):
-                if 0 < abs(c[1] - p) <= 20:
-                    c[1] = p
-                if 0 < abs(c[3] - p) <= 20:
-                    c[3] = p
+        for w in walls:
+            if w["axis"] == "v" and min(c[3], w["hi"]) > max(c[1], w["lo"]):
+                pmin, pmax = local_range(w, c[1], c[3])
+                if pmin - 24 <= c[0] <= pmax + 24:
+                    c[0] = pmin - 4
+                if pmin - 24 <= c[2] <= pmax + 24:
+                    c[2] = pmax + 4
+            if w["axis"] == "h" and min(c[2], w["hi"]) > max(c[0], w["lo"]):
+                pmin, pmax = local_range(w, c[0], c[2])
+                if pmin - 24 <= c[1] <= pmax + 24:
+                    c[1] = pmin - 4
+                if pmin - 24 <= c[3] <= pmax + 24:
+                    c[3] = pmax + 4
     # index in the paper's reading order: top-to-bottom bands, right-to-left
     cells.sort(key=lambda c: (c[1] // 300, -c[0]))
     return cells
@@ -425,6 +536,9 @@ def main() -> int:
     parser.add_argument("--detections-scale", type=float, default=4.0)
     parser.add_argument("--gold", default="", help="gold blocks JSON for scoring")
     parser.add_argument("--overlay-out", default="")
+    parser.add_argument("--chain-views", action="store_true",
+                        help="add gap-closed candidate views for motif/dotted chain borders "
+                             "(WIP calibration: can over-fire on catalog leaders and glyph columns)")
     parser.add_argument("--show-rules", action="store_true",
                         help="also draw accepted rules by class (diagnostic); default shows only final cells")
     parser.add_argument("--output", required=True)
@@ -449,11 +563,12 @@ def main() -> int:
                 mask_boxes.append([x1 - 40, y1 - 40, x2 + 40, y2 + 40])
                 TITLE_BOXES.append([x1 - 120, y1 - 120, x2 + 120, y2 + 120])
 
-    accepted, counts = detect(src, ink, mask_boxes, image_boxes)
+    accepted, counts = detect(src, ink, mask_boxes, image_boxes, chain_views=args.chain_views)
     for ax in accepted:
         accepted[ax] = merge(ink, accepted[ax], ax)
     accepted = snap_all(accepted)
-    cells = cells_from(accepted, src.shape)
+    walls = wall_geometry(accepted, ink)
+    cells = cells_from(walls, src.shape)
     cells = merge_boxed_cells(cells, ink, image_boxes + mask_boxes)
     print(dict(counts))
     print(f"rules: {len(accepted['h'])} h + {len(accepted['v'])} v | cells: {len(cells)}")

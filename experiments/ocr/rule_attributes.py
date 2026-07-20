@@ -147,6 +147,19 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
     obj_gaps = np.array([objects[i + 1][0] - objects[i][1] - 1 for i in range(len(objects) - 1)], dtype=float)
     obj_gap_cv = (round(float(obj_gaps.std() / obj_gaps.mean()), 2)
                   if len(obj_gaps) >= 3 and obj_gaps.mean() > 0 else None)
+    # full multi-object extent (a dotted/perforated rule IS its object row)
+    all_obj_lo, all_obj_hi = int(objects[0][0]), int(objects[-1][1])
+    # absolute centerline samples: physical rules warp (p0308 zhabei drifts
+    # ~60px over 1400px); consumers that draw or cut along the rule must
+    # follow the curve, not a single perp coordinate
+    win_start = max(0, pos - band)
+    centerline = None
+    if occ0.size > 30:
+        step = 64
+        centerline = [[int(c), int(round(win_start + curve[c]))]
+                      for c in range(all_obj_lo, all_obj_hi + 1, step)]
+        if centerline and centerline[-1][0] != all_obj_hi:
+            centerline.append([int(all_obj_hi), int(round(win_start + curve[all_obj_hi]))])
     interior = occupied[first:last + 1]
     fill = float(interior.mean())
     gaps = []
@@ -199,6 +212,9 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
         "obj_len_cv": obj_len_cv,
         "obj_span_coverage": obj_span_coverage,
         "obj_gap_cv": obj_gap_cv,
+        "all_obj_lo": all_obj_lo,
+        "all_obj_hi": all_obj_hi,
+        "centerline": centerline,
         "fill": round(fill, 3),
         "max_gap": int(max(gaps)) if gaps else 0,
         "n_gaps_over_8px": int(sum(1 for g in gaps if g > 8)),

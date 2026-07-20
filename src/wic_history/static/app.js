@@ -709,6 +709,8 @@ const submitButton = form.querySelector('button[type="submit"]');
 const modeSelect = document.querySelector('#mode');
 
 async function runSearch() {
+  // a disabled button does not block Enter-key form submission
+  if (submitButton.disabled) return;
   if (!document.querySelector('#query').value.trim()) return;
   lastRequest = requestBody();
   status.textContent = lastRequest.mode === 'lexical' ? 'Searching…' : 'Loading multilingual retrieval model…';

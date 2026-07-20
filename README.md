@@ -185,6 +185,10 @@ require the local provider and refuse to plan without it.
 
 ## Local evidence and retrieval stack
 
+For reviewed article-level BGE-M3 embeddings, the dedicated coherent-unit
+OpenSearch corpus, guarded backfill workers, rollout, monitoring, and rollback,
+see [docs/coherent-unit-search-operations.md](docs/coherent-unit-search-operations.md).
+
 Copy `.env.example` to an untracked `.env` and replace its development passwords, then start the selected databases:
 
 ```bash

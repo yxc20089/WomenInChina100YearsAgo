@@ -89,6 +89,7 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
             curve[i] = np.median(seg)
         occupied = np.zeros(length, dtype=bool)
         thicknesses = []
+        hollow_hits = 0
         for col in range(length):
             c = int(round(curve[col]))
             lo_c = max(0, c - 4)
@@ -104,11 +105,17 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
                 while bottom + 1 < window.shape[0] and column[bottom + 1]:
                     bottom += 1
                 thicknesses.append(bottom - top + 1)
-        trace_fit = trace.copy()
-        valid0 = ~np.isnan(trace_fit)
+                # hollow-glyph signature: a ring stroke (bullet marks) shows
+                # a SECOND ink run within +/-15px; a printed rule shows one
+                wide = column[max(0, c - 15):c + 16]
+                transitions = int(np.count_nonzero(np.diff(wide.astype(np.int8)) == 1))
+                if transitions + (1 if wide.size and wide[0] else 0) >= 2:
+                    hollow_hits += 1
         warp_amplitude = float(curve.max() - curve.min())
+        hollow_fraction = round(hollow_hits / max(1, int(occupied.sum())), 3)
     else:
         warp_amplitude = 0.0
+        hollow_fraction = None
 
     # trim to actual ink extent: fill and gap statistics describe the rule's
     # INTERIOR; overhang beyond the last ink is not a gap, it is where the
@@ -215,6 +222,7 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
         "all_obj_lo": all_obj_lo,
         "all_obj_hi": all_obj_hi,
         "centerline": centerline,
+        "hollow_fraction": hollow_fraction,
         "fill": round(fill, 3),
         "max_gap": int(max(gaps)) if gaps else 0,
         "n_gaps_over_8px": int(sum(1 for g in gaps if g > 8)),

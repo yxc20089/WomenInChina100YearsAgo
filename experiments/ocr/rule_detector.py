@@ -52,6 +52,7 @@ def classify_full(m, frame_zone=False):
     if (m["length"] < 500 and nobj >= 8 and ext >= 600
             and (m["p90_thickness"] or 99) <= 10
             and (m.get("obj_span_coverage") or 0) >= 0.4
+            and (m.get("hollow_fraction") or 0) <= 0.15
             and m["straightness_std"] is not None and m["straightness_std"] <= 4.0
             and m["flank_ink"] <= 0.30 and (m.get("flank_min") or 0) <= 0.25):
         return ("dotted_rule", "perforated hairline")
@@ -73,7 +74,10 @@ def classify_full(m, frame_zone=False):
     # rules (<=6px) lose proportionally more ink to the same damage: the
     # p0308 zhabei boundary measures 0.947 while every thicker gold rule
     # sits at 0.96-1.0, so the floor is class-dependent.
-    fill_floor = 0.93 if (m["median_thickness"] or 99) <= 6 else 0.95
+    # 0.94 general floor: p0367's real 14px inner frame measures 0.944
+    # beside its bead border (gold p10 was 0.96; max_gap<=12 remains the
+    # hard continuity gate)
+    fill_floor = 0.93 if (m["median_thickness"] or 99) <= 6 else 0.94
     if m["fill"] < fill_floor:
         return ("rejected_discontinuous", f"fill {m['fill']:.2f}")
     if (m["max_gap"] or 0) > 12:

@@ -4,18 +4,17 @@
  "semantic_boundary_authority": "none",
  "image": "artifacts/ingestion-render-pilot/jobs/ac934045-1e8f-49f7-a06f-3e1ff4d627a5/images/v219/p0309.png",
  "counts": {
-  "rejected_short": 586,
+  "rejected_short": 587,
   "rejected_text_signature": 18,
   "medium_rule": 15,
   "thin_rule": 17,
   "thick_band": 3,
   "rejected_discontinuous": 14,
-  "dotted_rule": 3,
+  "dotted_rule": 2,
   "rejected_embedded": 10,
   "motif_rule": 1,
   "rough_rule": 2,
   "rescued_medium_rule": 4,
-  "rescued_dotted_rule": 1,
   "rescued_thin_rule": 1
  },
  "rules": {
@@ -107,22 +106,10 @@
     "dotted_rule"
    ],
    [
-    6121,
-    8347,
-    1353,
-    "dotted_rule"
-   ],
-   [
     529,
     4448,
     1368,
     "medium_rule"
-   ],
-   [
-    6357,
-    8344,
-    1570,
-    "dotted_rule"
    ],
    [
     529,

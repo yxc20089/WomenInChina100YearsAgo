@@ -4,14 +4,13 @@
  "semantic_boundary_authority": "none",
  "image": "artifacts/ingestion-pages/jobs/588db16d-b702-492a-9aae-cb8d6a907c8c/images/v202/p0338.png",
  "counts": {
-  "rejected_short": 643,
+  "rejected_short": 644,
   "thin_rule": 6,
   "medium_rule": 8,
   "rejected_text_signature": 4,
   "rejected_embedded": 1,
   "rejected_discontinuous": 16,
   "rough_rule": 3,
-  "dotted_rule": 1,
   "rescued_thin_rule": 2,
   "rescued_dotted_rule": 1
  },
@@ -110,12 +109,6 @@
     "rough_rule"
    ],
    [
-    6970,
-    8278,
-    5459,
-    "dotted_rule"
-   ],
-   [
     528,
     8282,
     5914,
@@ -167,20 +160,8 @@
    7022
   ],
   [
-   5508,
-   7006,
-   5923,
-   7383
-  ],
-  [
    109,
    7004,
-   5519,
-   8287
-  ],
-  [
-   5505,
-   7373,
    5930,
    8289
   ]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import ValidationError
 
@@ -80,6 +80,18 @@ class EvidenceContractTests(unittest.TestCase):
     def test_source_offsets_are_paired(self):
         with self.assertRaisesRegex(ValidationError, "provided together"):
             SourcePointer(source_uri="s3://bucket/key", page_number=1, text_start=3)
+
+    def test_processing_run_preserves_opaque_configuration_values(self):
+        opaque = UUID(int=2)
+        run = ProcessingRun(
+            kind=RunKind.RENDER,
+            engine="test",
+            model_name="fixture",
+            model_revision="1",
+            configuration={"opaque": opaque},
+        )
+
+        self.assertIs(run.configuration["opaque"], opaque)
 
     def test_source_pointer_validates_derivative_hash(self):
         with self.assertRaises(ValidationError):

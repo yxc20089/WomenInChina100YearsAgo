@@ -8,7 +8,7 @@ from typing import Final, Literal, Protocol, final, override
 from uuid import UUID
 
 from .evidence import SourcePointer
-from .semantic_repository import CoherentTextBundle, CoherentTextSegment
+from .semantic_inputs import CoherentTextBundle, CoherentTextSegment
 
 
 COHERENT_ALIAS: Final = "wic-coherent-units-current"

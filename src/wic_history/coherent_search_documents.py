@@ -14,7 +14,7 @@ from .coherent_search_contracts import (
     require_sha256,
     snapshot_sha256,
 )
-from .semantic_repository import CoherentTextSegment
+from .semantic_inputs import CoherentTextSegment
 
 
 def _validate_segments(article: ProjectionArticle) -> tuple[CoherentTextSegment, ...]:

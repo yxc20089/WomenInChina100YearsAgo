@@ -137,6 +137,16 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
     dominant_ink = int(occupied[first:last + 1].sum())
     obj_dominance = round(dominant_ink / max(1, occupied_total), 3)
     span_fraction = (last - first + 1) / length
+    # object-population statistics: a printed chain border is a row of
+    # IDENTICAL cast motifs (object lengths tight, spacing tight); character
+    # pseudo-lines fragment into stroke chunks of highly variable length
+    obj_lens = np.array([b - a + 1 for a, b in objects], dtype=float)
+    obj_len_cv = round(float(obj_lens.std() / obj_lens.mean()), 2) if len(objects) >= 4 else None
+    ospan = objects[-1][1] - objects[0][0] + 1
+    obj_span_coverage = round(float(obj_lens.sum() / max(1, ospan)), 3)
+    obj_gaps = np.array([objects[i + 1][0] - objects[i][1] - 1 for i in range(len(objects) - 1)], dtype=float)
+    obj_gap_cv = (round(float(obj_gaps.std() / obj_gaps.mean()), 2)
+                  if len(obj_gaps) >= 3 and obj_gaps.mean() > 0 else None)
     interior = occupied[first:last + 1]
     fill = float(interior.mean())
     gaps = []
@@ -186,6 +196,9 @@ def measure_line(ink, orient, pos, lo, hi, band=40):
         "obj_offset_hi": int(last),
         "n_objects": len(objects),
         "obj_dominance": obj_dominance,
+        "obj_len_cv": obj_len_cv,
+        "obj_span_coverage": obj_span_coverage,
+        "obj_gap_cv": obj_gap_cv,
         "fill": round(fill, 3),
         "max_gap": int(max(gaps)) if gaps else 0,
         "n_gaps_over_8px": int(sum(1 for g in gaps if g > 8)),

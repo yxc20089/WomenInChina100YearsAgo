@@ -1,0 +1,85 @@
+{
+ "schema_version": "rule-detector-v7",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "image": "artifacts/ingestion-pages/jobs/e0b428e6-584e-4e2e-8e4d-7390120a8071/images/v230/p0367.png",
+ "counts": {
+  "rejected_short": 575,
+  "rejected_embedded": 27,
+  "medium_rule": 5,
+  "rejected_crooked": 2,
+  "rejected_discontinuous": 24,
+  "thin_rule": 4,
+  "rejected_text_signature": 16,
+  "no_ink": 2,
+  "rescued_thin_rule": 1
+ },
+ "rules": {
+  "h": [
+   [
+    393,
+    5340,
+    563,
+    "medium_rule"
+   ],
+   [
+    5403,
+    6098,
+    4333,
+    "thin_rule"
+   ],
+   [
+    386,
+    4246,
+    4430,
+    "thin_rule"
+   ],
+   [
+    401,
+    3907,
+    8316,
+    "medium_rule"
+   ]
+  ],
+  "v": [
+   [
+    2320,
+    4430,
+    386,
+    "medium_rule"
+   ],
+   [
+    563,
+    1814,
+    393,
+    "medium_rule"
+   ],
+   [
+    1954,
+    8316,
+    401,
+    "medium_rule"
+   ],
+   [
+    563,
+    4430,
+    3277,
+    "thin_rule"
+   ],
+   [
+    563,
+    2420,
+    5295,
+    "thin_rule"
+   ],
+   [
+    431,
+    1355,
+    5340,
+    "thin_rule"
+   ]
+  ]
+ },
+ "cells": [],
+ "score_vs_gold": null
+}

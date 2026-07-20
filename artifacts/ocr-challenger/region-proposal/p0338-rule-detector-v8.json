@@ -1,0 +1,163 @@
+{
+ "schema_version": "rule-detector-v7",
+ "status": "diagnostic_not_qualified",
+ "semantic_boundary_authority": "none",
+ "image": "artifacts/ingestion-pages/jobs/588db16d-b702-492a-9aae-cb8d6a907c8c/images/v202/p0338.png",
+ "counts": {
+  "rejected_short": 644,
+  "thin_rule": 6,
+  "medium_rule": 8,
+  "rejected_text_signature": 4,
+  "rejected_embedded": 1,
+  "rejected_discontinuous": 16,
+  "rough_rule": 3,
+  "rescued_thin_rule": 2
+ },
+ "rules": {
+  "h": [
+   [
+    2478,
+    3049,
+    492,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    528,
+    "medium_rule"
+   ],
+   [
+    114,
+    5933,
+    1833,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    3138,
+    "thin_rule"
+   ],
+   [
+    92,
+    5933,
+    4431,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    5693,
+    "thin_rule"
+   ],
+   [
+    114,
+    5933,
+    6970,
+    "thin_rule"
+   ],
+   [
+    4990,
+    5933,
+    7320,
+    "thin_rule"
+   ],
+   [
+    2258,
+    3583,
+    7332,
+    "medium_rule"
+   ],
+   [
+    114,
+    5933,
+    8278,
+    "medium_rule"
+   ]
+  ],
+  "v": [
+   [
+    528,
+    8278,
+    114,
+    "medium_rule"
+   ],
+   [
+    1312,
+    5145,
+    177,
+    "thin_rule"
+   ],
+   [
+    528,
+    1833,
+    3970,
+    "rough_rule"
+   ],
+   [
+    528,
+    1833,
+    4096,
+    "rough_rule"
+   ],
+   [
+    528,
+    8282,
+    5914,
+    "medium_rule"
+   ],
+   [
+    528,
+    8282,
+    5933,
+    "medium_rule"
+   ]
+  ]
+ },
+ "cells": [
+  [
+   4096,
+   528,
+   5933,
+   1833
+  ],
+  [
+   114,
+   528,
+   3970,
+   1833
+  ],
+  [
+   177,
+   1833,
+   5933,
+   3138
+  ],
+  [
+   177,
+   3138,
+   5933,
+   4431
+  ],
+  [
+   114,
+   4431,
+   5933,
+   5693
+  ],
+  [
+   114,
+   5693,
+   5933,
+   6970
+  ],
+  [
+   114,
+   6970,
+   5933,
+   8278
+  ]
+ ],
+ "score_vs_gold": null
+}

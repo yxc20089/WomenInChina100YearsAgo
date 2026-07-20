@@ -13,11 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .embedding_pipeline import BGEEmbedder
 from .claim_context import load_reviewed_claim_items
-from .coherent_search import (
-    SearchSpec,
-    coherent_dense_search,
-    coherent_hybrid_search,
-    coherent_lexical_search,
+from .coherent_api_search import (
+    IncompleteCoherentEmbeddingIdentityError,
+    run_coherent_api_search,
 )
 from .evidence import (
     RetrievalResponse,
@@ -37,7 +35,6 @@ from .exploration import ExplorationReport, build_exploration_report
 from .insights import InsightReport, build_insight_report
 from .ingestion_jobs import batch_failures, batch_status
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
-from .search_runtime import PinnedQueryEmbedder
 from .segmentation_review import (
     SegmentationActivationRequest,
     SegmentationActivationResultView,
@@ -264,72 +261,16 @@ def create_app(
                         year_start=request.year_start,
                         year_end=request.year_end,
                     )
-                case "reviewed_coherent_unit", mode:
-                    model_name = os.environ.get("COHERENT_EMBEDDING_MODEL")
-                    model_revision = os.environ.get("COHERENT_EMBEDDING_REVISION")
-                    configuration_sha256 = os.environ.get(
-                        "COHERENT_EMBEDDING_CONFIGURATION_SHA256"
+                case "reviewed_coherent_unit", _:
+                    result = run_coherent_api_search(
+                        search_url, request, app.state.coherent_embedder
                     )
-                    spec = SearchSpec(
-                        request.query,
-                        limit=request.limit,
-                        year_min=request.year_start,
-                        year_max=request.year_end,
-                        model_name=model_name,
-                        model_revision=model_revision,
-                        configuration_sha256=configuration_sha256,
-                    )
-                    match mode:
-                        case "lexical":
-                            return coherent_lexical_search(search_url, spec)
-                        case "dense":
-                            if not (
-                                model_name
-                                and model_revision
-                                and configuration_sha256
-                            ):
-                                raise HTTPException(
-                                    status_code=503,
-                                    detail=(
-                                        "Coherent dense search requires pinned "
-                                        "embedding model, revision, and configuration"
-                                    ),
-                                )
-                            if app.state.coherent_embedder is None:
-                                app.state.coherent_embedder = PinnedQueryEmbedder(
-                                    model_name,
-                                    model_revision,
-                                    configuration_sha256,
-                                )
-                            return coherent_dense_search(
-                                search_url, spec, app.state.coherent_embedder
-                            )
-                        case "hybrid":
-                            if not (
-                                model_name
-                                and model_revision
-                                and configuration_sha256
-                            ):
-                                raise HTTPException(
-                                    status_code=503,
-                                    detail=(
-                                        "Coherent dense search requires pinned "
-                                        "embedding model, revision, and configuration"
-                                    ),
-                                )
-                            if app.state.coherent_embedder is None:
-                                app.state.coherent_embedder = PinnedQueryEmbedder(
-                                    model_name,
-                                    model_revision,
-                                    configuration_sha256,
-                                )
-                            return coherent_hybrid_search(
-                                search_url, spec, app.state.coherent_embedder
-                            )
-                        case unreachable:
-                            assert_never(unreachable)
+                    app.state.coherent_embedder = result.embedder
+                    return result.response
                 case unreachable:
                     assert_never(unreachable)
+        except IncompleteCoherentEmbeddingIdentityError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except HTTPException:
             raise
         except Exception as exc:

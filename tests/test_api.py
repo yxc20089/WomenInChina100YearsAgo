@@ -162,7 +162,8 @@ class APITests(unittest.TestCase):
             hits=[],
         )
         with patch(
-            "wic_history.api.coherent_lexical_search", return_value=retrieval
+            "wic_history.coherent_api_search.coherent_lexical_search",
+            return_value=retrieval,
         ) as search:
             response = TestClient(create_app()).post(
                 "/api/search",
@@ -176,6 +177,11 @@ class APITests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["schema_version"], "1.1")
         search.assert_called_once()
+        spec = search.call_args.args[1]
+        self.assertEqual(spec.query, "女子教育")
+        self.assertEqual(spec.limit, 10)
+        self.assertIsNone(spec.year_min)
+        self.assertIsNone(spec.year_max)
 
     def test_search_dispatches_coherent_dense_and_hybrid_with_pinned_identity(self):
         environment = {
@@ -196,8 +202,8 @@ class APITests(unittest.TestCase):
             with self.subTest(mode=mode), patch.dict(
                 os.environ, environment, clear=True
             ), patch(
-                f"wic_history.api.{target}", return_value=retrieval
-            ) as search, patch("wic_history.api.PinnedQueryEmbedder"):
+                f"wic_history.coherent_api_search.{target}", return_value=retrieval
+            ) as search, patch("wic_history.coherent_api_search.PinnedQueryEmbedder"):
                 response = TestClient(create_app()).post(
                     "/api/search",
                     json={
@@ -210,6 +216,121 @@ class APITests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["mode"], mode)
             search.assert_called_once()
+
+    def test_coherent_dense_search_requires_complete_pinned_identity(self):
+        with patch.dict(
+            os.environ,
+            {"COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3"},
+            clear=True,
+        ):
+            response = TestClient(create_app()).post(
+                "/api/search",
+                json={
+                    "query": "女子教育",
+                    "mode": "dense",
+                    "corpus": "reviewed_coherent_unit",
+                },
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            (
+                "Coherent dense search requires pinned embedding model, "
+                "revision, and configuration"
+            ),
+        )
+
+    def test_coherent_query_embedder_is_reused_and_exposed_on_app_state(self):
+        retrieval = RetrievalResponse(
+            schema_version="1.1",
+            query="女子教育",
+            mode=RetrievalMode.DENSE,
+            hits=[],
+        )
+        environment = {
+            "COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3",
+            "COHERENT_EMBEDDING_REVISION": "model-revision",
+            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "f" * 64,
+        }
+        with patch.dict(os.environ, environment, clear=True), patch(
+            "wic_history.coherent_api_search.coherent_dense_search",
+            return_value=retrieval,
+        ) as search, patch(
+            "wic_history.coherent_api_search.PinnedQueryEmbedder"
+        ) as embedder_type:
+            app = create_app()
+            client = TestClient(app)
+            responses = [
+                client.post(
+                    "/api/search",
+                    json={
+                        "query": "女子教育",
+                        "mode": "dense",
+                        "corpus": "reviewed_coherent_unit",
+                    },
+                )
+                for _ in range(2)
+            ]
+
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        embedder_type.assert_called_once_with(
+            "BAAI/bge-m3", "model-revision", "f" * 64
+        )
+        self.assertIs(app.state.coherent_embedder, embedder_type.return_value)
+        self.assertTrue(
+            all(
+                call.args[2] is embedder_type.return_value
+                for call in search.call_args_list
+            )
+        )
+
+    def test_coherent_cached_embedder_still_requires_current_pinned_identity(self):
+        retrieval = RetrievalResponse(
+            schema_version="1.1",
+            query="女子教育",
+            mode=RetrievalMode.DENSE,
+            hits=[],
+        )
+        environment = {
+            "COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3",
+            "COHERENT_EMBEDDING_REVISION": "model-revision",
+            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "f" * 64,
+        }
+        with patch(
+            "wic_history.coherent_api_search.coherent_dense_search",
+            return_value=retrieval,
+        ), patch("wic_history.coherent_api_search.PinnedQueryEmbedder"):
+            app = create_app()
+            client = TestClient(app)
+            with patch.dict(os.environ, environment, clear=True):
+                first = client.post(
+                    "/api/search",
+                    json={
+                        "query": "女子教育",
+                        "mode": "dense",
+                        "corpus": "reviewed_coherent_unit",
+                    },
+                )
+            with patch.dict(os.environ, {}, clear=True):
+                second = client.post(
+                    "/api/search",
+                    json={
+                        "query": "女子教育",
+                        "mode": "dense",
+                        "corpus": "reviewed_coherent_unit",
+                    },
+                )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 503)
+        self.assertEqual(
+            second.json()["detail"],
+            (
+                "Coherent dense search requires pinned embedding model, "
+                "revision, and configuration"
+            ),
+        )
 
     def test_generation_endpoints_reject_coherent_corpus(self):
         client = TestClient(create_app())

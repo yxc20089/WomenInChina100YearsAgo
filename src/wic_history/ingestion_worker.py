@@ -13,15 +13,12 @@ from typing import Any, Callable, Sequence
 from uuid import UUID
 
 from .corpus_manifest import build_s3_client
-from .coherent_jobs import (
-    ActiveRevision,
-    CoherentJobError,
-    CoherentJobContext,
-    coherent_plan_key,
-    load_coherent_job_context,
+from .coherent_jobs import CoherentJobContext
+from .coherent_worker_adapter import (
+    ensure_coherent_snapshot as ensure_coherent_snapshot,
+    execute_coherent_stage,
+    load_coherent_execution_context,
 )
-from .coherent_job_embedding import execute_coherent_embedding
-from .coherent_job_projection_execution import execute_coherent_projection
 from .embedding_pipeline import embed_regions
 from .evidence import (
     EntityLinkArtifact,
@@ -237,25 +234,14 @@ def load_aggregate_context(
 def load_execution_context(
     database_url: str, lease: JobLease
 ) -> PageJobContext | AggregateJobContext | CoherentJobContext:
-    if lease.stage in {
-        "coherent_unit_embedding",
-        "coherent_unit_search_projection",
-    }:
-        return load_coherent_job_context(database_url, lease.job_id)
+    coherent_context = load_coherent_execution_context(database_url, lease)
+    if coherent_context is not None:
+        return coherent_context
     if lease.scope_kind == "page":
         return load_job_context(database_url, lease.job_id)
     if lease.scope_kind == "batch":
         return load_aggregate_context(database_url, lease.job_id)
     raise ValueError(f"Unsupported job scope_kind: {lease.scope_kind}")
-
-
-def ensure_coherent_snapshot(
-    planned_fingerprint: str, revisions: tuple[ActiveRevision, ...]
-) -> None:
-    if not revisions:
-        raise CoherentJobError("Coherent projection active snapshot is empty")
-    if coherent_plan_key(revisions) != planned_fingerprint:
-        raise CoherentJobError("Coherent projection active snapshot is stale")
 
 
 def resolve_workspace_path(workspace_root: Path, value: str | Path) -> Path:
@@ -1782,25 +1768,15 @@ def execute_stage(
     neo4j_password: str | None,
 ) -> StageExecution:
     if isinstance(context, CoherentJobContext):
-        if context.stage == "coherent_unit_embedding":
-            execution = execute_coherent_embedding(database_url, context)
-            return StageExecution(
-                execution.artifact_uri,
-                execution.output_sha256,
-                execution.result,
-                execution.adopted,
-            )
-        if context.stage == "coherent_unit_search_projection":
-            execution = execute_coherent_projection(
-                database_url, context, opensearch_url=opensearch_url
-            )
-            return StageExecution(
-                execution.artifact_uri,
-                execution.output_sha256,
-                execution.result,
-                execution.adopted,
-            )
-        raise ValueError(f"No coherent worker exists for stage {context.stage}")
+        execution = execute_coherent_stage(
+            database_url, context, opensearch_url=opensearch_url
+        )
+        return StageExecution(
+            execution.artifact_uri,
+            execution.output_sha256,
+            execution.result,
+            execution.adopted,
+        )
     if isinstance(context, AggregateJobContext):
         if context.stage == "search_projection":
             return execute_search_projection(

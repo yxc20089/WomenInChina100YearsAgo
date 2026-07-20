@@ -526,6 +526,15 @@ def snap_all(accepted, shape, snap=520, frame_snap=900, tol=60):
     return accepted
 
 
+CELL_CUTTING = ("thin_rule", "medium_rule", "thick_band", "rough_rule")
+# dotted/motif detections are reported but never cut cells: no measured
+# attribute separates printed dotted boundaries from incidental dot
+# alignments inside text bands (p0338 offenders vs kade/p0309 frames overlap
+# on pitch, coverage, len_cv, hollow), and the operator's priority is
+# explicit — a missed ribbon boundary is acceptable, a cut through words is
+# not (2026-07-20)
+
+
 def wall_geometry(accepted, ink):
     """Re-measure each final wall to recover its true centerline: physical
     rules warp (p0308 zhabei drifts 3246-3315 over 1400px), and a wall cut
@@ -534,6 +543,8 @@ def wall_geometry(accepted, ink):
     walls = []
     for axis in ("h", "v"):
         for lo, hi, p, cls in accepted[axis]:
+            if cls not in CELL_CUTTING:
+                continue
             m = measure_line(ink, axis, p, lo, hi, band=70)
             curve = None
             if m and m.get("present") and m.get("centerline"):

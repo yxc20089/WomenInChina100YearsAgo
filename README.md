@@ -300,6 +300,20 @@ OpenSearch v2 indexes only active OCR selections. Every hit carries the source
 object hash, derivative UUID/hash/tier, OCR run, exact region polygon, and the
 selection basis used to admit that run.
 
+Lexical (and therefore hybrid) queries additionally expand reviewed modern
+headwords into historian-reviewed historical variants from
+`config/historical-synonyms.toml` — e.g. `女士` also matches `淑女`/`士女` at
+explicitly lower weights, so exact matches always outrank synonym-only
+matches. This is reviewed query expansion, not model-generated semantic
+similarity: the dense lane may surface related vocabulary statistically, but
+only individually reviewed lexicon terms participate in lexical matching, the
+lexicon file is parsed fail-closed (a malformed entry raises rather than
+silently broadening retrieval), and every synonym-assisted hit names the
+matched historical term plus the lexicon version and content hash in its
+explanation. Expansion is directional — a headword expands to its variants,
+never the reverse — and changing the lexicon follows the review workflow
+documented at the top of the file.
+
 Project reviewed claims/entities to Neo4j, export an identical citation-mapped
 corpus for the isolated RAG comparisons, and start the local researcher API:
 

@@ -30,6 +30,11 @@ from .coherent_search_cli import (
     run_coherent_query,
 )
 from .model_config import load_pipeline_model_configuration
+from .query_expansion import (
+    QueryExpansion,
+    expand_query,
+    load_expansion_lexicon,
+)
 from .search_runtime import pinned_coherent_query_identity as _coherent_identity
 
 
@@ -310,6 +315,74 @@ def project_regions(
         database.close()
 
 
+def _lexical_query_body(
+    query: str,
+    limit: int,
+    filters: list[dict[str, Any]],
+    expansion: QueryExpansion | None,
+) -> dict[str, Any]:
+    original = {
+        "multi_match": {
+            "query": query,
+            "fields": ["raw_text^2", "normalized_text"],
+            "type": "best_fields",
+        }
+    }
+    if expansion is None:
+        clauses = [original]
+    else:
+        # named clauses so each hit reports exactly which reviewed term
+        # matched (matched_queries); variant boosts are strictly below the
+        # original's weight, so exact matches outrank synonym-only matches
+        original["multi_match"]["_name"] = "query"
+        clauses = [original]
+        for entry in expansion.matches:
+            for variant in entry.variants:
+                clauses.append(
+                    {
+                        "multi_match": {
+                            "query": variant.term,
+                            "fields": ["raw_text^2", "normalized_text"],
+                            "type": "best_fields",
+                            "boost": variant.weight,
+                            "_name": f"expansion:{entry.headword}->{variant.term}",
+                        }
+                    }
+                )
+    return {
+        "size": limit,
+        "query": {
+            "bool": {
+                "should": clauses,
+                "minimum_should_match": 1,
+                "filter": filters,
+            }
+        },
+        "_source": {"excludes": ["embedding"]},
+    }
+
+
+def _expansion_explanation(
+    item: dict[str, Any], expansion: QueryExpansion | None
+) -> dict[str, Any]:
+    if expansion is None:
+        return {}
+    matched = [
+        name.removeprefix("expansion:")
+        for name in item.get("matched_queries", [])
+        if name.startswith("expansion:")
+    ]
+    if not matched:
+        return {}
+    return {
+        "query_expansion": {
+            "matched_terms": matched,
+            "lexicon_version": expansion.lexicon_version,
+            "lexicon_sha256": expansion.lexicon_sha256,
+        }
+    }
+
+
 def lexical_search(
     opensearch_url: str,
     query: str,
@@ -318,7 +391,13 @@ def lexical_search(
     year_start: int | None = None,
     year_end: int | None = None,
 ) -> RetrievalResponse:
-    """Search raw and normalized OCR while retaining exact evidence pointers."""
+    """Search raw and normalized OCR while retaining exact evidence pointers.
+
+    Queries containing a reviewed modern headword additionally match its
+    historian-reviewed historical variants (config/historical-synonyms.toml)
+    at explicitly lower weights; synonym-assisted hits carry the matched
+    term and lexicon identity in their explanation.
+    """
     if not query.strip():
         raise ValueError("query must not be blank")
     try:
@@ -326,28 +405,12 @@ def lexical_search(
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("Install the data extra: uv sync --extra data") from exc
     search = OpenSearch(hosts=[opensearch_url], http_compress=True)
+    expansion = expand_query(query, load_expansion_lexicon())
     filters: list[dict[str, Any]] = []
     if year_start is not None or year_end is not None:
         bounds = {key: value for key, value in (("gte", year_start), ("lte", year_end)) if value}
         filters.append({"range": {"publication_year": bounds}})
-    body = {
-        "size": limit,
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "multi_match": {
-                            "query": query,
-                            "fields": ["raw_text^2", "normalized_text"],
-                            "type": "best_fields",
-                        }
-                    }
-                ],
-                "filter": filters,
-            }
-        },
-        "_source": {"excludes": ["embedding"]},
-    }
+    body = _lexical_query_body(query, limit, filters, expansion)
     response = search.search(index=index, body=body)
     hits = []
     for rank, item in enumerate(response["hits"]["hits"], 1):
@@ -379,6 +442,7 @@ def lexical_search(
                     "derivative_id": source["derivative_id"],
                     "evidence_tier": source["evidence_tier"],
                     "ocr_selection_basis": source["ocr_selection_basis"],
+                    **_expansion_explanation(item, expansion),
                 },
             )
         )

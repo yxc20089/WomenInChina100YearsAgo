@@ -17,13 +17,16 @@ from wic_history.e2e_store import (
     VisualModelOutputSpec,
     alignment_operations,
     locate_unique_surface,
+    review_and_select_text_version,
     review_local_identity_cluster,
 )
 
 
 def test_context_disambiguates_repeated_surface_and_code_owns_offsets() -> None:
     text = "霍爾平曾入英宮。英皇時召霍臨宮中。"
-    located = locate_unique_surface(text, "霍", left_context="時召", right_context="臨宮中")
+    located = locate_unique_surface(
+        text, "霍", left_context="時召", right_context="臨宮中"
+    )
     assert text[located.text_start : located.text_end] == "霍"
     assert located.text_start == text.rindex("霍")
 
@@ -82,9 +85,10 @@ def test_visual_output_requires_exact_path_and_explicit_confidence_provenance() 
         confidence=0.91,
         confidence_status="uncalibrated",
     )
-    assert output.raw_output_sha256 == hashlib.sha256(
-        output.raw_output.encode("utf-8")
-    ).hexdigest()
+    assert (
+        output.raw_output_sha256
+        == hashlib.sha256(output.raw_output.encode("utf-8")).hexdigest()
+    )
 
     with pytest.raises(ValueError, match="score/calibration"):
         VisualModelOutputSpec(
@@ -143,7 +147,9 @@ def test_calibration_and_local_cluster_specs_preserve_occurrence_boundaries() ->
     assert "evidence.entity_redirect" not in ARTICLE_LOCAL_IDENTITY_EVIDENCE_SQL
 
 
-def test_local_identity_review_is_terminal_idempotent_and_keeps_members(monkeypatch) -> None:
+def test_local_identity_review_is_terminal_idempotent_and_keeps_members(
+    monkeypatch,
+) -> None:
     from wic_history import e2e_store
 
     cluster_id = uuid4()
@@ -226,3 +232,78 @@ def test_local_identity_review_is_terminal_idempotent_and_keeps_members(monkeypa
     assert first.reused is False
     assert second.reused is True
     assert state["members"] == 2
+
+
+def test_accepted_text_reselection_locks_and_enqueues_in_one_transaction(
+    monkeypatch,
+) -> None:
+    from wic_history import coherent_jobs, e2e_store
+
+    text_version_id = uuid4()
+    region_id = uuid4()
+    selection_id = uuid4()
+    order: list[str] = []
+
+    class Result:
+        def __init__(self, row=None):
+            self.row = row
+
+        def fetchone(self):
+            return self.row
+
+    class Connection:
+        def __enter__(self):
+            order.append("enter")
+            return self
+
+        def __exit__(self, *_args):
+            order.append("exit")
+            return False
+
+        def execute(self, sql, _params):
+            if "FROM evidence.text_version" in sql:
+                order.append("select")
+                return Result(
+                    {
+                        "text_version_id": text_version_id,
+                        "region_id": region_id,
+                        "variant": "corrected",
+                        "text_sha256": "a" * 64,
+                        "review_status": "candidate",
+                    }
+                )
+            if "INSERT INTO evidence.region_text_selection" in sql:
+                order.append("selection")
+                return Result({"selection_id": selection_id})
+            return Result()
+
+    connection = Connection()
+
+    class Psycopg:
+        @staticmethod
+        def connect(*_args, **_kwargs):
+            return connection
+
+    monkeypatch.setattr(e2e_store, "_clients", lambda: (Psycopg, object()))
+    monkeypatch.setattr(
+        coherent_jobs,
+        "lock_coherent_mutation",
+        lambda received: order.append("lock") if received is connection else None,
+    )
+    monkeypatch.setattr(
+        coherent_jobs,
+        "enqueue_coherent_jobs",
+        lambda received, **_kwargs: (
+            order.append("enqueue") if received is connection else None
+        ),
+    )
+
+    result = review_and_select_text_version(
+        "postgresql://unused",
+        text_version_id,
+        decision="accept",
+        reviewer="historian",
+    )
+
+    assert result.selection_id == str(selection_id)
+    assert order == ["enter", "lock", "select", "selection", "enqueue", "exit"]

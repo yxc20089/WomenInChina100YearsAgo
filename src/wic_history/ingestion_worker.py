@@ -14,26 +14,21 @@ from uuid import UUID
 
 from .corpus_manifest import build_s3_client
 from .coherent_jobs import (
-    COHERENT_CONFIGURATION,
     ActiveRevision,
     CoherentJobError,
     CoherentJobContext,
-    _active_documents,
-    _active_revisions,
     coherent_plan_key,
-    execute_coherent_embedding,
     load_coherent_job_context,
 )
-from .coherent_search import (
-    CoherentEmbedding,
-    CoherentSource,
-    FrozenProjectionManifest,
-    ProjectionArticle,
-    project_coherent_units,
-    restore_coherent_alias,
-)
+from .coherent_job_embedding import execute_coherent_embedding
+from .coherent_job_projection_execution import execute_coherent_projection
 from .embedding_pipeline import embed_regions
-from .evidence import EntityLinkArtifact, LayoutPageArtifact, NERArtifact, OCRPageArtifact, Polygon, SourcePointer
+from .evidence import (
+    EntityLinkArtifact,
+    LayoutPageArtifact,
+    NERArtifact,
+    OCRPageArtifact,
+)
 from .graph import project_reviewed_graph
 from .gold_render import (
     ingestion_candidate,
@@ -72,7 +67,6 @@ from .repository import (
     ingest_ocr_artifact,
 )
 from .search import project_regions
-from .semantic_repository import CoherentTextBundle, CoherentTextSegment
 
 
 @dataclass(frozen=True, slots=True)
@@ -299,9 +293,7 @@ def _atomic_json(path: Path, value: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-def _resolve_record_image(
-    workspace_root: Path, record: dict[str, Any]
-) -> Path:
+def _resolve_record_image(workspace_root: Path, record: dict[str, Any]) -> Path:
     image_path = resolve_workspace_path(workspace_root, record["render_path"])
     if not image_path.is_file():
         raise ValueError(f"Rendered page image is absent: {image_path}")
@@ -401,9 +393,7 @@ def _existing_render(
             ]
             if len(matches) != 1:
                 continue
-            return _render_manifest_execution(
-                manifest_path, context, workspace_root
-            )
+            return _render_manifest_execution(manifest_path, context, workspace_root)
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             continue
     return None
@@ -464,8 +454,13 @@ def execute_render(
     result = results[0]
     if result.get("status") != "rendered":
         raise RuntimeError(result.get("issue", "lossless render failed"))
-    if context.source_sha256 and result["source_object_sha256"] != context.source_sha256:
-        raise ValueError("Rendered source SHA-256 conflicts with the authoritative catalog")
+    if (
+        context.source_sha256
+        and result["source_object_sha256"] != context.source_sha256
+    ):
+        raise ValueError(
+            "Rendered source SHA-256 conflicts with the authoritative catalog"
+        )
     write_lossless_results(output_dir, results)
     manifest_path = output_dir / "lossless_manifest.jsonl"
     return StageExecution(
@@ -806,7 +801,9 @@ def execute_ocr(
     }
     for field, expected in supported.items():
         if context.configuration.get(field) != expected:
-            raise ValueError(f"OCR worker does not implement {field}={context.configuration.get(field)!r}")
+            raise ValueError(
+                f"OCR worker does not implement {field}={context.configuration.get(field)!r}"
+            )
     layout_path, layout, manifest_path, image_path = _parent_layout(
         context, workspace_root
     )
@@ -839,16 +836,18 @@ def execute_ocr(
             },
             adopted=True,
         )
-    adopted = _existing_ocr(
-        database_url, context, workspace_root, layout.image_sha256
-    )
+    adopted = _existing_ocr(database_url, context, workspace_root, layout.image_sha256)
     if adopted:
         return adopted
     arguments = [
-        "--image", str(image_path),
-        "--layout-artifact", str(layout_path),
-        "--model-config-sha256", str(context.configuration["pipeline_model_configuration_sha256"]),
-        "--output", str(output_path),
+        "--image",
+        str(image_path),
+        "--layout-artifact",
+        str(layout_path),
+        "--model-config-sha256",
+        str(context.configuration["pipeline_model_configuration_sha256"]),
+        "--output",
+        str(output_path),
     ]
     exit_code = ocr_main(arguments)
     if exit_code:
@@ -993,9 +992,7 @@ def _ner_artifact_matches(
             if isinstance(identity_configuration, dict)
             else None
         )
-        expected_canary = configuration.get(
-            "expected_canary_raw_output_sha256"
-        )
+        expected_canary = configuration.get("expected_canary_raw_output_sha256")
         canary_hashes = (
             canary.get("raw_output_sha256s") if isinstance(canary, dict) else None
         )
@@ -1039,22 +1036,17 @@ def _ner_artifact_matches(
             and identity_configuration.get("response_format_sha256")
             == configuration.get("response_format_sha256")
             and isinstance(canary_hashes, list)
-            and len(canary_hashes)
-            == configuration.get("schema_canary_repetitions")
+            and len(canary_hashes) == configuration.get("schema_canary_repetitions")
             and set(canary_hashes) == {expected_canary}
             and canary.get("deterministic") is True
             and canary.get("required_span_verified") is True
             and run_configuration.get("job_configuration_sha256")
             == canonical_sha256(configuration)
-            and run_configuration.get("max_regions")
-            == configuration.get("max_regions")
+            and run_configuration.get("max_regions") == configuration.get("max_regions")
             and run_configuration.get("region_chunk_size")
             == configuration.get("region_chunk_size")
             and artifact.dataset_id
-            == (
-                configuration.get("dataset_id")
-                or f"ocr-run:{source_ocr_run_id}"
-            )
+            == (configuration.get("dataset_id") or f"ocr-run:{source_ocr_run_id}")
             and artifact.split_id
             == (
                 configuration.get("split_id")
@@ -1226,13 +1218,20 @@ def execute_ner(
     max_regions = configuration.get("max_regions")
     if adapter_name == "rules+gliner":
         arguments = [
-            "--ocr-artifact", str(ocr_path),
-            "--output", str(output_path),
-            "--model", str(configuration["model"]),
-            "--revision", str(configuration["revision"]),
-            "--threshold", str(configuration["threshold"]),
-            "--batch-size", str(configuration["batch_size"]),
-            "--word-splitter-language", str(configuration["word_splitter_language"]),
+            "--ocr-artifact",
+            str(ocr_path),
+            "--output",
+            str(output_path),
+            "--model",
+            str(configuration["model"]),
+            "--revision",
+            str(configuration["revision"]),
+            "--threshold",
+            str(configuration["threshold"]),
+            "--batch-size",
+            str(configuration["batch_size"]),
+            "--word-splitter-language",
+            str(configuration["word_splitter_language"]),
         ]
         if configuration.get("dataset_id") is not None:
             arguments.extend(["--dataset-id", str(configuration["dataset_id"])])
@@ -1248,9 +1247,7 @@ def execute_ner(
         if exit_code:
             raise RuntimeError(f"NER command exited with status {exit_code}")
     else:
-        expected_canary = configuration.get(
-            "expected_canary_raw_output_sha256"
-        )
+        expected_canary = configuration.get("expected_canary_raw_output_sha256")
         if not isinstance(expected_canary, str):
             raise ValueError(
                 "Production structured NER requires a qualification-pinned canary hash"
@@ -1264,18 +1261,14 @@ def execute_ner(
             runtime_name=configuration.get("runtime_name", "ollama"),
             runtime_version=configuration["runtime_version"],
             runtime_executable=Path(configuration["runtime_executable"]),
-            runtime_executable_sha256=configuration[
-                "runtime_executable_sha256"
-            ],
+            runtime_executable_sha256=configuration["runtime_executable_sha256"],
             ollama_manifest_digest=configuration["ollama_manifest_digest"],
             quantization=configuration["quantization"],
             device=configuration.get("device", "local-runtime"),
             seed=configuration.get("seed", 42),
             max_output_tokens=configuration.get("max_output_tokens", 512),
             timeout_seconds=configuration.get("timeout_seconds", 120),
-            schema_canary_repetitions=configuration.get(
-                "schema_canary_repetitions", 3
-            ),
+            schema_canary_repetitions=configuration.get("schema_canary_repetitions", 3),
             expected_canary_raw_output_sha256=expected_canary,
             code_revision=configuration["code_revision"],
             region_chunk_size=configuration.get("region_chunk_size", 8),
@@ -1295,9 +1288,7 @@ def execute_ner(
         )
         reverify_structured_ner_runtime(adapter, verified)
         _atomic_json(output_path, artifact.model_dump(mode="json"))
-    artifact = NERArtifact.model_validate_json(
-        output_path.read_text(encoding="utf-8")
-    )
+    artifact = NERArtifact.model_validate_json(output_path.read_text(encoding="utf-8"))
     if not _ner_artifact_matches(
         artifact,
         context,
@@ -1358,7 +1349,9 @@ def _validate_link_coverage(
             raise ValueError("Entity-link candidate run ID differs from its artifact")
         mention = expected_mentions.get(link.mention_id)
         if mention is None:
-            raise ValueError("Entity-link artifact contains a candidate for another NER run")
+            raise ValueError(
+                "Entity-link artifact contains a candidate for another NER run"
+            )
         if link.entity_type != mention.entity_type:
             raise ValueError("Entity-link candidate type differs from its mention")
         by_mention.setdefault(link.mention_id, []).append(link)
@@ -1368,7 +1361,9 @@ def _validate_link_coverage(
         if len(roster) > top_k + 1:
             raise ValueError("Entity-link roster exceeds top_k plus NIL")
         if sum(link.nil_candidate for link in roster) != 1:
-            raise ValueError("Entity-link roster must contain exactly one NIL candidate")
+            raise ValueError(
+                "Entity-link roster must contain exactly one NIL candidate"
+            )
         targets = [
             (link.entity_id, link.authority_uri)
             for link in roster
@@ -1462,7 +1457,9 @@ def execute_entity_link(
             output_path.read_text(encoding="utf-8")
         )
         if not _link_artifact_matches(artifact, context, source_ner_run_id):
-            raise ValueError("Existing job link artifact contradicts its immutable plan")
+            raise ValueError(
+                "Existing job link artifact contradicts its immutable plan"
+            )
         _validate_link_coverage(artifact, ner, top_k=top_k)
         stored = ingest_link_artifact(database_url, output_path)
         if stored.links_verified != len(artifact.links):
@@ -1490,7 +1487,9 @@ def execute_entity_link(
     ]
     if configuration.get("resolver") == "qwen":
         if configuration.get("resolver_runtime") != "ollama":
-            raise ValueError("Entity-link worker currently supports local Ollama resolution")
+            raise ValueError(
+                "Entity-link worker currently supports local Ollama resolution"
+            )
         arguments.extend(
             [
                 "--resolver-base-url",
@@ -1553,9 +1552,7 @@ def _projection_is_current(
     return bool(row and row[0])
 
 
-def _search_alias_points_to(
-    opensearch_url: str, alias: str, index_name: str
-) -> bool:
+def _search_alias_points_to(opensearch_url: str, alias: str, index_name: str) -> bool:
     try:
         from opensearchpy import OpenSearch
     except ImportError as exc:  # pragma: no cover - minimal installations
@@ -1591,7 +1588,9 @@ def execute_search_projection(
             or not _projection_is_current(database_url, build_id, "opensearch")
             or not _search_alias_points_to(opensearch_url, alias, index_name)
         ):
-            raise ValueError("Existing search receipt is not the current verified projection")
+            raise ValueError(
+                "Existing search receipt is not the current verified projection"
+            )
         result = {
             "projection_build_id": build_id,
             "index_name": index_name,
@@ -1654,7 +1653,9 @@ def execute_rag_export(
             "volume_number": context.scope.get("volume_number"),
             "page_number": context.scope.get("page_number"),
         }:
-            raise ValueError("Existing RAG export scope contradicts its immutable batch")
+            raise ValueError(
+                "Existing RAG export scope contradicts its immutable batch"
+            )
         result = {
             "documents": validation.documents,
             "exported_regions": validation.citations,
@@ -1708,11 +1709,12 @@ def execute_graph_projection(
     if receipt_path.is_file():
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         build_id = str(receipt.get("projection_build_id", ""))
-        if (
-            receipt.get("job_id") != context.job_id
-            or not _projection_is_current(database_url, build_id, "neo4j")
+        if receipt.get("job_id") != context.job_id or not _projection_is_current(
+            database_url, build_id, "neo4j"
         ):
-            raise ValueError("Existing graph receipt is not the current verified projection")
+            raise ValueError(
+                "Existing graph receipt is not the current verified projection"
+            )
         result = {
             key: receipt[key]
             for key in (
@@ -1764,173 +1766,6 @@ def execute_graph_projection(
     )
 
 
-def _coherent_manifest(connection: Any, documents: list[tuple[dict[str, Any], list[dict[str, Any]]]]) -> FrozenProjectionManifest:
-    revision_ids = [UUID(document["id"]) for document, _ in documents]
-    expected_identity = {
-        UUID(document["id"]): (
-            document["metadata"]["input_sha256"],
-            document["metadata"]["content_sha256"],
-        )
-        for document, _ in documents
-    }
-    page_rows = connection.execute(
-        "SELECT region_id, page_id FROM evidence.ocr_region WHERE region_id = ANY(%s::uuid[])",
-        ([UUID(citation["region_id"]) for _, citations in documents for citation in citations],),
-    ).fetchall()
-    page_ids = {row["region_id"]: row["page_id"] for row in page_rows}
-    embedding_rows = connection.execute(
-        """SELECT embedding.target_id, embedding.model_name,
-                  embedding.model_revision, embedding.input_sha256,
-                  embedding.content_sha256, embedding.configuration_sha256,
-                  embedding.embedding::text AS vector
-           FROM retrieval.embedding embedding
-           JOIN evidence.processing_run run USING (run_id)
-           WHERE embedding.target_kind = 'coherent_unit_revision'
-             AND embedding.target_id = ANY(%s::uuid[])
-             AND embedding.model_name = %s AND embedding.model_revision = %s
-             AND run.status = 'completed'
-             AND embedding.configuration_sha256 = %s
-             AND run.configuration->>'policy' = %s
-             AND (run.configuration->>'dimension')::integer = %s""",
-        (
-            revision_ids,
-            COHERENT_CONFIGURATION["model"],
-            COHERENT_CONFIGURATION["revision"],
-            COHERENT_CONFIGURATION["embedding_configuration_sha256"],
-            COHERENT_CONFIGURATION["window_policy"],
-            COHERENT_CONFIGURATION["dimension"],
-        ),
-    ).fetchall()
-    embedding_rows = [
-        row
-        for row in embedding_rows
-        if expected_identity.get(row["target_id"])
-        == (row["input_sha256"], row["content_sha256"])
-    ]
-    if len(embedding_rows) != len(revision_ids):
-        raise CoherentJobError(
-            "Coherent projection requires exact complete embedding coverage"
-        )
-    embeddings = {
-        row["target_id"]: CoherentEmbedding(
-            row["target_id"], "coherent_unit_revision", row["model_name"],
-            row["model_revision"], row["input_sha256"], row["content_sha256"],
-            row["configuration_sha256"],
-            tuple(float(value) for value in row["vector"].strip("[]").split(",")),
-        )
-        for row in embedding_rows
-    }
-    if len(embeddings) != len(embedding_rows):
-        raise CoherentJobError("Coherent projection found duplicate exact embeddings")
-    articles: list[ProjectionArticle] = []
-    for document, citations in documents:
-        revision_id = UUID(document["id"])
-        metadata = document["metadata"]
-        segments = tuple(
-            CoherentTextSegment(
-                citation["sequence_number"], UUID(citation["region_id"]),
-                page_ids[UUID(citation["region_id"])], UUID(citation["selected_text_version_id"]),
-                UUID(citation["text_selection_id"]), citation["region_text_start"],
-                citation["region_text_end"], citation["start_char"], citation["end_char"],
-                citation["exported_text"], citation["role"], citation["polygon"],
-            )
-            for citation in citations
-        )
-        bundle = CoherentTextBundle(
-            revision_id, document["text"], metadata["input_sha256"], segments, (),
-            metadata["content_sha256"], "",
-        )
-        sources = tuple(
-            CoherentSource(
-                citation["sequence_number"],
-                SourcePointer(
-                    source_uri=citation["source_uri"], source_sha256=citation["source_sha256"],
-                    page_id=page_ids[UUID(citation["region_id"])],
-                    derivative_id=UUID(citation["derivative_id"]),
-                    image_uri=citation["source_image_uri"], image_sha256=citation["source_image_sha256"],
-                    evidence_tier=citation["evidence_tier"], volume_number=citation["volume_number"],
-                    publication_year=citation["publication_year"], page_number=citation["page_number"],
-                    region_id=UUID(citation["region_id"]),
-                    text_version_id=UUID(citation["selected_text_version_id"]),
-                    text_selection_id=UUID(citation["text_selection_id"]),
-                    polygon=Polygon.model_validate(citation["polygon"]),
-                    text_start=citation["region_text_start"], text_end=citation["region_text_end"],
-                ),
-            )
-            for citation in citations
-        )
-        articles.append(ProjectionArticle(UUID(metadata["coherent_unit_id"]), document["title"], bundle, sources))
-    return FrozenProjectionManifest.freeze(tuple(articles), tuple(embeddings[item] for item in revision_ids))
-
-
-def execute_coherent_projection(
-    database_url: str, context: CoherentJobContext, *, opensearch_url: str
-) -> StageExecution:
-    psycopg, dict_row = _psycopg()
-    from psycopg.types.json import Jsonb
-
-    projected = None
-    revision_count = 0
-    try:
-        with psycopg.connect(database_url, row_factory=dict_row) as connection:
-            if any(
-                context.configuration.get(key) != value
-                for key, value in COHERENT_CONFIGURATION.items()
-            ) or context.configuration.get("planned_snapshot_sha256") != context.input_fingerprint:
-                raise CoherentJobError("Coherent projection configuration is not pinned")
-            connection.execute(
-                "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))",
-                ("wic-coherent-active-snapshot-v1",),
-            )
-            documents = _active_documents(connection)
-            revisions = _active_revisions(documents)
-            revision_count = len(revisions)
-            ensure_coherent_snapshot(context.input_fingerprint, revisions)
-            manifest = _coherent_manifest(connection, documents)
-            ensure_coherent_snapshot(
-                context.input_fingerprint,
-                _active_revisions(_active_documents(connection)),
-            )
-            projected = project_coherent_units(opensearch_url, manifest)
-            if (
-                projected.documents_indexed != revision_count
-                or projected.documents_indexed < 1
-                or projected.source_snapshot_sha256 != manifest.snapshot_sha256
-            ):
-                raise CoherentJobError(
-                    "Coherent projection core returned a misleading receipt"
-                )
-            connection.execute(
-            """INSERT INTO retrieval.projection_build (
-                   build_id, projection_kind, source_schema_version, configuration,
-                   status, completed_at, artifact_uri, source_snapshot_sha256,
-                   document_count, published_at
-               ) VALUES (%s, 'opensearch_coherent_unit', '1.0', %s, 'completed',
-                         now(), %s, %s, %s, now())""",
-            (
-                UUID(projected.build_id), Jsonb(dict(COHERENT_CONFIGURATION)),
-                f"opensearch://{projected.index_name}", context.input_fingerprint,
-                projected.documents_indexed,
-            ),
-            )
-    except BaseException:
-        if projected is not None:
-            restore_coherent_alias(opensearch_url, projected)
-        raise
-    result = {
-        "projection_build_id": projected.build_id, "index_name": projected.index_name,
-        "documents_indexed": projected.documents_indexed,
-        "source_snapshot_sha256": context.input_fingerprint,
-        "projection_manifest_sha256": projected.source_snapshot_sha256,
-        "planned_snapshot_sha256": context.input_fingerprint,
-        "planned_revision_count": revision_count,
-        "published": True,
-    }
-    return StageExecution(
-        f"opensearch://{projected.index_name}", canonical_sha256(result), result, False
-    )
-
-
 def execute_stage(
     database_url: str,
     context: PageJobContext | AggregateJobContext | CoherentJobContext,
@@ -1950,12 +1785,20 @@ def execute_stage(
         if context.stage == "coherent_unit_embedding":
             execution = execute_coherent_embedding(database_url, context)
             return StageExecution(
-                execution.artifact_uri, execution.output_sha256,
-                execution.result, execution.adopted,
+                execution.artifact_uri,
+                execution.output_sha256,
+                execution.result,
+                execution.adopted,
             )
         if context.stage == "coherent_unit_search_projection":
-            return execute_coherent_projection(
+            execution = execute_coherent_projection(
                 database_url, context, opensearch_url=opensearch_url
+            )
+            return StageExecution(
+                execution.artifact_uri,
+                execution.output_sha256,
+                execution.result,
+                execution.adopted,
             )
         raise ValueError(f"No coherent worker exists for stage {context.stage}")
     if isinstance(context, AggregateJobContext):
@@ -2042,7 +1885,9 @@ class LeaseHeartbeat:
 
     def raise_if_failed(self) -> None:
         if self._error:
-            raise RuntimeError(f"Lease heartbeat failed: {self._error}") from self._error
+            raise RuntimeError(
+                f"Lease heartbeat failed: {self._error}"
+            ) from self._error
 
 
 def run_one(
@@ -2194,6 +2039,8 @@ def run_loop(
         idle_polls=total_idle,
         stop_reason=stop_reason,
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
@@ -2216,9 +2063,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--neo4j-password", default=os.environ.get("NEO4J_PASSWORD"))
     parser.add_argument("--lease-seconds", type=int, default=900)
     parser.add_argument("--retry-delay-seconds", type=int, default=60)
-    parser.add_argument(
-        "--stage", choices=ALL_STAGES
-    )
+    parser.add_argument("--stage", choices=ALL_STAGES)
     parser.add_argument("--batch-id", type=UUID)
     parser.add_argument(
         "--loop",

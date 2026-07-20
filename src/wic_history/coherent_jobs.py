@@ -1,29 +1,36 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
-from typing import Any, Final
+from typing import Final, final
 from uuid import UUID, uuid4
 
-from .article_embedding import ArticleEmbeddingRequest, ReviewedArticleUnavailableError, embed_reviewed_articles
 from .article_embedding_vectors import DIMENSION, POLICY
 from .coherent_search import COHERENT_ALIAS, COHERENT_INDEX_PREFIX, coherent_index_body
+from .coherent_search_contracts import JsonValue
+from .coherent_job_database import (
+    DatabaseConnection,
+    database_clients,
+    lock_coherent_mutation,
+)
+from .coherent_job_hashing import coherent_sha256
 from .model_config import load_pipeline_model_configuration
 from .rag_experiment import REVIEWED_UNIT_EXPORT_SQL, build_coherent_unit_documents
 
 
-_RETRIEVAL_MODEL: Final = load_pipeline_model_configuration().retrieval.passage_embedding
-_MAPPING_SHA256: Final = hashlib.sha256(
-    json.dumps(coherent_index_body(), sort_keys=True, separators=(",", ":")).encode()
-).hexdigest()
-COHERENT_CONFIGURATION: Final[dict[str, str | int]] = {
+_RETRIEVAL_MODEL: Final = (
+    load_pipeline_model_configuration().retrieval.passage_embedding
+)
+_MAPPING_SHA256: Final = coherent_sha256(coherent_index_body())
+COHERENT_CONFIGURATION: Final[dict[str, str | int | bool]] = {
     "engine": "sentence-transformers",
+    "engine_version": "5.6.0",
+    "runtime": "transformers-cpu",
     "model": _RETRIEVAL_MODEL.model_name,
     "revision": _RETRIEVAL_MODEL.model_revision,
     "dimension": DIMENSION,
-    "normalize_embeddings": "true",
+    "normalize_embeddings": True,
     "window_policy": POLICY,
     "tokenizer_limit": 8190,
     "model_limit": 8190,
@@ -36,7 +43,6 @@ COHERENT_CONFIGURATION: Final[dict[str, str | int]] = {
     "mapping_sha256": _MAPPING_SHA256,
 }
 COHERENT_STAGES: Final = ("coherent_unit_embedding", "coherent_unit_search_projection")
-_SNAPSHOT_LOCK: Final = "wic-coherent-active-snapshot-v1"
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +52,7 @@ class ActiveRevision:
     content_sha256: str = ""
 
 
+@final
 class CoherentJobError(RuntimeError):
     def __init__(self, reason: str) -> None:
         super().__init__(reason)
@@ -67,7 +74,7 @@ class CoherentJobContext:
     batch_id: str
     stage: str
     input_fingerprint: str
-    configuration: Mapping[str, Any]
+    configuration: Mapping[str, JsonValue]
     revision_id: UUID | None
 
 
@@ -75,62 +82,61 @@ class CoherentJobContext:
 class CoherentExecution:
     artifact_uri: str
     output_sha256: str
-    result: dict[str, Any]
+    result: dict[str, JsonValue]
     adopted: bool
 
 
 def coherent_plan_key(revisions: tuple[ActiveRevision, ...]) -> str:
     payload = {
         "contract": "wic-coherent-article-jobs-v1",
-        "active_revisions": [asdict(revision) for revision in sorted(revisions, key=lambda item: str(item.revision_id))],
+        "active_revisions": [
+            asdict(revision)
+            for revision in sorted(revisions, key=lambda item: str(item.revision_id))
+        ],
         "configuration": COHERENT_CONFIGURATION,
     }
-    return hashlib.sha256(
-        json.dumps(payload, default=str, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    return coherent_sha256(payload)
 
 
-def lock_coherent_mutation(connection: Any) -> None:
-    connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (_SNAPSHOT_LOCK,))
-
-
-def _psycopg() -> tuple[Any, Any]:
-    import psycopg
-    from psycopg.rows import dict_row
-
-    return psycopg, dict_row
-
-
-def _active_documents(connection: Any) -> list[tuple[dict[str, Any], list[dict[str, Any]]]]:
+def load_active_documents(
+    connection: DatabaseConnection,
+) -> list[tuple[dict[str, JsonValue], list[dict[str, JsonValue]]]]:
     rows = connection.execute(
         REVIEWED_UNIT_EXPORT_SQL, {"volume_number": None, "page_number": None}
     ).fetchall()
     return build_coherent_unit_documents(rows)
 
 
-def _active_revisions(
-    documents: Sequence[tuple[dict[str, Any], list[dict[str, Any]]]],
+def active_revisions(
+    documents: Sequence[tuple[dict[str, JsonValue], list[dict[str, JsonValue]]]],
 ) -> tuple[ActiveRevision, ...]:
-    return tuple(
-        ActiveRevision(
-            UUID(document["id"]),
-            document["metadata"]["input_sha256"],
-            document["metadata"]["content_sha256"],
+    revisions: list[ActiveRevision] = []
+    for document, _ in documents:
+        metadata = document["metadata"]
+        if not isinstance(metadata, Mapping):
+            raise CoherentJobError("Coherent article metadata is invalid")
+        revisions.append(
+            ActiveRevision(
+                UUID(str(document["id"])),
+                str(metadata["input_sha256"]),
+                str(metadata["content_sha256"]),
+            )
         )
-        for document, _ in documents
-    )
+    return tuple(revisions)
 
 
 def enqueue_coherent_jobs(
-    connection: Any, *, created_by: str, max_revisions: int = 1000
+    connection: DatabaseConnection, *, created_by: str, max_revisions: int = 1000
 ) -> CoherentPlanResult:
     if not created_by.strip() or max_revisions < 1:
         raise CoherentJobError("created_by and a positive max_revisions are required")
     lock_coherent_mutation(connection)
-    documents = _active_documents(connection)
-    revisions = _active_revisions(documents)
+    documents = load_active_documents(connection)
+    revisions = active_revisions(documents)
     if len(revisions) > max_revisions:
-        raise CoherentJobError(f"Coherent backfill found {len(revisions)} revisions above the {max_revisions} revision guard")
+        raise CoherentJobError(
+            f"Coherent backfill found {len(revisions)} revisions above the {max_revisions} revision guard"
+        )
     if not revisions:
         return CoherentPlanResult(None, None, 0, 0, False)
     plan_key = coherent_plan_key(revisions)
@@ -143,7 +149,9 @@ def enqueue_coherent_jobs(
         (
             batch_id,
             plan_key,
-            json.dumps({"active_revisions": [asdict(item) for item in revisions]}, default=str),
+            json.dumps(
+                {"active_revisions": [asdict(item) for item in revisions]}, default=str
+            ),
             json.dumps(COHERENT_CONFIGURATION),
             created_by.strip(),
         ),
@@ -155,12 +163,20 @@ def enqueue_coherent_jobs(
         ).fetchone()
         if existing is None:
             raise CoherentJobError("Coherent plan conflict could not be reloaded")
-        return CoherentPlanResult(str(existing["batch_id"]), plan_key, len(revisions), len(revisions) + 1, False)
+        return CoherentPlanResult(
+            str(existing["batch_id"]),
+            plan_key,
+            len(revisions),
+            len(revisions) + 1,
+            False,
+        )
     parent_ids: list[UUID] = []
     for revision in revisions:
         job_id = uuid4()
         parent_ids.append(job_id)
-        fingerprint = _sha256({"revision": asdict(revision), "configuration": COHERENT_CONFIGURATION})
+        fingerprint = coherent_sha256(
+            {"revision": asdict(revision), "configuration": COHERENT_CONFIGURATION}
+        )
         job_configuration = {
             **COHERENT_CONFIGURATION,
             "planned_revision_id": str(revision.revision_id),
@@ -168,16 +184,23 @@ def enqueue_coherent_jobs(
             "planned_content_sha256": revision.content_sha256,
             "planned_embedding_fingerprint": fingerprint,
         }
-        connection.execute(
+        _ = connection.execute(
             """INSERT INTO pipeline.ingestion_job (
                    job_id, batch_id, job_key, stage, scope_kind,
                    coherent_unit_revision_id, input_fingerprint, configuration
                ) VALUES (%s, %s, %s, 'coherent_unit_embedding',
                          'coherent_unit_revision', %s, %s, %s::jsonb)""",
-            (job_id, batch_id, fingerprint, revision.revision_id, fingerprint, json.dumps(job_configuration)),
+            (
+                job_id,
+                batch_id,
+                fingerprint,
+                revision.revision_id,
+                fingerprint,
+                json.dumps(job_configuration),
+            ),
         )
     projection_id = uuid4()
-    connection.execute(
+    _ = connection.execute(
         """INSERT INTO pipeline.ingestion_job (
                job_id, batch_id, job_key, stage, scope_kind,
                input_fingerprint, configuration
@@ -186,7 +209,7 @@ def enqueue_coherent_jobs(
         (
             projection_id,
             batch_id,
-            _sha256({"projection": plan_key}),
+            coherent_sha256({"projection": plan_key}),
             plan_key,
             json.dumps(
                 {
@@ -198,29 +221,35 @@ def enqueue_coherent_jobs(
         ),
     )
     with connection.cursor() as cursor:
-        cursor.executemany(
+        _ = cursor.executemany(
             "INSERT INTO pipeline.ingestion_job_dependency (job_id, depends_on_job_id) VALUES (%s, %s)",
             [(projection_id, parent_id) for parent_id in parent_ids],
         )
-        cursor.executemany(
+        _ = cursor.executemany(
             "INSERT INTO pipeline.ingestion_job_event (job_id, event_type, worker_id) VALUES (%s, 'planned', %s)",
             [(job_id, created_by.strip()) for job_id in (*parent_ids, projection_id)],
         )
-    return CoherentPlanResult(str(batch_id), plan_key, len(revisions), len(revisions) + 1, True)
+    return CoherentPlanResult(
+        str(batch_id), plan_key, len(revisions), len(revisions) + 1, True
+    )
 
 
 def backfill_coherent_jobs(
     database_url: str, *, created_by: str, max_revisions: int
 ) -> CoherentPlanResult:
-    psycopg, dict_row = _psycopg()
+    psycopg, dict_row = database_clients()
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
-        return enqueue_coherent_jobs(
+        result = enqueue_coherent_jobs(
             connection, created_by=created_by, max_revisions=max_revisions
         )
+    return result
 
 
-def load_coherent_job_context(database_url: str, job_id: UUID | str) -> CoherentJobContext:
-    psycopg, dict_row = _psycopg()
+def load_coherent_job_context(
+    database_url: str, job_id: UUID | str
+) -> CoherentJobContext:
+    psycopg, dict_row = database_clients()
+    row: Mapping[str, JsonValue] | None = None
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
         row = connection.execute(
             """SELECT job_id, batch_id, stage, input_fingerprint,
@@ -231,120 +260,15 @@ def load_coherent_job_context(database_url: str, job_id: UUID | str) -> Coherent
         ).fetchone()
     if row is None:
         raise CoherentJobError("Coherent ingestion job does not exist")
-    return CoherentJobContext(str(row["job_id"]), str(row["batch_id"]), row["stage"], row["input_fingerprint"], row["configuration"], row["coherent_unit_revision_id"])
-
-
-def _sha256(value: Mapping[str, Any]) -> str:
-    return hashlib.sha256(
-        json.dumps(value, default=str, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-
-
-def _revision_superseded(database_url: str, revision_id: UUID) -> bool:
-    import psycopg
-
-    with psycopg.connect(database_url) as connection:
-        row = connection.execute(
-            """SELECT superseded_at IS NOT NULL
-               FROM evidence.coherent_unit_revision WHERE revision_id = %s""",
-            (revision_id,),
-        ).fetchone()
-    return bool(row and row[0])
-
-
-def execute_coherent_embedding(
-    database_url: str, context: CoherentJobContext
-) -> CoherentExecution:
-    revision_id = context.revision_id
-    if revision_id is None:
-        raise CoherentJobError("Coherent embedding job lacks its exact revision")
-    planned = ActiveRevision(
-        revision_id,
-        str(context.configuration.get("planned_input_sha256", "")),
-        str(context.configuration.get("planned_content_sha256", "")),
+    configuration = row["configuration"]
+    if not isinstance(configuration, Mapping):
+        raise CoherentJobError("Coherent ingestion configuration is invalid")
+    raw_revision = row["coherent_unit_revision_id"]
+    return CoherentJobContext(
+        str(row["job_id"]),
+        str(row["batch_id"]),
+        str(row["stage"]),
+        str(row["input_fingerprint"]),
+        configuration,
+        None if raw_revision is None else UUID(str(raw_revision)),
     )
-    expected_fingerprint = _sha256(
-        {"revision": asdict(planned), "configuration": COHERENT_CONFIGURATION}
-    )
-    if (
-        any(context.configuration.get(key) != value for key, value in COHERENT_CONFIGURATION.items())
-        or context.configuration.get("planned_revision_id") != str(revision_id)
-        or context.configuration.get("planned_embedding_fingerprint") != expected_fingerprint
-        or context.input_fingerprint != expected_fingerprint
-    ):
-        raise CoherentJobError("Coherent embedding plan fingerprint is invalid")
-    current = next(
-        (
-            item
-            for item in _active_revisions_from_database(database_url)
-            if item.revision_id == revision_id
-        ),
-        None,
-    )
-    if current != planned:
-        result = {
-            "revision_id": str(revision_id),
-            "planned_input_sha256": planned.input_sha256,
-            "planned_content_sha256": planned.content_sha256,
-            "input_fingerprint": expected_fingerprint,
-            "embeddings_inserted": 0,
-            "embeddings_reused": 0,
-            "stale_noop": True,
-            "active": False,
-        }
-        reconciliation = _schedule_current_reconcile(database_url, context.job_id)
-        result["reconciliation_plan_key"] = reconciliation.plan_key
-        result["reconciliation_scheduled"] = True
-        return CoherentExecution(f"coherent-unit://embedding/{revision_id}", _sha256(result), result, False)
-    request = ArticleEmbeddingRequest(
-        database_url,
-        str(context.configuration["model"]),
-        str(context.configuration["revision"]),
-        16,
-        revision_id,
-        str(context.configuration["embedding_configuration_sha256"]),
-    )
-    try:
-        summary = embed_reviewed_articles(request)
-    except ReviewedArticleUnavailableError:
-        if not _revision_superseded(database_url, revision_id):
-            raise
-        reconciliation = _schedule_current_reconcile(database_url, context.job_id)
-        result = {
-            "revision_id": str(revision_id),
-            "planned_input_sha256": planned.input_sha256,
-            "planned_content_sha256": planned.content_sha256,
-            "input_fingerprint": expected_fingerprint,
-            "embeddings_inserted": 0,
-            "embeddings_reused": 0,
-            "stale_noop": True,
-            "active": False,
-            "reconciliation_plan_key": reconciliation.plan_key,
-            "reconciliation_scheduled": True,
-        }
-    else:
-        result = {
-            "revision_id": str(revision_id),
-            "planned_input_sha256": planned.input_sha256,
-            "planned_content_sha256": planned.content_sha256,
-            "input_fingerprint": expected_fingerprint,
-            "embeddings_inserted": summary.embeddings_inserted,
-            "embeddings_reused": summary.embeddings_reused,
-            "stale_noop": False,
-            "active": True,
-        }
-    return CoherentExecution(f"coherent-unit://embedding/{revision_id}", _sha256(result), result, bool(result["embeddings_reused"]))
-
-
-def _active_revisions_from_database(database_url: str) -> tuple[ActiveRevision, ...]:
-    psycopg, dict_row = _psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as connection:
-        return _active_revisions(_active_documents(connection))
-
-
-def _schedule_current_reconcile(database_url: str, worker_id: str) -> CoherentPlanResult:
-    psycopg, dict_row = _psycopg()
-    with psycopg.connect(database_url, row_factory=dict_row) as connection:
-        return enqueue_coherent_jobs(
-            connection, created_by=f"stale-job:{worker_id}", max_revisions=100_000
-        )

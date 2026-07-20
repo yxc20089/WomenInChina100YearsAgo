@@ -13,6 +13,7 @@ from wic_history.coherent_search import (
     CoherentProjectionError,
     FrozenProjectionManifest,
     project_coherent_units,
+    restore_coherent_alias,
 )
 from wic_history.search import DEFAULT_ALIAS
 
@@ -29,6 +30,28 @@ def test_projection_publishes_validated_revision_document(search_server: str) ->
     assert document.year_max == 1926
     assert len(document.sources) == 2
     assert "entity_ids" not in raw_document and "claim_ids" not in raw_document
+    assert result.previous_index_names == ("wic-coherent-units-build-old",)
+
+
+def test_projection_compensation_restores_previous_alias(search_server: str) -> None:
+    projected = project_coherent_units(search_server, manifest())
+    assert OpenSearchFake.aliases[COHERENT_ALIAS] == projected.index_name
+
+    restore_coherent_alias(search_server, projected)
+
+    assert OpenSearchFake.aliases[COHERENT_ALIAS] == "wic-coherent-units-build-old"
+
+
+def test_projection_compensation_refuses_to_overwrite_newer_publish(
+    search_server: str,
+) -> None:
+    projected = project_coherent_units(search_server, manifest())
+    OpenSearchFake.aliases[COHERENT_ALIAS] = "wic-coherent-units-build-newer"
+
+    with pytest.raises(CoherentProjectionError, match="changed"):
+        restore_coherent_alias(search_server, projected)
+
+    assert OpenSearchFake.aliases[COHERENT_ALIAS] == "wic-coherent-units-build-newer"
 
 
 def test_projection_rejects_stale_manifest_before_alias_move(

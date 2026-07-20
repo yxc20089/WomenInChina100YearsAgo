@@ -411,9 +411,7 @@ def create_plan(
     )
     all_requested_stages = (*normalized_stages, *normalized_aggregate_stages)
     stage_configuration = {
-        stage: resolve_stage_configuration(
-            stage, (configuration or {}).get(stage, {})
-        )
+        stage: resolve_stage_configuration(stage, (configuration or {}).get(stage, {}))
         for stage in all_requested_stages
     }
     if not name.strip() or not created_by.strip():
@@ -598,8 +596,7 @@ def create_plan(
             )
             events.append((job_id, created_by.strip()))
             dependencies.extend(
-                (job_id, parent_id)
-                for parent_id in page_stage_ids[dependency_stage]
+                (job_id, parent_id) for parent_id in page_stage_ids[dependency_stage]
             )
         with connection.cursor() as cursor:
             cursor.executemany(
@@ -1036,27 +1033,48 @@ def validate_stage_result(
         stale_noop = result.get("stale_noop")
         active = result.get("active")
         if type(stale_noop) is not bool or type(active) is not bool:
-            raise ValueError("Coherent embedding requires an explicit stale_noop receipt")
+            raise ValueError(
+                "Coherent embedding requires an explicit stale_noop receipt"
+            )
         if coherent_unit_revision_id is not None and result["revision_id"] != str(
             coherent_unit_revision_id
         ):
             raise ValueError("Coherent embedding revision differs from its leased job")
-        if input_fingerprint is not None and result.get("input_fingerprint") != input_fingerprint:
-            raise ValueError("Coherent embedding fingerprint differs from its leased job")
+        if (
+            input_fingerprint is not None
+            and result.get("input_fingerprint") != input_fingerprint
+        ):
+            raise ValueError(
+                "Coherent embedding fingerprint differs from its leased job"
+            )
         if result.get("planned_input_sha256") != configuration.get(
             "planned_input_sha256"
         ) or result.get("planned_content_sha256") != configuration.get(
             "planned_content_sha256"
         ):
-            raise ValueError("Coherent embedding receipt differs from its planned content")
+            raise ValueError(
+                "Coherent embedding receipt differs from its planned content"
+            )
+        if result.get("embedding_configuration_sha256") != configuration.get(
+            "embedding_configuration_sha256"
+        ):
+            raise ValueError(
+                "Coherent embedding receipt differs from its planned configuration"
+            )
         total = result["embeddings_inserted"] + result["embeddings_reused"]
         if stale_noop:
-            if active or total != 0 or result.get("reconciliation_scheduled") is not True:
+            if (
+                active
+                or total != 0
+                or result.get("reconciliation_scheduled") is not True
+            ):
                 raise ValueError("Stale coherent embedding receipt is inconsistent")
             if not re.fullmatch(
                 r"[0-9a-f]{64}", str(result.get("reconciliation_plan_key", ""))
             ):
                 raise ValueError("Stale coherent embedding requires reconciliation")
+            if result.get("reconciliation_plan_key") == input_fingerprint:
+                raise ValueError("Stale coherent embedding requires a current plan")
         elif not active or total != 1:
             raise ValueError("Active coherent embedding requires exactly one artifact")
     elif stage == "ner":
@@ -1103,7 +1121,9 @@ def validate_stage_result(
         if (mentions == 0 and links != 0) or not (
             mentions <= links <= mentions * (top_k + 1)
         ):
-            raise ValueError("Entity-link candidate count contradicts mention/top_k coverage")
+            raise ValueError(
+                "Entity-link candidate count contradicts mention/top_k coverage"
+            )
         if not re.fullmatch(
             r"[0-9a-f]{64}", str(result.get("authority_catalog_sha256", ""))
         ):
@@ -1120,6 +1140,9 @@ def validate_stage_result(
             "wic-coherent-units-build-"
         ):
             raise ValueError("Coherent projection requires its dedicated index prefix")
+        build_id = UUID(str(result["projection_build_id"]))
+        if result["index_name"] != f"wic-coherent-units-build-{build_id.hex}":
+            raise ValueError("Coherent projection build and index identities differ")
         if not re.fullmatch(
             r"[0-9a-f]{64}", str(result.get("source_snapshot_sha256", ""))
         ):
@@ -1130,7 +1153,9 @@ def validate_stage_result(
             input_fingerprint is not None
             and result["source_snapshot_sha256"] != input_fingerprint
         ) or result.get("planned_snapshot_sha256") != planned_snapshot:
-            raise ValueError("Coherent projection receipt differs from its planned snapshot")
+            raise ValueError(
+                "Coherent projection receipt differs from its planned snapshot"
+            )
         if (
             not isinstance(planned_count, int)
             or isinstance(planned_count, bool)
@@ -1138,15 +1163,15 @@ def validate_stage_result(
             or result["documents_indexed"] != planned_count
             or result.get("planned_revision_count") != planned_count
         ):
-            raise ValueError("Coherent projection requires exact positive planned coverage")
+            raise ValueError(
+                "Coherent projection requires exact positive planned coverage"
+            )
         if result.get("published") is not True:
             raise ValueError("Coherent projection receipt must confirm publication")
     elif stage == "rag_export":
         _required_count(result, "documents")
         _required_count(result, "exported_regions")
-        if not re.fullmatch(
-            r"[0-9a-f]{64}", str(result.get("manifest_sha256", ""))
-        ):
+        if not re.fullmatch(r"[0-9a-f]{64}", str(result.get("manifest_sha256", ""))):
             raise ValueError("RAG export requires manifest_sha256")
     elif stage == "graph_projection":
         _required_uuid(result, "projection_build_id")
@@ -1675,7 +1700,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     payload = (
         [asdict(item) for item in result]
         if isinstance(result, list)
-        else asdict(result) if result is not None else None
+        else asdict(result)
+        if result is not None
+        else None
     )
     print(json.dumps(payload, ensure_ascii=False))
     return 0

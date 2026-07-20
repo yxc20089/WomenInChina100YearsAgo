@@ -81,16 +81,14 @@ def project_coherent_units(
         search.close()
 
 
-def restore_coherent_alias(
-    opensearch_url: str, projection: ProjectionResult
-) -> None:
+def restore_coherent_alias(opensearch_url: str, projection: ProjectionResult) -> None:
     search = opensearch_client(opensearch_url)
     try:
         current_response: JsonValue = search.indices.get_alias(
             name=COHERENT_ALIAS, ignore=[404]
         )
         current_indices = parse_alias_response(current_response)
-        if current_indices != {projection.index_name}:
+        if current_indices != (projection.index_name,):
             raise CoherentProjectionError(
                 "coherent alias changed after publication; compensation refused"
             )

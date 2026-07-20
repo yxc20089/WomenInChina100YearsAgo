@@ -20,7 +20,7 @@ header, main { width: min(980px, calc(100% - 36px)); margin: 0 auto; }
 header { padding: 72px 0 42px; border-bottom: 1px solid var(--ink); }
 .header-actions { display: flex; gap: 20px; }
 .eyebrow { color: var(--red); letter-spacing: .18em; font-weight: bold; }
-h1 { margin: 8px 0 20px; font-size: clamp(3rem, 9vw, 6.8rem); line-height: .84; letter-spacing: -.06em; }
+h1 { margin: 8px 0 20px; font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1; letter-spacing: -.02em; }
 .lede { max-width: 680px; color: var(--muted); font-size: 1.12rem; line-height: 1.55; }
 main { padding: 38px 0 100px; }
 form { background: rgba(255,255,255,.3); border: 1px solid var(--line); padding: 24px; }
@@ -42,7 +42,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .warning { margin: 16px 0; padding: 12px 15px; border-left: 4px solid var(--red); background: #eadbca; }
 .results { margin-top: 18px; }
 .result-card { display: grid; grid-template-columns: 48px 1fr; gap: 18px; padding: 26px 0; border-bottom: 1px solid var(--line); }
-.rank { font-size: 2.2rem; color: var(--red); font-style: italic; }
+.rank { font-size: 2.2rem; color: var(--red); }
 .citation { margin: 0 0 8px; color: var(--muted); letter-spacing: .04em; }
 blockquote { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.35; }
 .score { color: var(--muted); font-size: .85rem; }

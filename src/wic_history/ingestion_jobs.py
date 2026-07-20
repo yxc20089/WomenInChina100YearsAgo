@@ -12,6 +12,12 @@ from datetime import timedelta
 from typing import Any, Iterable, Sequence
 from uuid import UUID, uuid4
 
+from .coherent_job_validation import (
+    CoherentEmbeddingResultValidation,
+    CoherentProjectionResultValidation,
+    validate_coherent_unit_embedding_result,
+    validate_coherent_unit_search_projection_result,
+)
 from .coherent_jobs import COHERENT_STAGES, backfill_coherent_jobs
 from .model_config import load_pipeline_model_configuration
 
@@ -1027,56 +1033,14 @@ def validate_stage_result(
         _required_uuid(result, "embedding_run_id")
         _required_count(result, "embeddings")
     elif stage == "coherent_unit_embedding":
-        _required_uuid(result, "revision_id")
-        _required_count(result, "embeddings_inserted")
-        _required_count(result, "embeddings_reused")
-        stale_noop = result.get("stale_noop")
-        active = result.get("active")
-        if type(stale_noop) is not bool or type(active) is not bool:
-            raise ValueError(
-                "Coherent embedding requires an explicit stale_noop receipt"
+        validate_coherent_unit_embedding_result(
+            CoherentEmbeddingResultValidation(
+                configuration,
+                result,
+                input_fingerprint,
+                coherent_unit_revision_id,
             )
-        if coherent_unit_revision_id is not None and result["revision_id"] != str(
-            coherent_unit_revision_id
-        ):
-            raise ValueError("Coherent embedding revision differs from its leased job")
-        if (
-            input_fingerprint is not None
-            and result.get("input_fingerprint") != input_fingerprint
-        ):
-            raise ValueError(
-                "Coherent embedding fingerprint differs from its leased job"
-            )
-        if result.get("planned_input_sha256") != configuration.get(
-            "planned_input_sha256"
-        ) or result.get("planned_content_sha256") != configuration.get(
-            "planned_content_sha256"
-        ):
-            raise ValueError(
-                "Coherent embedding receipt differs from its planned content"
-            )
-        if result.get("embedding_configuration_sha256") != configuration.get(
-            "embedding_configuration_sha256"
-        ):
-            raise ValueError(
-                "Coherent embedding receipt differs from its planned configuration"
-            )
-        total = result["embeddings_inserted"] + result["embeddings_reused"]
-        if stale_noop:
-            if (
-                active
-                or total != 0
-                or result.get("reconciliation_scheduled") is not True
-            ):
-                raise ValueError("Stale coherent embedding receipt is inconsistent")
-            if not re.fullmatch(
-                r"[0-9a-f]{64}", str(result.get("reconciliation_plan_key", ""))
-            ):
-                raise ValueError("Stale coherent embedding requires reconciliation")
-            if result.get("reconciliation_plan_key") == input_fingerprint:
-                raise ValueError("Stale coherent embedding requires a current plan")
-        elif not active or total != 1:
-            raise ValueError("Active coherent embedding requires exactly one artifact")
+        )
     elif stage == "ner":
         _required_uuid(result, "ner_run_id")
         for field in (
@@ -1134,40 +1098,13 @@ def validate_stage_result(
         if not str(result.get("index_name", "")).startswith("wic-regions-"):
             raise ValueError("Search projection requires managed index_name")
     elif stage == "coherent_unit_search_projection":
-        _required_uuid(result, "projection_build_id")
-        _required_count(result, "documents_indexed")
-        if not str(result.get("index_name", "")).startswith(
-            "wic-coherent-units-build-"
-        ):
-            raise ValueError("Coherent projection requires its dedicated index prefix")
-        build_id = UUID(str(result["projection_build_id"]))
-        if result["index_name"] != f"wic-coherent-units-build-{build_id.hex}":
-            raise ValueError("Coherent projection build and index identities differ")
-        if not re.fullmatch(
-            r"[0-9a-f]{64}", str(result.get("source_snapshot_sha256", ""))
-        ):
-            raise ValueError("Coherent projection requires source_snapshot_sha256")
-        planned_snapshot = configuration.get("planned_snapshot_sha256")
-        planned_count = configuration.get("planned_revision_count")
-        if (
-            input_fingerprint is not None
-            and result["source_snapshot_sha256"] != input_fingerprint
-        ) or result.get("planned_snapshot_sha256") != planned_snapshot:
-            raise ValueError(
-                "Coherent projection receipt differs from its planned snapshot"
+        validate_coherent_unit_search_projection_result(
+            CoherentProjectionResultValidation(
+                configuration,
+                result,
+                input_fingerprint,
             )
-        if (
-            not isinstance(planned_count, int)
-            or isinstance(planned_count, bool)
-            or planned_count < 1
-            or result["documents_indexed"] != planned_count
-            or result.get("planned_revision_count") != planned_count
-        ):
-            raise ValueError(
-                "Coherent projection requires exact positive planned coverage"
-            )
-        if result.get("published") is not True:
-            raise ValueError("Coherent projection receipt must confirm publication")
+        )
     elif stage == "rag_export":
         _required_count(result, "documents")
         _required_count(result, "exported_regions")

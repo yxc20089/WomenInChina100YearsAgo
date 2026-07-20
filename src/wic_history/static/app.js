@@ -705,10 +705,16 @@ function render(data) {
   sceneButton.disabled = false;
 }
 
-form.addEventListener('submit', async event => {
-  event.preventDefault();
+const submitButton = form.querySelector('button[type="submit"]');
+const modeSelect = document.querySelector('#mode');
+
+async function runSearch() {
+  if (!document.querySelector('#query').value.trim()) return;
   lastRequest = requestBody();
   status.textContent = lastRequest.mode === 'lexical' ? 'Searching…' : 'Loading multilingual retrieval model…';
+  submitButton.disabled = true;
+  submitButton.textContent = 'Searching…';
+  modeSelect.disabled = true;
   contextButton.disabled = true;
   chatButton.disabled = true;
   contextPanel.hidden = true;
@@ -720,7 +726,21 @@ form.addEventListener('submit', async event => {
     render(await response.json());
   } catch (error) {
     status.textContent = `Search failed: ${error.message}`;
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Search';
+    modeSelect.disabled = false;
   }
+}
+
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  runSearch();
+});
+
+// Re-run automatically when the mode changes, so the toggle feels live.
+document.querySelector('#mode').addEventListener('change', () => {
+  if (lastRequest) runSearch();
 });
 
 async function generate(task, button) {

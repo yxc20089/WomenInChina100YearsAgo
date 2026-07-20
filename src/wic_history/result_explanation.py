@@ -169,18 +169,17 @@ def _context_payload(
     evidence: list[EvidenceAlias],
 ) -> dict[str, Any]:
     aliases = {item.sequence_number: item.evidence_id for item in evidence}
+    # Request-scoped alias boundary: the model only ever sees E identifiers.
+    # Real revision/region UUIDs stay server-side (the E-id -> UUID mapping
+    # lives in `evidence`), so the model cannot echo or fabricate a true id.
     return {
         "task": "explain_selected_coherent_result",
         "research_query": query,
-        "revision_id": str(target.bundle.coherent_unit_revision_id),
         "authority": target.authority.value,
         "authority_note": target.authority_note,
-        "content_sha256": target.bundle.content_sha256,
         "segments": [
             {
                 "evidence_id": aliases[segment.sequence_number],
-                "sequence_number": segment.sequence_number,
-                "region_id": str(segment.region_id),
                 "role": segment.role,
                 "text": segment.text,
             }
@@ -213,8 +212,10 @@ def prepare_explanation_messages(
                 "dates, and uncertainty. Return one JSON object with exactly these keys: "
                 "plain_language_gloss (string), ambiguous_phrases (array of objects with phrase, "
                 "explanation, evidence_ids), limitations (nonempty string array), and evidence_ids "
-                "(nonempty string array). Use only the supplied E identifiers. Every interpretation "
-                "must name the supporting E identifiers; do not emit UUID citations.\n\nCONTEXT_JSON\n"
+                "(nonempty string array). Use only the supplied E identifiers and never emit UUID "
+                "citations. Top-level evidence_ids lists the passages the whole gloss rests on; each "
+                "ambiguous_phrases entry must additionally name the specific E identifiers its own "
+                "explanation depends on.\n\nCONTEXT_JSON\n"
                 + json.dumps(context, ensure_ascii=False, sort_keys=True)
             ),
         },
@@ -242,7 +243,10 @@ def _parse_model_output(
     invalid = sorted(referenced - allowed)
     if invalid:
         return None, ["Model output contains out-of-context evidence identifiers: " + ", ".join(invalid)]
-    if len(set(parsed.evidence_ids)) != len(parsed.evidence_ids):
+    citation_lists = [parsed.evidence_ids] + [
+        phrase.evidence_ids for phrase in parsed.ambiguous_phrases
+    ]
+    if any(len(set(ids)) != len(ids) for ids in citation_lists):
         return None, ["Model output contains duplicate evidence identifiers."]
     return parsed, []
 

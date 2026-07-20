@@ -12,7 +12,9 @@ from wic_history.result_explanation import (
     ExplanationAuthority,
     ExplanationStatus,
     ExplanationTarget,
+    _evidence,
     explain_result,
+    prepare_explanation_messages,
 )
 from wic_history.semantic_inputs import CoherentTextBundle, CoherentTextSegment
 
@@ -147,3 +149,31 @@ def test_explain_result_api_loads_target_by_revision_id() -> None:
     assert response.json()["status"] == "completed"
     assert response.json()["evidence"][0]["evidence_id"] == "E1"
     loader.assert_called_once_with("postgresql://example", REVISION_ID)
+
+
+def test_model_context_excludes_real_uuids() -> None:
+    passage = target()
+    messages, _, _ = prepare_explanation_messages(
+        passage, "女学生教育", _evidence(passage)
+    )
+    prompt = messages[1]["content"]
+    assert str(REVISION_ID) not in prompt
+    for region_id in REGION_IDS:
+        assert str(region_id) not in prompt
+    assert "E1" in prompt and "E2" in prompt
+
+
+def test_explain_result_rejects_duplicate_ids_in_ambiguous_phrases() -> None:
+    class DuplicateGenerator(FakeGenerator):
+        def complete(self, messages):
+            return (
+                '{"plain_language_gloss":"g",'
+                '"ambiguous_phrases":[{"phrase":"x","explanation":"y",'
+                '"evidence_ids":["E1","E1"]}],'
+                '"limitations":["l"],"evidence_ids":["E1"]}'
+            )
+
+    result = explain_result(target(), "女学生教育", DuplicateGenerator())
+
+    assert result.status == ExplanationStatus.REJECTED
+    assert "duplicate" in result.validation_errors[0].lower()

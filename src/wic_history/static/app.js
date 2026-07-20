@@ -706,6 +706,7 @@ function render(data) {
 }
 
 const submitButton = form.querySelector('button[type="submit"]');
+const modeSelect = document.querySelector('#mode');
 
 async function runSearch() {
   if (!document.querySelector('#query').value.trim()) return;
@@ -713,6 +714,7 @@ async function runSearch() {
   status.textContent = lastRequest.mode === 'lexical' ? 'Searching…' : 'Loading multilingual retrieval model…';
   submitButton.disabled = true;
   submitButton.textContent = 'Searching…';
+  modeSelect.disabled = true;
   contextButton.disabled = true;
   chatButton.disabled = true;
   contextPanel.hidden = true;
@@ -727,6 +729,7 @@ async function runSearch() {
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = 'Search';
+    modeSelect.disabled = false;
   }
 }
 

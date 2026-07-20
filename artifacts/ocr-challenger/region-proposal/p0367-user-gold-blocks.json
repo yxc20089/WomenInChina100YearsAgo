@@ -1,0 +1,76 @@
+{
+ "page": "v230/p0367",
+ "source": "user screenshots 2026-07-19 23:24, template-matched \u00b110px",
+ "blocks": [
+  {
+   "stamp": "11.24.17",
+   "bbox_source_xyxy": [
+    5256,
+    512,
+    6158,
+    1538
+   ],
+   "match": 0.825
+  },
+  {
+   "stamp": "11.24.37",
+   "bbox_source_xyxy": [
+    3256,
+    2488,
+    6177,
+    3438
+   ],
+   "match": 0.539
+  },
+  {
+   "stamp": "11.24.43",
+   "bbox_source_xyxy": [
+    3288,
+    3456,
+    6172,
+    4390
+   ],
+   "match": 0.576
+  },
+  {
+   "stamp": "11.24.24",
+   "bbox_source_xyxy": [
+    5320,
+    1520,
+    6173,
+    2476
+   ],
+   "match": 0.846
+  },
+  {
+   "stamp": "11.24.10",
+   "bbox_source_xyxy": [
+    3248,
+    544,
+    5316,
+    2515
+   ],
+   "match": 0.671
+  },
+  {
+   "stamp": "11.23.54",
+   "bbox_source_xyxy": [
+    344,
+    536,
+    3330,
+    4456
+   ],
+   "match": 0.565
+  },
+  {
+   "stamp": "11.24.53",
+   "bbox_source_xyxy": [
+    312,
+    4368,
+    6187,
+    8326
+   ],
+   "match": 0.511
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "page": "v219/p0309",
+ "scope": "bottom-left half",
+ "source": "user screenshots 2026-07-19 23:27, template-matched \u00b110px",
+ "blocks": [
+  {
+   "stamp": "11.27.11",
+   "bbox_source_xyxy": [
+    3552,
+    4432,
+    4664,
+    8360
+   ],
+   "match": 0.871
+  },
+  {
+   "stamp": "11.27.22",
+   "bbox_source_xyxy": [
+    2520,
+    4400,
+    3592,
+    8344
+   ],
+   "match": 0.98
+  },
+  {
+   "stamp": "11.27.29",
+   "bbox_source_xyxy": [
+    1736,
+    4432,
+    2608,
+    8336
+   ],
+   "match": 0.866
+  },
+  {
+   "stamp": "11.27.38",
+   "bbox_source_xyxy": [
+    320,
+    4456,
+    1784,
+    8352
+   ],
+   "match": 0.97
+  }
+ ]
+}

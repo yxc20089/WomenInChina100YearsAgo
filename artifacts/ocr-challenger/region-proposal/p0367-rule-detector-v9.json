@@ -4,116 +4,202 @@
  "semantic_boundary_authority": "none",
  "image": "artifacts/ingestion-pages/jobs/e0b428e6-584e-4e2e-8e4d-7390120a8071/images/v230/p0367.png",
  "counts": {
-  "rejected_short": 1262,
-  "rejected_embedded": 55,
-  "medium_rule": 5,
-  "rejected_crooked": 2,
-  "rejected_discontinuous": 47,
-  "thin_rule": 4,
-  "rejected_text_signature": 40,
-  "no_ink": 7,
+  "rejected_short": 574,
+  "rejected_embedded": 32,
+  "medium_rule": 6,
+  "rejected_discontinuous": 20,
+  "thin_rule": 5,
+  "rejected_text_signature": 15,
+  "no_ink": 2,
   "dotted_rule": 1,
-  "closed_view_solid_skipped": 9,
-  "motif_rule": 3,
-  "rescued_thin_rule": 1
+  "sweep_medium_rule": 8,
+  "sweep_thin_rule": 5,
+  "sweep_dotted_rule": 10,
+  "chain_leader_stack_dropped": 6
  },
  "rules": {
   "h": [
    [
-    393,
-    5340,
+    4800,
+    6185,
+    500,
+    "medium_rule"
+   ],
+   [
+    386,
+    6185,
     563,
     "medium_rule"
    ],
    [
-    5403,
-    6098,
-    4333,
+    386,
+    3277,
+    620,
+    "thin_rule"
+   ],
+   [
+    4791,
+    6185,
+    2460,
+    "thin_rule"
+   ],
+   [
+    4361,
+    6185,
+    3420,
     "thin_rule"
    ],
    [
     386,
-    4246,
-    4430,
+    6185,
+    4407,
     "thin_rule"
    ],
    [
-    401,
-    2259,
-    6418,
-    "motif_rule"
+    386,
+    6185,
+    8260,
+    "medium_rule"
    ],
    [
-    3924,
-    5933,
-    7202,
-    "motif_rule"
-   ],
-   [
-    401,
+    386,
     3907,
     8316,
+    "medium_rule"
+   ],
+   [
+    4864,
+    6185,
+    8340,
+    "dotted_rule"
+   ],
+   [
+    7,
+    2399,
+    8900,
     "medium_rule"
    ]
   ],
   "v": [
    [
-    2320,
-    4430,
+    563,
+    8900,
     386,
     "medium_rule"
    ],
    [
     563,
-    1814,
+    8900,
     393,
     "medium_rule"
    ],
    [
-    1954,
-    8316,
-    401,
-    "medium_rule"
+    1600,
+    4559,
+    1380,
+    "dotted_rule"
    ],
    [
-    1480,
-    4430,
-    1489,
-    "motif_rule"
+    1698,
+    4550,
+    1580,
+    "dotted_rule"
    ],
    [
     563,
-    4430,
-    3277,
+    4407,
+    2020,
+    "dotted_rule"
+   ],
+   [
+    563,
+    2396,
+    3140,
+    "dotted_rule"
+   ],
+   [
+    563,
+    4407,
+    3220,
     "thin_rule"
    ],
    [
     563,
-    2420,
+    4407,
+    3277,
+    "thin_rule"
+   ],
+   [
+    500,
+    2460,
     5295,
     "thin_rule"
    ],
    [
     431,
-    1355,
+    2750,
     5340,
     "thin_rule"
    ],
    [
-    6320,
-    6995,
-    6005,
-    "dotted_rule"
+    0,
+    8961,
+    6171,
+    "medium_rule"
    ]
   ]
  },
  "cells": [
   [
-   8,
-   8,
-   6176,
-   8952
+   5297,
+   555,
+   6185,
+   2529
+  ],
+  [
+   3219,
+   568,
+   6185,
+   4355
+  ],
+  [
+   2063,
+   568,
+   3230,
+   4349
+  ],
+  [
+   387,
+   568,
+   2082,
+   4351
+  ],
+  [
+   391,
+   4337,
+   6185,
+   8198
+  ],
+  [
+   391,
+   8188,
+   6189,
+   8947
   ]
  ],
- "score_vs_gold": null
+ "score_vs_gold": {
+  "gold_total": 7,
+  "iou_ge_06": 1,
+  "iou_ge_05": 2,
+  "median_iou": 0.462,
+  "per_block": [
+   0.462,
+   0.247,
+   0.229,
+   0.465,
+   0.357,
+   0.548,
+   0.947
+  ]
+ }
 }

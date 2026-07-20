@@ -67,7 +67,9 @@ def classify_full(m, frame_zone=False):
         return ("motif_rule", "ornament chain")
     if m["length"] < 500:
         return ("rejected_short", "")
-    if m["straightness_std"] is None or m["straightness_std"] > 4.0:
+    # 4.6 ceiling: p0367's real bead-adjacent band boundaries measure
+    # 4.08-4.46 (multi-object chains warp more than solid rules)
+    if m["straightness_std"] is None or m["straightness_std"] > 4.6:
         return ("rejected_crooked", f"resid {m['straightness_std']}")
     # object-level continuity (operator definition): a rule's interior gaps
     # are print damage of a few px; fill near 1.0 by construction. Hairline
@@ -90,9 +92,13 @@ def classify_full(m, frame_zone=False):
         return ("rejected_embedded", f"flank_min {m['flank_min']:.2f}")
     u = m["thickness_uniformity"] or 9
     p90 = m["p90_thickness"] or 99
-    if m["median_thickness"] <= 28 and p90 <= 42 and u <= 2.0 and m["flank_ink"] <= 0.45:
+    # frame-zone rules carry the page's bead border on their outer flank, so
+    # flank_ink relaxes there (flank_min already exempt); u 2.15 admits the
+    # p0367 photo-block top edge (2.09) with margin below text strokes (~3.0)
+    flank_cap = 0.85 if frame_zone else 0.45
+    if m["median_thickness"] <= 28 and p90 <= 42 and u <= 2.15 and m["flank_ink"] <= flank_cap:
         return ("thin_rule" if m["median_thickness"] <= 12 else "medium_rule", "ok")
-    if m["median_thickness"] > 28 and u <= 1.8 and m["flank_ink"] <= 0.25:
+    if m["median_thickness"] > 28 and u <= 1.8 and m["flank_ink"] <= (0.85 if frame_zone else 0.25):
         return ("thick_band", "")
     # textured/brush-printed rule: uniformity fails on ragged edges, but a
     # long straight continuous ISOLATED stroke can only be a rule
@@ -291,8 +297,14 @@ def detect(src, ink, mask_boxes, image_boxes, chain_views=False):
             dim = src.shape[0] if axis == "h" else src.shape[1]
             cls, _why = classify_full(m, frame_zone=(P < 250 or P > dim - 250))
             if chain_only and cls in RULE_CLASSES and cls not in ("dotted_rule", "motif_rule"):
-                counts["closed_view_solid_skipped"] += 1
-                continue
+                # closed-view solids are kept only when raw Hough missed the
+                # rule entirely (p0309 x3592); otherwise they are shifted
+                # duplicates of raw walls
+                dup = any(abs(r[2] - P) <= 20 and min(r[1], HI) - max(r[0], LO) > 0.3 * (HI - LO)
+                          for r in accepted[axis])
+                if dup:
+                    counts["closed_view_dup_skipped"] += 1
+                    continue
             counts[cls] += 1
             if cls in RULE_CLASSES:
                 if cls in ("dotted_rule", "motif_rule"):
@@ -306,9 +318,21 @@ def detect(src, ink, mask_boxes, image_boxes, chain_views=False):
                     else:
                         counts["masked_title_contained"] += 1
                     continue
-                # seed = the measured continuous object, not the loose Hough span
-                sLO = LO + m["obj_offset_lo"]
-                sHI = LO + m["obj_offset_hi"]
+                # seed = the measured continuous object, not the loose Hough
+                # span. DASHED rules (many collinear thin objects, p0309
+                # column rules: nobj to 41, cov>=0.6) seed at the full object
+                # row — the solid-ink walker cannot ride their dots.
+                dashed = ((m.get("n_objects") or 1) >= 5
+                          and (m.get("obj_span_coverage") or 0) >= 0.6
+                          and (m["p90_thickness"] or 99) <= 14
+                          and (m.get("hollow_fraction") or 0) <= 0.15
+                          and (m["all_obj_hi"] - m["all_obj_lo"]) >= 1.3 * m["length"])
+                if dashed:
+                    sLO = LO + m["all_obj_lo"]
+                    sHI = LO + m["all_obj_hi"]
+                else:
+                    sLO = LO + m["obj_offset_lo"]
+                    sHI = LO + m["obj_offset_hi"]
                 if title_contained(axis, P, sLO, sHI):
                     counts["masked_title_contained"] += 1
                     continue
@@ -320,6 +344,50 @@ def detect(src, ink, mask_boxes, image_boxes, chain_views=False):
                   and m["fill"] >= 0.7
                   and m["straightness_std"] is not None and m["straightness_std"] <= 4.0):
                 fragments[axis].append((P, LO + m["obj_offset_lo"], LO + m["obj_offset_hi"]))
+    # DENSE SWEEP: Hough repeatedly proved candidate-incomplete (warp
+    # shatter, sparse chains, dashed columns — p0309 x3592 had no candidate
+    # at all). measure_line is the validated detector: probe a 40px perp
+    # grid in overlapping 1600px windows with the full classifier;
+    # duplicates of existing walls are dropped.
+    for axis in ("h", "v"):
+        dim_perp = src.shape[0] if axis == "h" else src.shape[1]
+        dim_along = src.shape[1] if axis == "h" else src.shape[0]
+        for P in range(60, dim_perp - 60, 40):
+            for wlo in range(0, max(1, dim_along - 800), 800):
+                whi = min(dim_along, wlo + 1600)
+                m = measure_line(ink, axis, P, wlo, whi, band=45)
+                if not m or not m.get("present"):
+                    continue
+                cls, _why = classify_full(m, frame_zone=(P < 250 or P > dim_perp - 250))
+                # sweep recovers page-scale structure only: the sparsity-gated
+                # motif class collapses in confined windows (135 spurious hits
+                # on p0309), and short internal rules stay Hough's job
+                if cls not in RULE_CLASSES or cls == "motif_rule":
+                    continue
+                if cls == "dotted_rule" or (
+                        (m.get("n_objects") or 1) >= 5
+                        and (m.get("obj_span_coverage") or 0) >= 0.6
+                        and (m["p90_thickness"] or 99) <= 14
+                        and (m.get("hollow_fraction") or 0) <= 0.15
+                        and (m["all_obj_hi"] - m["all_obj_lo"]) >= 1.3 * m["length"]):
+                    sLO, sHI = wlo + m["all_obj_lo"], wlo + m["all_obj_hi"]
+                    walkable = cls != "dotted_rule"
+                else:
+                    sLO, sHI = wlo + m["obj_offset_lo"], wlo + m["obj_offset_hi"]
+                    walkable = True
+                if sHI - sLO < 1200:
+                    continue
+                if masked(sLO, sHI, P, axis, mask_boxes, image_boxes) or title_contained(axis, P, sLO, sHI):
+                    continue
+                dup = any(abs(r[2] - P) <= 45 and min(r[1], sHI) - max(r[0], sLO) > 0.5 * (sHI - sLO)
+                          for r in accepted[axis])
+                if dup:
+                    continue
+                counts["sweep_" + cls] += 1
+                if walkable:
+                    accepted[axis].append([walk(ink, axis, P, sLO, -1), walk(ink, axis, P, sHI, +1), P, cls])
+                else:
+                    accepted[axis].append([sLO, sHI, P, cls])
     # chain classes mark isolated boundary ornament only. Catalog dot-leaders
     # (p0308 baidai ad) match the gates but come in STACKS: measured leader
     # pitch 118px vs the closest real boundary pair 128px (p0367 box edge +
@@ -380,25 +448,81 @@ def merge(ink, rr, axis):
                 q[1] = max(q[1], r[1])
                 continue
         out.append(list(r))
-    return out
+    # collinear-gap chaining: same physical rule broken by damage/junction —
+    # p0367's left frame split into segments 8px apart in perp with a 140px
+    # span hole, which overlap-gated merging can never join
+    out.sort(key=lambda r: (r[2], r[0]))
+    chained = []
+    for r in out:
+        if chained:
+            q = chained[-1]
+            if abs(q[2] - r[2]) <= 12 and 0 <= r[0] - q[1] <= 400:
+                q[1] = max(q[1], r[1])
+                if r[1] - r[0] > q[1] - q[0]:
+                    q[2] = r[2]
+                continue
+        chained.append(r)
+    return chained
 
 
-def snap_all(accepted, snap=520, tol=60):
+def extend_walls(accepted, ink, shape):
+    """Iterative wall extension: sweep/Hough windows repeatedly missed the
+    continuation of walls they found elsewhere (p0367 band rule accepted as
+    [4791,6185] where the printed rule spans [3256,6177] — the confined gold
+    probe classified the full span cleanly). Anchor a probe window just
+    beyond each dangling end at the wall's own perp; extend while the
+    classifier keeps accepting rule ink that reaches the end."""
+    for axis in ("h", "v"):
+        dim_perp = shape[0] if axis == "h" else shape[1]
+        dim_along = shape[1] if axis == "h" else shape[0]
+        for r in accepted[axis]:
+            for side in (0, 1):
+                for _ in range(4):
+                    if side == 0:
+                        wlo, whi = max(0, r[0] - 1400), min(dim_along, r[0] + 200)
+                    else:
+                        wlo, whi = max(0, r[1] - 200), min(dim_along, r[1] + 1400)
+                    if whi - wlo < 400:
+                        break
+                    m = measure_line(ink, axis, r[2], wlo, whi, band=45)
+                    if not m or not m.get("present"):
+                        break
+                    cls, _why = classify_full(
+                        m, frame_zone=(r[2] < 250 or r[2] > dim_perp - 250))
+                    if cls not in RULE_CLASSES:
+                        break
+                    alo, ahi = wlo + m["all_obj_lo"], wlo + m["all_obj_hi"]
+                    if side == 0:
+                        if ahi < r[0] - 100 or alo >= r[0] - 50:
+                            break
+                        r[0] = alo
+                    else:
+                        if alo > r[1] + 100 or ahi <= r[1] + 50:
+                            break
+                        r[1] = ahi
+    return accepted
+
+
+def snap_all(accepted, shape, snap=520, frame_snap=900, tol=60):
     # blind junction snap: no observed defect came from snap; corridor-gated
     # variants blocked legitimate closures (perpendicular crossing rules read
-    # as strokes) and broke the grid (v7 calibration, 2026-07-19)
-    def snap_rules(prim, cross):
+    # as strokes) and broke the grid (v7 calibration, 2026-07-19). Long snaps
+    # are allowed only TOWARD page-frame rules (blank margins — p0367's mid
+    # divider ends 824px from the right frame); interior junctions keep the
+    # proven 520 cap (900 globally re-broke p0308).
+    def snap_rules(prim, cross, cross_dim):
         for r in prim:
             for c in cross:
+                cap = frame_snap if (c[2] < 250 or c[2] > cross_dim - 250) else snap
                 if c[0] - tol <= r[2] <= c[1] + tol:
-                    if 0 < r[0] - c[2] <= snap:
+                    if 0 < r[0] - c[2] <= cap:
                         r[0] = c[2]
-                    if 0 < c[2] - r[1] <= snap:
+                    if 0 < c[2] - r[1] <= cap:
                         r[1] = c[2]
         return prim
     for _ in range(2):
-        accepted["h"] = snap_rules(accepted["h"], accepted["v"])
-        accepted["v"] = snap_rules(accepted["v"], accepted["h"])
+        accepted["h"] = snap_rules(accepted["h"], accepted["v"], shape[1])
+        accepted["v"] = snap_rules(accepted["v"], accepted["h"], shape[0])
     return accepted
 
 
@@ -541,8 +665,7 @@ def main() -> int:
     parser.add_argument("--gold", default="", help="gold blocks JSON for scoring")
     parser.add_argument("--overlay-out", default="")
     parser.add_argument("--chain-views", action="store_true",
-                        help="add gap-closed candidate views for motif/dotted chain borders "
-                             "(WIP calibration: can over-fire on catalog leaders and glyph columns)")
+                        help="add gap-closed candidate views (superseded by the dense sweep; off by default)")
     parser.add_argument("--show-rules", action="store_true",
                         help="also draw accepted rules by class (diagnostic); default shows only final cells")
     parser.add_argument("--output", required=True)
@@ -570,7 +693,8 @@ def main() -> int:
     accepted, counts = detect(src, ink, mask_boxes, image_boxes, chain_views=args.chain_views)
     for ax in accepted:
         accepted[ax] = merge(ink, accepted[ax], ax)
-    accepted = snap_all(accepted)
+    accepted = extend_walls(accepted, ink, src.shape)
+    accepted = snap_all(accepted, src.shape)
     walls = wall_geometry(accepted, ink)
     cells = cells_from(walls, src.shape)
     cells = merge_boxed_cells(cells, ink, image_boxes + mask_boxes)

@@ -7,6 +7,19 @@ from wic_history.migrate import migration_files
 
 
 class DatabaseContractTests(unittest.TestCase):
+    def test_legacy_embedding_identity_is_global_and_hashless(self):
+        # Given: the original retrieval embedding schema.
+        sql = Path("db/migrations/001_evidence_schema.sql").read_text(encoding="utf-8")
+
+        # When: its identity and columns are inspected.
+        embedding_sql = sql.partition("CREATE TABLE IF NOT EXISTS retrieval.embedding (")[2].partition(");")[0]
+
+        # Then: legacy rows use the global model/target identity without hashes.
+        self.assertIn("UNIQUE (target_kind, target_id, model_name, model_revision)", embedding_sql)
+        self.assertNotIn("input_sha256", embedding_sql)
+        self.assertNotIn("content_sha256", embedding_sql)
+        self.assertNotIn("configuration_sha256", embedding_sql)
+
     def test_evidence_migration_contains_required_layers_and_constraints(self):
         sql = Path("db/migrations/001_evidence_schema.sql").read_text(encoding="utf-8")
         for fragment in [
@@ -47,8 +60,89 @@ class DatabaseContractTests(unittest.TestCase):
                 "019_batch_identity_resolution.sql",
                 "020_identity_candidate_model_runs.sql",
                 "021_authoritative_visual_outputs_local_identity.sql",
+                "022_coherent_unit_article_search.sql",
             ],
         )
+
+    def test_coherent_unit_revision_embeddings_have_versioned_identity(self):
+        # Given: the coherent-unit article-search migration.
+        migration = Path("db/migrations/022_coherent_unit_article_search.sql")
+        sql = migration.read_text(encoding="utf-8")
+
+        # When: the embedding schema contract is inspected.
+        required_fragments = (
+            "ADD COLUMN input_sha256 text", "ADD COLUMN content_sha256 text",
+            "ADD COLUMN configuration_sha256 text", "'coherent_unit_revision'",
+            "input_sha256 IS NULL OR input_sha256 ~ '^[0-9a-f]{64}$'",
+            "content_sha256 IS NULL OR content_sha256 ~ '^[0-9a-f]{64}$'",
+            "configuration_sha256 IS NULL OR configuration_sha256 ~ '^[0-9a-f]{64}$'",
+            "embedding_coherent_unit_revision_hashes_check",
+            "num_nonnulls(input_sha256, content_sha256, configuration_sha256) = 3",
+            "DROP CONSTRAINT embedding_target_kind_target_id_model_name_model_revision_key",
+            "CREATE UNIQUE INDEX embedding_legacy_identity_idx", "WHERE input_sha256 IS NULL",
+            "CREATE UNIQUE INDEX embedding_versioned_identity_idx", "WHERE input_sha256 IS NOT NULL",
+        )
+
+        # Then: legacy hashless rows and fully versioned revisions have distinct identities.
+        for fragment in required_fragments:
+            self.assertIn(fragment, sql)
+        for target_kind in (
+            "region", "evidence_span", "coherent_unit", "article",
+            "identity_profile", "entity", "claim",
+        ):
+            self.assertIn(f"'{target_kind}'", sql)
+        expected_identity = ", ".join(
+            ("target_kind", "target_id", "model_name", "model_revision", "input_sha256",
+             "content_sha256", "configuration_sha256")
+        )
+        self.assertIn(expected_identity, " ".join(sql.split()))
+
+    def test_coherent_unit_revision_jobs_have_exclusive_database_scope(self):
+        # Given: the coherent-unit article-search migration.
+        migration = Path("db/migrations/022_coherent_unit_article_search.sql")
+        sql = migration.read_text(encoding="utf-8")
+
+        # When: ingestion-job stages and scope are inspected.
+        required_fragments = (
+            "'coherent_unit_embedding'",
+            "'coherent_unit_search_projection'",
+            "ADD COLUMN coherent_unit_revision_id uuid",
+            "REFERENCES evidence.coherent_unit_revision(revision_id)",
+            "scope_kind IN ('page', 'batch', 'coherent_unit_revision')",
+            "ADD CONSTRAINT ingestion_job_scope_check",
+            "ADD CONSTRAINT ingestion_job_stage_scope_check", "stage <> 'coherent_unit_embedding' OR scope_kind = 'coherent_unit_revision'",
+            "stage <> 'coherent_unit_search_projection' OR scope_kind = 'batch'",
+        )
+
+        # Then: revision work is addressable without weakening page or batch scope.
+        for fragment in required_fragments:
+            self.assertIn(fragment, " ".join(sql.split()))
+        for stage in (
+            "render_lossless", "layout", "ocr", "embedding", "ner",
+            "entity_link", "search_projection", "rag_export", "graph_projection",
+        ):
+            self.assertIn(f"'{stage}'", sql)
+
+    def test_coherent_unit_projection_builds_record_publishable_snapshots(self):
+        # Given: the coherent-unit article-search migration.
+        migration = Path("db/migrations/022_coherent_unit_article_search.sql")
+        sql = migration.read_text(encoding="utf-8")
+
+        # When: projection-build compatibility fields are inspected.
+        required_fragments = (
+            "'opensearch_coherent_unit'", "ADD COLUMN source_snapshot_sha256 text",
+            "ADD COLUMN document_count integer", "ADD COLUMN published_at timestamptz",
+            "source_snapshot_sha256 IS NULL",
+            "document_count IS NULL OR document_count >= 0",
+            "ADD CONSTRAINT projection_build_coherent_snapshot_check", "source_snapshot_sha256 IS NOT NULL",
+            "document_count IS NOT NULL", "published_at IS NOT NULL",
+        )
+
+        # Then: old projections remain nullable while coherent snapshots can be published.
+        for fragment in required_fragments:
+            self.assertIn(fragment, sql)
+        for projection_kind in ("opensearch", "neo4j", "lightrag", "graphrag"):
+            self.assertIn(f"'{projection_kind}'", sql)
 
     def test_ingestion_stage_constraint_is_append_only_widened_for_entity_link(self):
         sql = Path("db/migrations/014_ingestion_entity_link_stage.sql").read_text(

@@ -1,4 +1,4 @@
-"""Generate versioned dense region embeddings and persist them in pgvector."""
+"""Generate versioned dense embeddings and persist them in pgvector."""
 
 from __future__ import annotations
 
@@ -7,8 +7,9 @@ import json
 import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from typing import Any, Sequence
-from uuid import uuid4
+from enum import StrEnum
+from typing import Any, Sequence, assert_never
+from uuid import UUID, uuid4
 
 from .model_config import load_pipeline_model_configuration
 
@@ -18,8 +19,15 @@ DEFAULT_REVISION = _PIPELINE_MODELS.retrieval.passage_embedding.model_revision
 EMBEDDING_DIMENSION = _PIPELINE_MODELS.retrieval.passage_embedding.dimension
 
 
+class EmbeddingUnit(StrEnum):
+    REGION = "region"
+    REVIEWED_COHERENT_UNIT = "reviewed_coherent_unit"
+
+
 class BGEEmbedder:
-    def __init__(self, model_name: str = DEFAULT_MODEL, revision: str = DEFAULT_REVISION):
+    def __init__(
+        self, model_name: str = DEFAULT_MODEL, revision: str = DEFAULT_REVISION
+    ):
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:  # pragma: no cover - minimal installations
@@ -37,7 +45,9 @@ class BGEEmbedder:
         )
         vectors = values.tolist()
         if any(len(vector) != EMBEDDING_DIMENSION for vector in vectors):
-            raise ValueError(f"Expected {EMBEDDING_DIMENSION}-dimensional BGE-M3 vectors")
+            raise ValueError(
+                f"Expected {EMBEDDING_DIMENSION}-dimensional BGE-M3 vectors"
+            )
         return vectors
 
     def encode_query(self, query: str) -> list[float]:
@@ -108,7 +118,13 @@ def embed_regions(
                 model_name,
                 model_revision,
                 "sentence-transformers-5.x",
-                Jsonb({"normalized": True, "dimension": EMBEDDING_DIMENSION, "batch_size": batch_size}),
+                Jsonb(
+                    {
+                        "normalized": True,
+                        "dimension": EMBEDDING_DIMENSION,
+                        "batch_size": batch_size,
+                    }
+                ),
                 started_at,
                 completed_at,
             ),
@@ -119,9 +135,19 @@ def embed_regions(
                 INSERT INTO retrieval.embedding (
                     target_kind, target_id, run_id, model_name, model_revision, embedding
                 ) VALUES ('region', %s, %s, %s, %s, %s::vector)
-                ON CONFLICT (target_kind, target_id, model_name, model_revision) DO NOTHING
+                ON CONFLICT (target_kind, target_id, model_name, model_revision)
+                WHERE input_sha256 IS NULL
+                  AND content_sha256 IS NULL
+                  AND configuration_sha256 IS NULL
+                DO NOTHING
                 """,
-                (region_id, run_id, model_name, model_revision, _vector_literal(vector)),
+                (
+                    region_id,
+                    run_id,
+                    model_name,
+                    model_revision,
+                    _vector_literal(vector),
+                ),
             )
             inserted += cursor.rowcount
     return EmbeddingResult(str(run_id), len(rows), inserted, model_name, model_revision)
@@ -136,6 +162,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--source-ocr-run-id")
+    parser.add_argument(
+        "--unit",
+        type=EmbeddingUnit,
+        choices=tuple(EmbeddingUnit),
+        default=EmbeddingUnit.REGION,
+        help="Embedding unit (default: region)",
+    )
+    parser.add_argument("--revision-id", type=UUID)
     return parser
 
 
@@ -145,13 +179,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("DATABASE_URL or --database-url is required")
     configuration = load_pipeline_model_configuration(args.model_config)
     embedding = configuration.retrieval.passage_embedding
-    result = embed_regions(
-        args.database_url,
-        embedding.model_name,
-        embedding.model_revision,
-        args.batch_size,
-        args.source_ocr_run_id,
-    )
+    match args.unit:
+        case EmbeddingUnit.REGION:
+            result = embed_regions(
+                args.database_url,
+                embedding.model_name,
+                embedding.model_revision,
+                args.batch_size,
+                args.source_ocr_run_id,
+            )
+        case EmbeddingUnit.REVIEWED_COHERENT_UNIT:
+            from .article_embedding import (
+                ArticleEmbeddingRequest,
+                embed_reviewed_articles,
+            )
+
+            result = embed_reviewed_articles(
+                ArticleEmbeddingRequest(
+                    args.database_url,
+                    embedding.model_name,
+                    embedding.model_revision,
+                    args.batch_size,
+                    args.revision_id,
+                )
+            )
+        case unreachable:
+            assert_never(unreachable)
     print(json.dumps(asdict(result), ensure_ascii=False))
     return 0
 

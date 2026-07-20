@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Final, Protocol, final, runtime_checkable
 from uuid import NAMESPACE_URL, UUID, uuid5
@@ -21,6 +22,7 @@ DIMENSION: Final = 1024
 POLICY: Final = "windowed_mean_v1"
 OVERLAP_RATIO: Final = 0.125
 TARGET_KIND: Final = "coherent_unit_revision"
+SAFETENSORS_CONVERSION_ENV: Final = "DISABLE_SAFETENSORS_CONVERSION"
 
 
 class _FloatMatrix(Protocol):
@@ -77,7 +79,15 @@ else:
             raise MissingArticleEmbeddingDependencyError(
                 "sentence-transformers"
             ) from exc
-        return SentenceTransformer(model_name, revision=revision, device=device)
+        previous = os.environ.get(SAFETENSORS_CONVERSION_ENV)
+        os.environ[SAFETENSORS_CONVERSION_ENV] = "1"
+        try:
+            return SentenceTransformer(model_name, revision=revision, device=device)
+        finally:
+            if previous is None:
+                os.environ.pop(SAFETENSORS_CONVERSION_ENV, None)
+            else:
+                os.environ[SAFETENSORS_CONVERSION_ENV] = previous
 
 
 def _load_sentence_model(model_name: str, model_revision: str) -> _SentenceModel:

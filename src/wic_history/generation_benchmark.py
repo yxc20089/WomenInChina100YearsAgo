@@ -81,9 +81,10 @@ class GenerationBenchmarkCase(StrictModel):
             if source.region_id is not None
         }
         retrieved_sources = {
-            hit.source.region_id
+            span.source.region_id
             for hit in self.context.retrieved_context
-            if hit.source.region_id is not None
+            for span in hit.sources
+            if span.source.region_id is not None
         }
         allowed_sources = reviewed_sources
         if self.task != GenerationTask.RECONSTRUCTED_SCENE:
@@ -144,9 +145,10 @@ def generation_benchmark_eligibility_failures(
                 f"Dataset has {task_count} {task.value} cases; at least 5 are required."
             )
     pointers = [
-        hit.source
+        span.source
         for case in cases
         for hit in case.context.retrieved_context
+        for span in hit.sources
     ] + [
         source
         for case in cases
@@ -176,11 +178,12 @@ def generation_benchmark_eligibility_failures(
         if source.region_id is not None
     }
     historian_gold_region_ids = {
-        hit.source.region_id
+        span.source.region_id
         for case in cases
         for hit in case.context.retrieved_context
-        if hit.source.region_id is not None
-        and hit.source.evidence_tier == "historian_selected_gold"
+        for span in hit.sources
+        if span.source.region_id is not None
+        and span.source.evidence_tier == "historian_selected_gold"
     }
     eligible_support = directly_reviewed_region_ids | historian_gold_region_ids
     unsupported_expected = sum(
@@ -481,9 +484,10 @@ def score_generation_benchmark(
         allowed = reviewed_allowed
         if case.task != GenerationTask.RECONSTRUCTED_SCENE:
             allowed = allowed | {
-                hit.source.region_id
+                span.source.region_id
                 for hit in case.context.retrieved_context
-                if hit.source.region_id is not None
+                for span in hit.sources
+                if span.source.region_id is not None
             }
         if not cited.issubset(allowed):
             raise ValueError("generation result cites a region outside its frozen context")

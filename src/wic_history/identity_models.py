@@ -377,7 +377,10 @@ def persist_identity_profile_embeddings(
                 ) VALUES ('identity_profile', %s, %s, %s, %s, %s::vector)
                 ON CONFLICT (
                     target_kind, target_id, model_name, model_revision
-                ) DO NOTHING
+                ) WHERE input_sha256 IS NULL
+                    AND content_sha256 IS NULL
+                    AND configuration_sha256 IS NULL
+                DO NOTHING
                 """,
                 (
                     profile["identity_profile_id"],

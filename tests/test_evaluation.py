@@ -4,10 +4,68 @@ import unittest
 from uuid import UUID
 
 from wic_history.evaluation import EvaluationQuestion, QuestionCategory, score_question
-from wic_history.evidence import Polygon, RetrievalHit, RetrievalMode, RetrievalResponse, SourcePointer
+from wic_history.evidence import (
+    Point,
+    Polygon,
+    RetrievalHit,
+    RetrievalMode,
+    RetrievalResponse,
+    RetrievalSourceSpan,
+    SourcePointer,
+)
 
 
 class EvaluationTests(unittest.TestCase):
+    def test_scores_coherent_hits_from_ordered_sources(self):
+        expected = UUID("00000000-0000-0000-0000-000000000001")
+        revision = UUID("00000000-0000-0000-0000-000000000010")
+        unit = UUID("00000000-0000-0000-0000-000000000020")
+        source = SourcePointer(
+            source_uri="s3://x",
+            page_number=1,
+            region_id=expected,
+            polygon=Polygon(
+                points=[Point(x=0, y=0), Point(x=1, y=0), Point(x=1, y=1)]
+            ),
+        )
+        question = EvaluationQuestion(
+            question_id="q1",
+            query="女學生",
+            category=QuestionCategory.EXACT_LOOKUP,
+            expected_region_ids=[expected],
+            author="historian-a",
+        )
+        response = RetrievalResponse(
+            schema_version="1.1",
+            query="女學生",
+            mode=RetrievalMode.LEXICAL,
+            hits=[
+                RetrievalHit(
+                    rank=1,
+                    score=1,
+                    target_kind="reviewed_coherent_unit",
+                    target_id=revision,
+                    coherent_unit_id=unit,
+                    sources=[
+                        RetrievalSourceSpan(
+                            document_id=revision,
+                            sequence_number=0,
+                            document_start=0,
+                            document_end=3,
+                            role="body",
+                            source=source,
+                        )
+                    ],
+                    text="女學生",
+                )
+            ],
+        )
+
+        result = score_question(question, response)
+
+        self.assertEqual(result.recall_at_k, 1.0)
+        self.assertEqual(result.citation_pointer_rate, 1.0)
+
     def test_scores_recall_rank_and_citation_pointer(self):
         expected = UUID("00000000-0000-0000-0000-000000000001")
         other = UUID("00000000-0000-0000-0000-000000000002")
@@ -18,7 +76,9 @@ class EvaluationTests(unittest.TestCase):
             expected_region_ids=[expected],
             author="historian-a",
         )
-        polygon = Polygon(points=[{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 1, "y": 1}])
+        polygon = Polygon(
+            points=[Point(x=0, y=0), Point(x=1, y=0), Point(x=1, y=1)]
+        )
         hits = [
             RetrievalHit(
                 rank=1,

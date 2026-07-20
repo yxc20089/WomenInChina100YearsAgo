@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Any, Iterable
 from uuid import NAMESPACE_URL, UUID, uuid5
@@ -17,6 +17,16 @@ from .e2e_store import (
     propose_event,
 )
 from .model_config import load_pipeline_model_configuration
+from .reviewed_text_materializer import (
+    ReviewedSpanInput,
+    materialize_reviewed_article,
+)
+from .semantic_inputs import (
+    CoherentTextBundle as CoherentTextBundle,
+    CoherentTextSegment as CoherentTextSegment,
+    PageImageReference as PageImageReference,
+    semantic_multimodal_input_sha256 as semantic_multimodal_input_sha256,
+)
 from .semantic_tasks import (
     EventFrameResponse,
     LiteralInput,
@@ -50,43 +60,6 @@ def _clients() -> tuple[Any, Any]:
     except ImportError as exc:  # pragma: no cover - minimal installations
         raise RuntimeError("Install the data extra: uv sync --extra data") from exc
     return psycopg, dict_row
-
-
-@dataclass(frozen=True, slots=True)
-class CoherentTextSegment:
-    sequence_number: int
-    region_id: UUID
-    page_id: UUID
-    text_version_id: UUID
-    selection_id: UUID
-    text_start: int
-    text_end: int
-    composite_start: int
-    composite_end: int
-    text: str
-    role: str
-    polygon: Any
-
-
-@dataclass(frozen=True, slots=True)
-class PageImageReference:
-    page_id: UUID
-    derivative_id: UUID
-    image_uri: str
-    image_sha256: str
-    media_type: str
-    width: int
-    height: int
-    region_ids: tuple[UUID, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class CoherentTextBundle:
-    coherent_unit_revision_id: UUID
-    content: str
-    input_sha256: str
-    segments: tuple[CoherentTextSegment, ...]
-    page_images: tuple[PageImageReference, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,14 +146,20 @@ def load_reviewed_coherent_text(
     with psycopg.connect(database_url, row_factory=dict_row) as connection:
         revision = connection.execute(
             """
-            SELECT revision_id FROM evidence.coherent_unit_revision
-            WHERE revision_id = %s AND superseded_at IS NULL
+            SELECT revision.revision_id, revision.unit_kind
+            FROM evidence.coherent_unit_revision revision
+            JOIN evidence.page_article_segmentation_selection segmentation_selection
+              ON segmentation_selection.selection_id = revision.approval_selection_id
+             AND segmentation_selection.superseded_at IS NULL
+            WHERE revision.revision_id = %s
+              AND revision.superseded_at IS NULL
+              AND revision.unit_kind = 'article'
             """,
             (coherent_unit_revision_id,),
         ).fetchone()
         if revision is None:
             raise ValueError(
-                "semantic tasks require an active reviewed coherent-unit revision"
+                "semantic tasks require an active reviewed article revision"
             )
         span_count = connection.execute(
             "SELECT count(*) AS count FROM evidence.coherent_unit_span WHERE revision_id = %s",
@@ -192,7 +171,7 @@ def load_reviewed_coherent_text(
                    span.text_start AS raw_start, span.text_end AS raw_end,
                    span.role, region.raw_text, region.polygon,
                    selection.selection_id, version.text_version_id,
-                   version.text_content,
+                   version.text_content, version.text_sha256,
                    raw_version.text_version_id AS raw_text_version_id,
                    alignment.operations,
                    derivative.derivative_id, derivative.image_uri,
@@ -230,39 +209,49 @@ def load_reviewed_coherent_text(
         )
     if not rows:
         raise ValueError("semantic tasks require at least one reviewed text region")
+    sources = tuple(
+        ReviewedSpanInput(
+            sequence_number=row["sequence_number"],
+            region_id=row["region_id"],
+            page_id=row["page_id"],
+            raw_text=row["raw_text"],
+            raw_start=row["raw_start"],
+            raw_end=row["raw_end"],
+            selected_text_version_id=row["text_version_id"],
+            selected_text_sha256=row["text_sha256"],
+            selection_id=row["selection_id"],
+            selected_text=row["text_content"],
+            role=row["role"],
+            alignment_operations=(
+                tuple(row["operations"]) if row["operations"] is not None else None
+            ),
+        )
+        for row in rows
+    )
+    canonical = materialize_reviewed_article(
+        coherent_unit_revision_id,
+        revision["unit_kind"],
+        sources,
+    )
+    rows_by_sequence = {row["sequence_number"]: row for row in rows}
     segments: list[CoherentTextSegment] = []
     image_rows: dict[UUID, dict[str, Any]] = {}
     image_regions: dict[UUID, list[UUID]] = {}
-    content_parts: list[str] = []
-    cursor = 0
-    for row in rows:
-        start, end = _selected_interval(
-            row["raw_text"],
-            row["text_content"],
-            row["raw_start"],
-            row["raw_end"],
-            row["operations"],
-        )
-        text = row["text_content"][start:end]
-        if segments:
-            content_parts.append("\n")
-            cursor += 1
-        composite_start = cursor
-        content_parts.append(text)
-        cursor += len(text)
+    for span in canonical.spans:
+        row = rows_by_sequence[span.sequence_number]
         segments.append(
             CoherentTextSegment(
-                sequence_number=row["sequence_number"],
-                region_id=row["region_id"],
-                page_id=row["page_id"],
-                text_version_id=row["text_version_id"],
-                selection_id=row["selection_id"],
-                text_start=start,
-                text_end=end,
-                composite_start=composite_start,
-                composite_end=cursor,
-                text=text,
-                role=row["role"],
+                sequence_number=span.sequence_number,
+                region_id=span.region_id,
+                page_id=span.page_id,
+                text_version_id=span.selected_text_version_id,
+                selection_id=span.selection_id,
+                text_start=span.selected_start,
+                text_end=span.selected_end,
+                composite_start=span.composite_start,
+                composite_end=span.composite_end,
+                text=span.text,
+                role=span.role,
                 polygon=row["polygon"],
             )
         )
@@ -270,7 +259,6 @@ def load_reviewed_coherent_text(
         region_ids = image_regions.setdefault(row["derivative_id"], [])
         if row["region_id"] not in region_ids:
             region_ids.append(row["region_id"])
-    content = "".join(content_parts)
     page_images = tuple(
         PageImageReference(
             page_id=row["page_id"],
@@ -284,41 +272,17 @@ def load_reviewed_coherent_text(
         )
         for derivative_id, row in image_rows.items()
     )
-    identity = {
-        "coherent_unit_revision_id": str(coherent_unit_revision_id),
-        "segments": [
-            {
-                "sequence_number": item.sequence_number,
-                "region_id": str(item.region_id),
-                "page_id": str(item.page_id),
-                "text_version_id": str(item.text_version_id),
-                "selection_id": str(item.selection_id),
-                "text_start": item.text_start,
-                "text_end": item.text_end,
-                "text_sha256": hashlib.sha256(item.text.encode("utf-8")).hexdigest(),
-            }
-            for item in segments
-        ],
-        "page_images": [
-            {
-                "page_id": str(item.page_id),
-                "derivative_id": str(item.derivative_id),
-                "image_uri": item.image_uri,
-                "image_sha256": item.image_sha256,
-                "media_type": item.media_type,
-                "width": item.width,
-                "height": item.height,
-                "region_ids": [str(value) for value in item.region_ids],
-            }
-            for item in page_images
-        ],
-    }
-    return CoherentTextBundle(
-        coherent_unit_revision_id,
-        content,
-        _canonical_sha256(identity),
-        tuple(segments),
-        page_images,
+    bundle = CoherentTextBundle(
+        coherent_unit_revision_id=coherent_unit_revision_id,
+        content=canonical.content,
+        input_sha256=canonical.input_sha256,
+        segments=tuple(segments),
+        page_images=page_images,
+        content_sha256=canonical.content_sha256,
+    )
+    return replace(
+        bundle,
+        multimodal_input_sha256=semantic_multimodal_input_sha256(bundle),
     )
 
 
@@ -958,7 +922,9 @@ def persist_semantic_extraction(
             connection,
             coherent_unit_revision_id=bundle.coherent_unit_revision_id,
             task="mention_classification",
-            input_sha256=bundle.input_sha256,
+            input_sha256=(
+                bundle.multimodal_input_sha256 or bundle.input_sha256
+            ),
             result=result,
             model_config_path=model_config_path,
             artifact_uri=artifact_uri,

@@ -18,6 +18,37 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
+import logging
+
+from .coherent_jobs import enqueue_coherent_jobs
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def _plan_coherent_search(database_url: str, created_by: str) -> None:
+    """Best-effort coherent search planning after an activation commit.
+
+    Planning failures (damaged article, revision guard, lock contention)
+    must never roll back or block a historian's activation — recovery is
+    the coherent backfill command.
+    """
+    psycopg, dict_row, _ = _psycopg()
+    try:
+        with psycopg.connect(database_url, row_factory=dict_row) as connection:
+            result = enqueue_coherent_jobs(
+                connection, created_by=created_by, max_revisions=100_000
+            )
+        for revision_id, reason in result.skipped:
+            _LOGGER.warning(
+                "coherent unit %s skipped from search planning: %s",
+                revision_id,
+                reason,
+            )
+    except Exception:
+        _LOGGER.exception(
+            "coherent search planning failed after segmentation activation; "
+            "run coherent backfill to recover"
+        )
 
 METHOD = "reading_order_window"
 METHOD_VERSION = "1"
@@ -752,6 +783,9 @@ def activate_segmentation(
                 """,
                 (existing["selection_id"],),
             ).fetchone()["count"]
+            # read-only idempotent path: nothing uncommitted in this
+            # transaction, so best-effort planning can run before returning
+            _plan_coherent_search(database_url, selected_by)
             return SegmentationActivationResult(
                 str(existing["selection_id"]), str(existing["run_id"]),
                 str(existing["page_id"]), str(review_id), 0, approved_units, True,
@@ -928,6 +962,7 @@ def activate_segmentation(
                         item["text_start"], item["text_end"], item["role"],
                     ),
                 )
+    _plan_coherent_search(database_url, selected_by)
     return SegmentationActivationResult(
         str(selection_id), str(review["run_id"]), str(review["page_id"]),
         str(review_id), superseded, len(by_article), False,

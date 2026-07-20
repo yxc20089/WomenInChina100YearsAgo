@@ -19,7 +19,18 @@ from .evidence import (
     SourcePointer,
 )
 from .embedding_pipeline import BGEEmbedder
+from .coherent_search import CoherentProjectionError
+from .coherent_search_cli import (
+    CoherentProjectionArguments,
+    CoherentQueryArguments,
+    REVIEWED_COHERENT_UNIT,
+    register_coherent_project_arguments,
+    register_coherent_query_arguments,
+    run_coherent_projection,
+    run_coherent_query,
+)
 from .model_config import load_pipeline_model_configuration
+from .search_runtime import pinned_coherent_query_identity as _coherent_identity
 
 
 DEFAULT_INDEX = "wic-regions-v2"
@@ -435,6 +446,10 @@ def hybrid_search(
     fused: dict[UUID, tuple[RetrievalHit, float, dict[str, int]]] = {}
     for retriever, response in (("lexical", lexical), ("dense", dense)):
         for hit in response.hits:
+            if hit.source is None:
+                raise CoherentProjectionError(
+                    "region search returned a hit without its source"
+                )
             region_id = hit.source.region_id
             if region_id is None:
                 continue
@@ -521,6 +536,7 @@ def build_parser() -> argparse.ArgumentParser:
     project.add_argument("--index", default=DEFAULT_INDEX)
     project.add_argument("--alias", default=DEFAULT_ALIAS)
     project.add_argument("--recreate", action="store_true")
+    register_coherent_project_arguments(project)
     query = subparsers.add_parser("query")
     query.add_argument("query")
     query.add_argument("--index", default=DEFAULT_ALIAS)
@@ -528,9 +544,10 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("--year-start", type=int)
     query.add_argument("--year-end", type=int)
     query.add_argument("--mode", choices=("lexical", "dense", "hybrid"), default="lexical")
+    register_coherent_query_arguments(query)
     query.add_argument(
         "--model-config",
-        help="Complete model configuration; individual model overrides are not accepted",
+        help="Complete model configuration for region dense/hybrid search",
     )
     return parser
 
@@ -540,6 +557,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "project":
         if not args.database_url:
             raise SystemExit("DATABASE_URL or --database-url is required")
+        if args.unit == REVIEWED_COHERENT_UNIT:
+            return run_coherent_projection(
+                CoherentProjectionArguments(
+                    database_url=args.database_url,
+                    opensearch_url=args.opensearch_url,
+                    model_name=_coherent_identity().model_name,
+                    model_revision=_coherent_identity().model_revision,
+                    configuration_sha256=_coherent_identity().configuration_sha256,
+                    snapshot_sha256=args.snapshot_sha256,
+                )
+            )
         result = project_regions(
             args.database_url,
             args.opensearch_url,
@@ -549,6 +577,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(json.dumps(asdict(result), ensure_ascii=False))
         return 0
+    if args.unit == REVIEWED_COHERENT_UNIT:
+        return run_coherent_query(
+            CoherentQueryArguments(
+                opensearch_url=args.opensearch_url,
+                query=args.query,
+                limit=args.limit,
+                year_start=args.year_start,
+                year_end=args.year_end,
+                mode=args.mode,
+                model_name=_coherent_identity().model_name,
+                model_revision=_coherent_identity().model_revision,
+                configuration_sha256=_coherent_identity().configuration_sha256,
+            )
+        )
     if args.mode == "lexical":
         response = lexical_search(
             args.opensearch_url,

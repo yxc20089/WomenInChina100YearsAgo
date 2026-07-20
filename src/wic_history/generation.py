@@ -15,9 +15,19 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import (
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 
-from .evidence import ScenarioContextBundle, SourcePointer, StrictModel
+from .evidence import (
+    ScenarioContextBundle,
+    SourcePointer,
+    StrictModel,
+    serialize_legacy_sources,
+)
 
 
 class GenerationTask(StrEnum):
@@ -135,6 +145,14 @@ class GenerationResponse(StrictModel):
                 "non-invoked generation cannot claim model output provenance"
             )
         return self
+
+    @model_serializer(mode="wrap")
+    def serialize_legacy_citations(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = handler(self)
+        payload["citations"] = serialize_legacy_sources(payload["citations"])
+        return payload
 
 
 class TextGenerator(Protocol):
@@ -697,9 +715,10 @@ def generate(
     if task in {GenerationTask.RESEARCH_BRIEF, GenerationTask.CHAT_ANSWER}:
         sources.update(
             {
-                hit.source.region_id: hit.source
+                span.source.region_id: span.source
                 for hit in context.retrieved_context
-                if hit.source.region_id
+                for span in hit.sources
+                if span.source.region_id
             }
         )
     cited_ids, invalid_ids, validation_errors = _validate_output(

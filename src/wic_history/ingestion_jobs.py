@@ -12,6 +12,13 @@ from datetime import timedelta
 from typing import Any, Iterable, Sequence
 from uuid import UUID, uuid4
 
+from .coherent_job_validation import (
+    CoherentEmbeddingResultValidation,
+    CoherentProjectionResultValidation,
+    validate_coherent_unit_embedding_result,
+    validate_coherent_unit_search_projection_result,
+)
+from .coherent_jobs import COHERENT_STAGES, backfill_coherent_jobs
 from .model_config import load_pipeline_model_configuration
 
 
@@ -21,7 +28,7 @@ PAGE_STAGES = ("render_lossless", "layout", "ocr", "embedding")
 # reviewed coherent-unit revision via ``wic-e2e``.
 LEGACY_PAGE_STAGES = ("ner", "entity_link")
 AGGREGATE_STAGES = ("search_projection", "rag_export", "graph_projection")
-ALL_STAGES = (*PAGE_STAGES, *LEGACY_PAGE_STAGES, *AGGREGATE_STAGES)
+ALL_STAGES = (*PAGE_STAGES, *LEGACY_PAGE_STAGES, *AGGREGATE_STAGES, *COHERENT_STAGES)
 STAGE_DEPENDENCY = {
     "layout": "render_lossless",
     "ocr": "layout",
@@ -410,9 +417,7 @@ def create_plan(
     )
     all_requested_stages = (*normalized_stages, *normalized_aggregate_stages)
     stage_configuration = {
-        stage: resolve_stage_configuration(
-            stage, (configuration or {}).get(stage, {})
-        )
+        stage: resolve_stage_configuration(stage, (configuration or {}).get(stage, {}))
         for stage in all_requested_stages
     }
     if not name.strip() or not created_by.strip():
@@ -597,8 +602,7 @@ def create_plan(
             )
             events.append((job_id, created_by.strip()))
             dependencies.extend(
-                (job_id, parent_id)
-                for parent_id in page_stage_ids[dependency_stage]
+                (job_id, parent_id) for parent_id in page_stage_ids[dependency_stage]
             )
         with connection.cursor() as cursor:
             cursor.executemany(
@@ -939,7 +943,8 @@ def complete_job(
     with psycopg.connect(database_url) as connection:
         job = connection.execute(
             """
-            SELECT stage, configuration
+            SELECT stage, configuration, input_fingerprint,
+                   coherent_unit_revision_id
             FROM pipeline.ingestion_job
             WHERE job_id = %s AND status IN ('leased', 'running')
               AND lease_owner = %s AND lease_expires_at > now()
@@ -949,7 +954,7 @@ def complete_job(
         ).fetchone()
         if job is None:
             raise ValueError("Job lease is absent, expired, or owned by another worker")
-        validate_stage_result(job[0], job[1], result_data)
+        validate_stage_result(job[0], job[1], result_data, job[2], job[3])
         row = connection.execute(
             """
             UPDATE pipeline.ingestion_job
@@ -996,7 +1001,11 @@ def _required_count(result: dict[str, Any], field: str) -> None:
 
 
 def validate_stage_result(
-    stage: str, configuration: dict[str, Any], result: dict[str, Any]
+    stage: str,
+    configuration: dict[str, Any],
+    result: dict[str, Any],
+    input_fingerprint: str | None = None,
+    coherent_unit_revision_id: UUID | None = None,
 ) -> None:
     """Reject completion metadata that contradicts the immutable job contract."""
     if stage == "render_lossless":
@@ -1023,6 +1032,15 @@ def validate_stage_result(
     elif stage == "embedding":
         _required_uuid(result, "embedding_run_id")
         _required_count(result, "embeddings")
+    elif stage == "coherent_unit_embedding":
+        validate_coherent_unit_embedding_result(
+            CoherentEmbeddingResultValidation(
+                configuration,
+                result,
+                input_fingerprint,
+                coherent_unit_revision_id,
+            )
+        )
     elif stage == "ner":
         _required_uuid(result, "ner_run_id")
         for field in (
@@ -1067,7 +1085,9 @@ def validate_stage_result(
         if (mentions == 0 and links != 0) or not (
             mentions <= links <= mentions * (top_k + 1)
         ):
-            raise ValueError("Entity-link candidate count contradicts mention/top_k coverage")
+            raise ValueError(
+                "Entity-link candidate count contradicts mention/top_k coverage"
+            )
         if not re.fullmatch(
             r"[0-9a-f]{64}", str(result.get("authority_catalog_sha256", ""))
         ):
@@ -1077,12 +1097,18 @@ def validate_stage_result(
         _required_count(result, "documents_indexed")
         if not str(result.get("index_name", "")).startswith("wic-regions-"):
             raise ValueError("Search projection requires managed index_name")
+    elif stage == "coherent_unit_search_projection":
+        validate_coherent_unit_search_projection_result(
+            CoherentProjectionResultValidation(
+                configuration,
+                result,
+                input_fingerprint,
+            )
+        )
     elif stage == "rag_export":
         _required_count(result, "documents")
         _required_count(result, "exported_regions")
-        if not re.fullmatch(
-            r"[0-9a-f]{64}", str(result.get("manifest_sha256", ""))
-        ):
+        if not re.fullmatch(r"[0-9a-f]{64}", str(result.get("manifest_sha256", ""))):
             raise ValueError("RAG export requires manifest_sha256")
     elif stage == "graph_projection":
         _required_uuid(result, "projection_build_id")
@@ -1521,6 +1547,9 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("--job-id", type=UUID, required=True)
     replay.add_argument("--requested-by", required=True)
     replay.add_argument("--reason", required=True)
+    backfill = subparsers.add_parser("coherent-backfill")
+    backfill.add_argument("--created-by", required=True)
+    backfill.add_argument("--max-revisions", type=int, default=1000)
     return parser
 
 
@@ -1592,17 +1621,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             cancelled_by=args.cancelled_by,
             reason=args.reason,
         )
-    else:
+    elif args.command == "replay":
         result = replay_failed_job(
             args.database_url,
             args.job_id,
             requested_by=args.requested_by,
             reason=args.reason,
         )
+    else:
+        result = backfill_coherent_jobs(
+            args.database_url,
+            created_by=args.created_by,
+            max_revisions=args.max_revisions,
+        )
     payload = (
         [asdict(item) for item in result]
         if isinstance(result, list)
-        else asdict(result) if result is not None else None
+        else asdict(result)
+        if result is not None
+        else None
     )
     print(json.dumps(payload, ensure_ascii=False))
     return 0

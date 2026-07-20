@@ -1,12 +1,95 @@
 from __future__ import annotations
 
 import unittest
+import json
 from uuid import uuid4
 
-from wic_history.search import REGION_PROJECTION_SQL, region_document, region_index_body
+from tests.coherent_search_support import manifest
+from wic_history.coherent_search import project_coherent_units
+from wic_history.coherent_search import CoherentProjectionError
+from wic_history.search_manifest import (
+    CoherentProjectionPins,
+    load_coherent_projection_manifest,
+)
+from wic_history.search import (
+    REGION_PROJECTION_SQL,
+    build_parser,
+    main,
+    region_document,
+    region_index_body,
+)
 
 
 class SearchProjectionTests(unittest.TestCase):
+    def test_coherent_manifest_rejects_malformed_pin_before_database_access(self):
+        with self.assertRaisesRegex(CoherentProjectionError, "lowercase SHA-256"):
+            load_coherent_projection_manifest(
+                "postgresql://unused",
+                CoherentProjectionPins("model", "revision", "bad", "e" * 64),
+            )
+
+    def test_cli_defaults_to_region_and_accepts_coherent_unit(self):
+        default = build_parser().parse_args(["query", "女學生"])
+        coherent = build_parser().parse_args(
+            ["query", "女子教育", "--unit", "reviewed_coherent_unit"]
+        )
+
+        self.assertEqual(default.unit, "region")
+        self.assertEqual(coherent.unit, "reviewed_coherent_unit")
+
+    def test_coherent_projection_cli_requires_pinned_snapshot_inputs(self):
+        args = build_parser().parse_args(
+            [
+                "project",
+                "--unit",
+                "reviewed_coherent_unit",
+                "--snapshot-sha256",
+                "e" * 64,
+            ]
+        )
+
+        self.assertEqual(args.snapshot_sha256, "e" * 64)
+
+    def test_coherent_projection_cli_reports_exact_missing_pins_error(self):
+        with self.assertRaises(SystemExit) as raised:
+            main(
+                [
+                    "project",
+                    "--database-url",
+                    "postgresql://unused",
+                    "--unit",
+                    "reviewed_coherent_unit",
+                ]
+            )
+
+        self.assertEqual(
+            str(raised.exception),
+            "coherent projection requires --snapshot-sha256",
+        )
+
+    def test_cli_rejects_model_identity_overrides(self):
+        # model identity comes only from config/pipeline-models.toml
+        with self.assertRaises(SystemExit):
+            build_parser().parse_args(
+                ["query", "女子教育", "--unit", "reviewed_coherent_unit",
+                 "--revision", "bogus"]
+            )
+        with self.assertRaises(SystemExit):
+            build_parser().parse_args(
+                ["query", "女子教育", "--unit", "reviewed_coherent_unit",
+                 "--configuration-sha256", "f" * 64]
+            )
+
+    def test_coherent_query_identity_is_resolved_from_pinned_configuration(self):
+        from wic_history.model_config import load_pipeline_model_configuration
+        from wic_history.search_runtime import pinned_coherent_query_identity
+
+        identity = pinned_coherent_query_identity()
+        pinned = load_pipeline_model_configuration().retrieval.passage_embedding
+        self.assertEqual(identity.model_name, pinned.model_name)
+        self.assertEqual(identity.model_revision, pinned.model_revision)
+        self.assertRegex(identity.configuration_sha256, "^[0-9a-f]{64}$")
+
     def test_mapping_has_cjk_text_and_versioned_dense_vector(self):
         properties = region_index_body()["mappings"]["properties"]
         self.assertEqual(properties["raw_text"]["analyzer"], "cjk")
@@ -60,3 +143,29 @@ class SearchProjectionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_cli_default_and_coherent_query_use_wire_fake(
+    search_server: str, capsys
+) -> None:
+    assert main(["--opensearch-url", search_server, "query", "女子教育"]) == 0
+    region = json.loads(capsys.readouterr().out)
+    _ = project_coherent_units(search_server, manifest())
+
+    assert (
+        main(
+            [
+                "--opensearch-url",
+                search_server,
+                "query",
+                "女子教育",
+                "--unit",
+                "reviewed_coherent_unit",
+            ]
+        )
+        == 0
+    )
+    coherent = json.loads(capsys.readouterr().out)
+
+    assert region["schema_version"] == "1.0"
+    assert coherent["schema_version"] == "1.1"

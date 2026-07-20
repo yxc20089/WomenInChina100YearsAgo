@@ -21,8 +21,11 @@ from wic_history.evidence import (
     RetrievalHit,
     RetrievalMode,
     RetrievalResponse,
+    ScenarioEvidenceItem,
     SourcePointer,
 )
+from tests.coherent_search_support import manifest
+from wic_history.coherent_search import project_coherent_units
 from wic_history.exploration import ExplorationCounts, ExplorationReport
 from wic_history.review_workflow import ClaimQueueResponse, MentionQueueResponse
 from wic_history.segmentation import SegmentationProposalResult
@@ -36,6 +39,293 @@ from wic_history.ingestion_jobs import BatchStatus, FailedJob
 
 
 class APITests(unittest.TestCase):
+    def test_region_context_and_generation_serialize_exact_legacy_hit_keys(self):
+        source = SourcePointer(
+            source_uri="s3://example/volume.pdf",
+            page_id="00000000-0000-0000-0000-000000000002",
+            derivative_id="00000000-0000-0000-0000-000000000003",
+            image_uri="artifacts/page.png",
+            volume_number=219,
+            publication_year=1925,
+            page_number=308,
+            region_id="00000000-0000-0000-0000-000000000001",
+            text_version_id="00000000-0000-0000-0000-000000000004",
+            text_selection_id="00000000-0000-0000-0000-000000000005",
+        )
+        retrieval = RetrievalResponse(
+            query="女學生",
+            mode=RetrievalMode.LEXICAL,
+            hits=[
+                RetrievalHit(
+                    rank=1,
+                    score=1,
+                    source=source,
+                    text="女學生",
+                    claim_ids=["00000000-0000-0000-0000-000000000006"],
+                )
+            ],
+        )
+        reviewed = ScenarioEvidenceItem(
+            statement="女學生",
+            epistemic_label="directly_evidenced",
+            sources=[source],
+            claim_ids=["00000000-0000-0000-0000-000000000006"],
+        )
+
+        class FakeGenerator:
+            model_identity = "fake@revision"
+
+            def complete(self, messages):
+                return (
+                    "女學生 "
+                    "[region:00000000-0000-0000-0000-000000000001]."
+                )
+        hit_keys = {
+            "rank",
+            "score",
+            "source",
+            "text",
+            "normalized_text",
+            "entity_ids",
+            "claim_ids",
+            "explanation",
+        }
+        source_keys = {
+            "source_uri",
+            "source_sha256",
+            "derivative_id",
+            "image_sha256",
+            "evidence_tier",
+            "volume_number",
+            "publication_year",
+            "page_number",
+            "region_id",
+            "polygon",
+            "text_start",
+            "text_end",
+        }
+        with patch(
+            "wic_history.api.lexical_search", return_value=retrieval
+        ), patch(
+            "wic_history.api.load_reviewed_claim_items", return_value=[reviewed]
+        ):
+            client = TestClient(
+                create_app(
+                    database_url="postgresql://example",
+                    generator_factory=FakeGenerator,
+                )
+            )
+            context = client.post(
+                "/api/context", json={"query": "女學生", "mode": "lexical"}
+            ).json()
+            generated = (
+                client.post(
+                    "/api/generate",
+                    json={"query": "女學生", "mode": "lexical"},
+                ).json(),
+                client.post(
+                    "/api/chat",
+                    json={"query": "女學生", "mode": "lexical", "history": []},
+                ).json(),
+            )
+
+        for nested in (context, *(response["context"] for response in generated)):
+            hit = nested["retrieved_context"][0]
+            self.assertEqual(set(hit), hit_keys)
+            self.assertEqual(set(hit["source"]), source_keys)
+            self.assertEqual(
+                set(nested["evidence_items"][0]["sources"][0]), source_keys
+            )
+        for response in generated:
+            self.assertEqual(set(response["citations"][0]), source_keys)
+
+    def test_search_defaults_to_legacy_region_contract(self):
+        retrieval = RetrievalResponse(
+            query="女學生", mode=RetrievalMode.LEXICAL, hits=[]
+        )
+        with patch(
+            "wic_history.api.lexical_search", return_value=retrieval
+        ) as search:
+            response = TestClient(create_app()).post(
+                "/api/search", json={"query": "女學生", "mode": "lexical"}
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["schema_version"], "1.0")
+        self.assertEqual(search.call_args.args[2], "wic-regions-current")
+
+    def test_search_dispatches_explicit_coherent_corpus(self):
+        retrieval = RetrievalResponse(
+            schema_version="1.1",
+            query="女子教育",
+            mode=RetrievalMode.LEXICAL,
+            hits=[],
+        )
+        with patch(
+            "wic_history.coherent_api_search.coherent_lexical_search",
+            return_value=retrieval,
+        ) as search:
+            response = TestClient(create_app()).post(
+                "/api/search",
+                json={
+                    "query": "女子教育",
+                    "mode": "lexical",
+                    "corpus": "reviewed_coherent_unit",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["schema_version"], "1.1")
+        search.assert_called_once()
+        spec = search.call_args.args[1]
+        self.assertEqual(spec.query, "女子教育")
+        self.assertEqual(spec.limit, 10)
+        self.assertIsNone(spec.year_min)
+        self.assertIsNone(spec.year_max)
+
+    def test_search_dispatches_coherent_dense_and_hybrid_with_pinned_identity(self):
+        environment = {
+            "COHERENT_EMBEDDING_MODEL": "BAAI/bge-m3",
+            "COHERENT_EMBEDDING_REVISION": "model-revision",
+            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "f" * 64,
+        }
+        for mode, target in (
+            ("dense", "coherent_dense_search"),
+            ("hybrid", "coherent_hybrid_search"),
+        ):
+            retrieval = RetrievalResponse(
+                schema_version="1.1",
+                query="女子教育",
+                mode=RetrievalMode(mode),
+                hits=[],
+            )
+            with self.subTest(mode=mode), patch.dict(
+                os.environ, environment, clear=True
+            ), patch(
+                f"wic_history.coherent_api_search.{target}", return_value=retrieval
+            ) as search, patch("wic_history.coherent_api_search.PinnedQueryEmbedder"):
+                response = TestClient(create_app()).post(
+                    "/api/search",
+                    json={
+                        "query": "女子教育",
+                        "mode": mode,
+                        "corpus": "reviewed_coherent_unit",
+                    },
+                )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["mode"], mode)
+            search.assert_called_once()
+
+    def test_coherent_dense_search_ignores_environment_identity(self):
+        # model identity comes only from config/pipeline-models.toml;
+        # environment overrides must have no effect
+        retrieval = RetrievalResponse(
+            schema_version="1.1",
+            query="女子教育",
+            mode=RetrievalMode.DENSE,
+            hits=[],
+        )
+        bogus = {
+            "COHERENT_EMBEDDING_MODEL": "some/other-model",
+            "COHERENT_EMBEDDING_REVISION": "bogus-revision",
+            "COHERENT_EMBEDDING_CONFIGURATION_SHA256": "0" * 64,
+        }
+        with patch.dict(os.environ, bogus, clear=True), patch(
+            "wic_history.coherent_api_search.coherent_dense_search",
+            return_value=retrieval,
+        ), patch(
+            "wic_history.coherent_api_search.PinnedQueryEmbedder"
+        ) as embedder_type:
+            response = TestClient(create_app()).post(
+                "/api/search",
+                json={
+                    "query": "女子教育",
+                    "mode": "dense",
+                    "corpus": "reviewed_coherent_unit",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        from wic_history.search_runtime import pinned_coherent_query_identity
+
+        identity = pinned_coherent_query_identity()
+        embedder_type.assert_called_once_with(
+            identity.model_name,
+            identity.model_revision,
+            identity.configuration_sha256,
+        )
+
+    def test_coherent_query_embedder_is_reused_and_exposed_on_app_state(self):
+        retrieval = RetrievalResponse(
+            schema_version="1.1",
+            query="女子教育",
+            mode=RetrievalMode.DENSE,
+            hits=[],
+        )
+        with patch(
+            "wic_history.coherent_api_search.coherent_dense_search",
+            return_value=retrieval,
+        ) as search, patch(
+            "wic_history.coherent_api_search.PinnedQueryEmbedder"
+        ) as embedder_type:
+            app = create_app()
+            client = TestClient(app)
+            responses = [
+                client.post(
+                    "/api/search",
+                    json={
+                        "query": "女子教育",
+                        "mode": "dense",
+                        "corpus": "reviewed_coherent_unit",
+                    },
+                )
+                for _ in range(2)
+            ]
+
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        from wic_history.search_runtime import pinned_coherent_query_identity
+
+        identity = pinned_coherent_query_identity()
+        embedder_type.assert_called_once_with(
+            identity.model_name,
+            identity.model_revision,
+            identity.configuration_sha256,
+        )
+        self.assertIs(app.state.coherent_embedder, embedder_type.return_value)
+        self.assertTrue(
+            all(
+                call.args[2] is embedder_type.return_value
+                for call in search.call_args_list
+            )
+        )
+
+    def test_generation_endpoints_reject_coherent_corpus(self):
+        client = TestClient(create_app())
+        request = {
+            "query": "女子教育",
+            "mode": "lexical",
+            "corpus": "reviewed_coherent_unit",
+        }
+
+        responses = [
+            client.post("/api/context", json=request),
+            client.post("/api/generate", json=request),
+            client.post("/api/chat", json=request),
+        ]
+
+        self.assertEqual([response.status_code for response in responses], [422] * 3)
+        self.assertTrue(
+            all("region" in response.json()["detail"] for response in responses)
+        )
+
+    def test_search_rejects_unknown_corpus_at_request_boundary(self):
+        response = TestClient(create_app()).post(
+            "/api/search", json={"query": "女學生", "corpus": "article"}
+        )
+
+        self.assertEqual(response.status_code, 422)
+
     def test_health_validates_complete_generation_configuration(self):
         with patch("opensearchpy.OpenSearch.ping", return_value=True), patch.dict(
             os.environ,
@@ -539,3 +829,26 @@ class APITests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_search_api_uses_real_coherent_wire_fake(search_server: str) -> None:
+    client = TestClient(create_app(opensearch_url=search_server))
+    region = client.post(
+        "/api/search", json={"query": "女子教育", "mode": "lexical"}
+    )
+    _ = project_coherent_units(search_server, manifest())
+    coherent = client.post(
+        "/api/search",
+        json={
+            "query": "女子教育",
+            "mode": "lexical",
+            "corpus": "reviewed_coherent_unit",
+        },
+    )
+
+    assert region.status_code == 200
+    assert region.json()["schema_version"] == "1.0"
+    assert coherent.status_code == 200
+    assert coherent.json()["schema_version"] == "1.1"
+    assert coherent.json()["hits"][0]["source"] is None
+    assert len(coherent.json()["hits"][0]["sources"]) == 2

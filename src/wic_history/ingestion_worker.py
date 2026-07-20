@@ -13,8 +13,19 @@ from typing import Any, Callable, Sequence
 from uuid import UUID
 
 from .corpus_manifest import build_s3_client
+from .coherent_jobs import CoherentJobContext
+from .coherent_worker_adapter import (
+    ensure_coherent_snapshot as ensure_coherent_snapshot,
+    execute_coherent_stage,
+    load_coherent_execution_context,
+)
 from .embedding_pipeline import embed_regions
-from .evidence import EntityLinkArtifact, LayoutPageArtifact, NERArtifact, OCRPageArtifact
+from .evidence import (
+    EntityLinkArtifact,
+    LayoutPageArtifact,
+    NERArtifact,
+    OCRPageArtifact,
+)
 from .graph import project_reviewed_graph
 from .gold_render import (
     ingestion_candidate,
@@ -222,7 +233,10 @@ def load_aggregate_context(
 
 def load_execution_context(
     database_url: str, lease: JobLease
-) -> PageJobContext | AggregateJobContext:
+) -> PageJobContext | AggregateJobContext | CoherentJobContext:
+    coherent_context = load_coherent_execution_context(database_url, lease)
+    if coherent_context is not None:
+        return coherent_context
     if lease.scope_kind == "page":
         return load_job_context(database_url, lease.job_id)
     if lease.scope_kind == "batch":
@@ -265,9 +279,7 @@ def _atomic_json(path: Path, value: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
-def _resolve_record_image(
-    workspace_root: Path, record: dict[str, Any]
-) -> Path:
+def _resolve_record_image(workspace_root: Path, record: dict[str, Any]) -> Path:
     image_path = resolve_workspace_path(workspace_root, record["render_path"])
     if not image_path.is_file():
         raise ValueError(f"Rendered page image is absent: {image_path}")
@@ -367,9 +379,7 @@ def _existing_render(
             ]
             if len(matches) != 1:
                 continue
-            return _render_manifest_execution(
-                manifest_path, context, workspace_root
-            )
+            return _render_manifest_execution(manifest_path, context, workspace_root)
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             continue
     return None
@@ -430,8 +440,13 @@ def execute_render(
     result = results[0]
     if result.get("status") != "rendered":
         raise RuntimeError(result.get("issue", "lossless render failed"))
-    if context.source_sha256 and result["source_object_sha256"] != context.source_sha256:
-        raise ValueError("Rendered source SHA-256 conflicts with the authoritative catalog")
+    if (
+        context.source_sha256
+        and result["source_object_sha256"] != context.source_sha256
+    ):
+        raise ValueError(
+            "Rendered source SHA-256 conflicts with the authoritative catalog"
+        )
     write_lossless_results(output_dir, results)
     manifest_path = output_dir / "lossless_manifest.jsonl"
     return StageExecution(
@@ -772,7 +787,9 @@ def execute_ocr(
     }
     for field, expected in supported.items():
         if context.configuration.get(field) != expected:
-            raise ValueError(f"OCR worker does not implement {field}={context.configuration.get(field)!r}")
+            raise ValueError(
+                f"OCR worker does not implement {field}={context.configuration.get(field)!r}"
+            )
     layout_path, layout, manifest_path, image_path = _parent_layout(
         context, workspace_root
     )
@@ -805,16 +822,18 @@ def execute_ocr(
             },
             adopted=True,
         )
-    adopted = _existing_ocr(
-        database_url, context, workspace_root, layout.image_sha256
-    )
+    adopted = _existing_ocr(database_url, context, workspace_root, layout.image_sha256)
     if adopted:
         return adopted
     arguments = [
-        "--image", str(image_path),
-        "--layout-artifact", str(layout_path),
-        "--model-config-sha256", str(context.configuration["pipeline_model_configuration_sha256"]),
-        "--output", str(output_path),
+        "--image",
+        str(image_path),
+        "--layout-artifact",
+        str(layout_path),
+        "--model-config-sha256",
+        str(context.configuration["pipeline_model_configuration_sha256"]),
+        "--output",
+        str(output_path),
     ]
     exit_code = ocr_main(arguments)
     if exit_code:
@@ -959,9 +978,7 @@ def _ner_artifact_matches(
             if isinstance(identity_configuration, dict)
             else None
         )
-        expected_canary = configuration.get(
-            "expected_canary_raw_output_sha256"
-        )
+        expected_canary = configuration.get("expected_canary_raw_output_sha256")
         canary_hashes = (
             canary.get("raw_output_sha256s") if isinstance(canary, dict) else None
         )
@@ -1005,22 +1022,17 @@ def _ner_artifact_matches(
             and identity_configuration.get("response_format_sha256")
             == configuration.get("response_format_sha256")
             and isinstance(canary_hashes, list)
-            and len(canary_hashes)
-            == configuration.get("schema_canary_repetitions")
+            and len(canary_hashes) == configuration.get("schema_canary_repetitions")
             and set(canary_hashes) == {expected_canary}
             and canary.get("deterministic") is True
             and canary.get("required_span_verified") is True
             and run_configuration.get("job_configuration_sha256")
             == canonical_sha256(configuration)
-            and run_configuration.get("max_regions")
-            == configuration.get("max_regions")
+            and run_configuration.get("max_regions") == configuration.get("max_regions")
             and run_configuration.get("region_chunk_size")
             == configuration.get("region_chunk_size")
             and artifact.dataset_id
-            == (
-                configuration.get("dataset_id")
-                or f"ocr-run:{source_ocr_run_id}"
-            )
+            == (configuration.get("dataset_id") or f"ocr-run:{source_ocr_run_id}")
             and artifact.split_id
             == (
                 configuration.get("split_id")
@@ -1192,13 +1204,20 @@ def execute_ner(
     max_regions = configuration.get("max_regions")
     if adapter_name == "rules+gliner":
         arguments = [
-            "--ocr-artifact", str(ocr_path),
-            "--output", str(output_path),
-            "--model", str(configuration["model"]),
-            "--revision", str(configuration["revision"]),
-            "--threshold", str(configuration["threshold"]),
-            "--batch-size", str(configuration["batch_size"]),
-            "--word-splitter-language", str(configuration["word_splitter_language"]),
+            "--ocr-artifact",
+            str(ocr_path),
+            "--output",
+            str(output_path),
+            "--model",
+            str(configuration["model"]),
+            "--revision",
+            str(configuration["revision"]),
+            "--threshold",
+            str(configuration["threshold"]),
+            "--batch-size",
+            str(configuration["batch_size"]),
+            "--word-splitter-language",
+            str(configuration["word_splitter_language"]),
         ]
         if configuration.get("dataset_id") is not None:
             arguments.extend(["--dataset-id", str(configuration["dataset_id"])])
@@ -1214,9 +1233,7 @@ def execute_ner(
         if exit_code:
             raise RuntimeError(f"NER command exited with status {exit_code}")
     else:
-        expected_canary = configuration.get(
-            "expected_canary_raw_output_sha256"
-        )
+        expected_canary = configuration.get("expected_canary_raw_output_sha256")
         if not isinstance(expected_canary, str):
             raise ValueError(
                 "Production structured NER requires a qualification-pinned canary hash"
@@ -1230,18 +1247,14 @@ def execute_ner(
             runtime_name=configuration.get("runtime_name", "ollama"),
             runtime_version=configuration["runtime_version"],
             runtime_executable=Path(configuration["runtime_executable"]),
-            runtime_executable_sha256=configuration[
-                "runtime_executable_sha256"
-            ],
+            runtime_executable_sha256=configuration["runtime_executable_sha256"],
             ollama_manifest_digest=configuration["ollama_manifest_digest"],
             quantization=configuration["quantization"],
             device=configuration.get("device", "local-runtime"),
             seed=configuration.get("seed", 42),
             max_output_tokens=configuration.get("max_output_tokens", 512),
             timeout_seconds=configuration.get("timeout_seconds", 120),
-            schema_canary_repetitions=configuration.get(
-                "schema_canary_repetitions", 3
-            ),
+            schema_canary_repetitions=configuration.get("schema_canary_repetitions", 3),
             expected_canary_raw_output_sha256=expected_canary,
             code_revision=configuration["code_revision"],
             region_chunk_size=configuration.get("region_chunk_size", 8),
@@ -1261,9 +1274,7 @@ def execute_ner(
         )
         reverify_structured_ner_runtime(adapter, verified)
         _atomic_json(output_path, artifact.model_dump(mode="json"))
-    artifact = NERArtifact.model_validate_json(
-        output_path.read_text(encoding="utf-8")
-    )
+    artifact = NERArtifact.model_validate_json(output_path.read_text(encoding="utf-8"))
     if not _ner_artifact_matches(
         artifact,
         context,
@@ -1324,7 +1335,9 @@ def _validate_link_coverage(
             raise ValueError("Entity-link candidate run ID differs from its artifact")
         mention = expected_mentions.get(link.mention_id)
         if mention is None:
-            raise ValueError("Entity-link artifact contains a candidate for another NER run")
+            raise ValueError(
+                "Entity-link artifact contains a candidate for another NER run"
+            )
         if link.entity_type != mention.entity_type:
             raise ValueError("Entity-link candidate type differs from its mention")
         by_mention.setdefault(link.mention_id, []).append(link)
@@ -1334,7 +1347,9 @@ def _validate_link_coverage(
         if len(roster) > top_k + 1:
             raise ValueError("Entity-link roster exceeds top_k plus NIL")
         if sum(link.nil_candidate for link in roster) != 1:
-            raise ValueError("Entity-link roster must contain exactly one NIL candidate")
+            raise ValueError(
+                "Entity-link roster must contain exactly one NIL candidate"
+            )
         targets = [
             (link.entity_id, link.authority_uri)
             for link in roster
@@ -1428,7 +1443,9 @@ def execute_entity_link(
             output_path.read_text(encoding="utf-8")
         )
         if not _link_artifact_matches(artifact, context, source_ner_run_id):
-            raise ValueError("Existing job link artifact contradicts its immutable plan")
+            raise ValueError(
+                "Existing job link artifact contradicts its immutable plan"
+            )
         _validate_link_coverage(artifact, ner, top_k=top_k)
         stored = ingest_link_artifact(database_url, output_path)
         if stored.links_verified != len(artifact.links):
@@ -1456,7 +1473,9 @@ def execute_entity_link(
     ]
     if configuration.get("resolver") == "qwen":
         if configuration.get("resolver_runtime") != "ollama":
-            raise ValueError("Entity-link worker currently supports local Ollama resolution")
+            raise ValueError(
+                "Entity-link worker currently supports local Ollama resolution"
+            )
         arguments.extend(
             [
                 "--resolver-base-url",
@@ -1519,9 +1538,7 @@ def _projection_is_current(
     return bool(row and row[0])
 
 
-def _search_alias_points_to(
-    opensearch_url: str, alias: str, index_name: str
-) -> bool:
+def _search_alias_points_to(opensearch_url: str, alias: str, index_name: str) -> bool:
     try:
         from opensearchpy import OpenSearch
     except ImportError as exc:  # pragma: no cover - minimal installations
@@ -1557,7 +1574,9 @@ def execute_search_projection(
             or not _projection_is_current(database_url, build_id, "opensearch")
             or not _search_alias_points_to(opensearch_url, alias, index_name)
         ):
-            raise ValueError("Existing search receipt is not the current verified projection")
+            raise ValueError(
+                "Existing search receipt is not the current verified projection"
+            )
         result = {
             "projection_build_id": build_id,
             "index_name": index_name,
@@ -1620,7 +1639,9 @@ def execute_rag_export(
             "volume_number": context.scope.get("volume_number"),
             "page_number": context.scope.get("page_number"),
         }:
-            raise ValueError("Existing RAG export scope contradicts its immutable batch")
+            raise ValueError(
+                "Existing RAG export scope contradicts its immutable batch"
+            )
         result = {
             "documents": validation.documents,
             "exported_regions": validation.citations,
@@ -1674,11 +1695,12 @@ def execute_graph_projection(
     if receipt_path.is_file():
         receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         build_id = str(receipt.get("projection_build_id", ""))
-        if (
-            receipt.get("job_id") != context.job_id
-            or not _projection_is_current(database_url, build_id, "neo4j")
+        if receipt.get("job_id") != context.job_id or not _projection_is_current(
+            database_url, build_id, "neo4j"
         ):
-            raise ValueError("Existing graph receipt is not the current verified projection")
+            raise ValueError(
+                "Existing graph receipt is not the current verified projection"
+            )
         result = {
             key: receipt[key]
             for key in (
@@ -1732,7 +1754,7 @@ def execute_graph_projection(
 
 def execute_stage(
     database_url: str,
-    context: PageJobContext | AggregateJobContext,
+    context: PageJobContext | AggregateJobContext | CoherentJobContext,
     workspace_root: Path,
     *,
     cache_dir: Path,
@@ -1745,6 +1767,16 @@ def execute_stage(
     neo4j_user: str,
     neo4j_password: str | None,
 ) -> StageExecution:
+    if isinstance(context, CoherentJobContext):
+        execution = execute_coherent_stage(
+            database_url, context, opensearch_url=opensearch_url
+        )
+        return StageExecution(
+            execution.artifact_uri,
+            execution.output_sha256,
+            execution.result,
+            execution.adopted,
+        )
     if isinstance(context, AggregateJobContext):
         if context.stage == "search_projection":
             return execute_search_projection(
@@ -1829,7 +1861,9 @@ class LeaseHeartbeat:
 
     def raise_if_failed(self) -> None:
         if self._error:
-            raise RuntimeError(f"Lease heartbeat failed: {self._error}") from self._error
+            raise RuntimeError(
+                f"Lease heartbeat failed: {self._error}"
+            ) from self._error
 
 
 def run_one(
@@ -1981,6 +2015,8 @@ def run_loop(
         idle_polls=total_idle,
         stop_reason=stop_reason,
     )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
@@ -2003,9 +2039,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--neo4j-password", default=os.environ.get("NEO4J_PASSWORD"))
     parser.add_argument("--lease-seconds", type=int, default=900)
     parser.add_argument("--retry-delay-seconds", type=int, default=60)
-    parser.add_argument(
-        "--stage", choices=ALL_STAGES
-    )
+    parser.add_argument("--stage", choices=ALL_STAGES)
     parser.add_argument("--batch-id", type=UUID)
     parser.add_argument(
         "--loop",

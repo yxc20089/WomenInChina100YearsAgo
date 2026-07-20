@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 from uuid import UUID
 
@@ -11,7 +12,20 @@ from wic_history.rag_experiment import (
 )
 
 
-def _row(region_id: str, page_id: str, text: str, reading_order: int) -> dict:
+RAGTestValue = (
+    UUID
+    | str
+    | int
+    | float
+    | None
+    | dict[str, list[dict[str, int]]]
+    | list[dict[str, str | int]]
+)
+
+
+def _row(
+    region_id: str, page_id: str, text: str, reading_order: int
+) -> dict[str, RAGTestValue]:
     return {
         "page_id": UUID(page_id),
         "page_number": 308,
@@ -80,12 +94,18 @@ class RAGExperimentTests(unittest.TestCase):
         self.assertIn("evidence.coherent_unit_revision", REVIEWED_UNIT_EXPORT_SQL)
         self.assertIn("segmentation_selection.superseded_at IS NULL", REVIEWED_UNIT_EXPORT_SQL)
         self.assertIn("revision.superseded_at IS NULL", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("revision.unit_kind = 'article'", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("JOIN evidence.region_text_selection", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("text_selection.superseded_at IS NULL", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("selected_version.review_status = 'reviewed'", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("AND NOT EXISTS", REVIEWED_UNIT_EXPORT_SQL)
+        self.assertIn("AS expected_span_count", REVIEWED_UNIT_EXPORT_SQL)
 
     def test_reviewed_unit_offsets_map_back_to_raw_ocr(self) -> None:
         base = _row(
             "00000000-0000-0000-0000-000000000001",
             "00000000-0000-0000-0000-000000000010",
-            "甲女子乙",
+            "甲女雷乙",
             1,
         )
         base.update(
@@ -103,15 +123,113 @@ class RAGExperimentTests(unittest.TestCase):
                 "span_text_start": 1,
                 "span_text_end": 3,
                 "span_role": "body",
+                "selected_text": "甲女霍乙",
+                "selected_text_sha256": hashlib.sha256(
+                    "甲女霍乙".encode("utf-8")
+                ).hexdigest(),
+                "selected_text_version_id": UUID(
+                    "00000000-0000-0000-0000-000000000044"
+                ),
+                "text_selection_id": UUID(
+                    "00000000-0000-0000-0000-000000000045"
+                ),
+                "alignment_operations": [
+                    {
+                        "operation": "equal",
+                        "source_start": 0,
+                        "source_end": 1,
+                        "target_start": 0,
+                        "target_end": 1,
+                    },
+                    {
+                        "operation": "replace",
+                        "source_start": 1,
+                        "source_end": 3,
+                        "target_start": 1,
+                        "target_end": 3,
+                    },
+                    {
+                        "operation": "equal",
+                        "source_start": 3,
+                        "source_end": 4,
+                        "target_start": 3,
+                        "target_end": 4,
+                    },
+                ],
+                "expected_span_count": 1,
             }
         )
 
         document, citations = build_coherent_unit_documents([base])[0]
 
-        self.assertEqual(document["text"], "女子")
+        self.assertEqual(document["text"], "女霍")
         self.assertEqual(citations[0]["region_text_start"], 1)
         self.assertEqual(citations[0]["region_text_end"], 3)
+        self.assertEqual(citations[0]["raw_region_text_start"], 1)
+        self.assertEqual(citations[0]["raw_region_text_end"], 3)
+        self.assertEqual(
+            citations[0]["selected_text_version_id"],
+            "00000000-0000-0000-0000-000000000044",
+        )
+        self.assertEqual(
+            citations[0]["text_selection_id"],
+            "00000000-0000-0000-0000-000000000045",
+        )
+        self.assertEqual(
+            document["metadata"]["content_sha256"],
+            hashlib.sha256("女霍".encode("utf-8")).hexdigest(),
+        )
+        self.assertNotEqual(
+            document["metadata"]["content_sha256"],
+            document["metadata"]["segmentation_content_sha256"],
+        )
         self.assertEqual(
             document["text"][citations[0]["start_char"] : citations[0]["end_char"]],
-            "女子",
+            "女霍",
         )
+
+    def test_reviewed_unit_rejects_rows_lost_across_provenance_joins(self) -> None:
+        # Given: one materialized row from a revision that declares two source spans.
+        base = _row(
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000010",
+            "女子",
+            1,
+        )
+        base.update(
+            {
+                "revision_id": UUID("00000000-0000-0000-0000-000000000040"),
+                "unit_id": UUID("00000000-0000-0000-0000-000000000041"),
+                "issue_id": None,
+                "unit_kind": "article",
+                "title": "女學",
+                "content_sha256": "c" * 64,
+                "approved_by": "historian-a",
+                "segmentation_selection_id": UUID(
+                    "00000000-0000-0000-0000-000000000042"
+                ),
+                "segmentation_review_id": UUID(
+                    "00000000-0000-0000-0000-000000000043"
+                ),
+                "span_sequence_number": 0,
+                "span_text_start": 0,
+                "span_text_end": 2,
+                "span_role": "body",
+                "selected_text": "女子",
+                "selected_text_sha256": hashlib.sha256(
+                    "女子".encode("utf-8")
+                ).hexdigest(),
+                "selected_text_version_id": UUID(
+                    "00000000-0000-0000-0000-000000000044"
+                ),
+                "text_selection_id": UUID(
+                    "00000000-0000-0000-0000-000000000045"
+                ),
+                "alignment_operations": None,
+                "expected_span_count": 2,
+            }
+        )
+
+        # When/Then: export fails instead of presenting a partial article as complete.
+        with self.assertRaisesRegex(ValueError, "cardinality"):
+            _ = build_coherent_unit_documents([base])

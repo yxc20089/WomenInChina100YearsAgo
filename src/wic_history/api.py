@@ -6,13 +6,17 @@ import argparse
 import os
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Callable, Literal, Sequence, assert_never
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .embedding_pipeline import BGEEmbedder
 from .claim_context import load_reviewed_claim_items
+from .coherent_api_search import (
+    IncompleteCoherentEmbeddingIdentityError,
+    run_coherent_api_search,
+)
 from .evidence import (
     RetrievalResponse,
     ScenarioContextBundle,
@@ -87,6 +91,7 @@ class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=1000)
     mode: Literal["lexical", "dense", "hybrid"] = "hybrid"
+    corpus: Literal["region", "reviewed_coherent_unit"] = "region"
     limit: int = Field(default=10, ge=1, le=50)
     year_start: int | None = Field(default=None, ge=1872, le=1949)
     year_end: int | None = Field(default=None, ge=1872, le=1949)
@@ -196,6 +201,7 @@ def create_app(
     static_dir = Path(__file__).with_name("static")
     app = FastAPI(title="Women in China 100 Years Ago Research API", version="0.1.0")
     app.state.embedder = None
+    app.state.coherent_embedder = None
     app.state.generator = None
     app.state.generator_loaded = False
 
@@ -221,36 +227,50 @@ def create_app(
         if request.year_start and request.year_end and request.year_end < request.year_start:
             raise HTTPException(status_code=422, detail="year_end cannot precede year_start")
         try:
-            if request.mode == "lexical":
-                return lexical_search(
-                    search_url,
-                    request.query,
-                    index,
-                    request.limit,
-                    request.year_start,
-                    request.year_end,
-                )
-            if app.state.embedder is None:
-                app.state.embedder = embedder_factory()
-            if request.mode == "dense":
-                return dense_search(
-                    search_url,
-                    request.query,
-                    app.state.embedder,
-                    index,
-                    request.limit,
-                    request.year_start,
-                    request.year_end,
-                )
-            return hybrid_search(
-                search_url,
-                request.query,
-                app.state.embedder,
-                index,
-                request.limit,
-                year_start=request.year_start,
-                year_end=request.year_end,
-            )
+            match request.corpus, request.mode:
+                case "region", "lexical":
+                    return lexical_search(
+                        search_url,
+                        request.query,
+                        index,
+                        request.limit,
+                        request.year_start,
+                        request.year_end,
+                    )
+                case "region", "dense":
+                    if app.state.embedder is None:
+                        app.state.embedder = embedder_factory()
+                    return dense_search(
+                        search_url,
+                        request.query,
+                        app.state.embedder,
+                        index,
+                        request.limit,
+                        request.year_start,
+                        request.year_end,
+                    )
+                case "region", "hybrid":
+                    if app.state.embedder is None:
+                        app.state.embedder = embedder_factory()
+                    return hybrid_search(
+                        search_url,
+                        request.query,
+                        app.state.embedder,
+                        index,
+                        request.limit,
+                        year_start=request.year_start,
+                        year_end=request.year_end,
+                    )
+                case "reviewed_coherent_unit", _:
+                    result = run_coherent_api_search(
+                        search_url, request, app.state.coherent_embedder
+                    )
+                    app.state.coherent_embedder = result.embedder
+                    return result.response
+                case unreachable:
+                    assert_never(unreachable)
+        except IncompleteCoherentEmbeddingIdentityError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except HTTPException:
             raise
         except Exception as exc:
@@ -268,6 +288,13 @@ def create_app(
             raise HTTPException(
                 status_code=503, detail=f"Reviewed claim context unavailable: {exc}"
             ) from exc
+
+    def require_region(request: SearchRequest) -> None:
+        if request.corpus != "region":
+            raise HTTPException(
+                status_code=422,
+                detail="Context and generation endpoints currently require corpus=region",
+            )
 
     def require_database() -> str:
         if not db_url:
@@ -370,15 +397,18 @@ def create_app(
 
     @app.post("/api/context", response_model=ScenarioContextBundle)
     def context(request: SearchRequest) -> ScenarioContextBundle:
+        require_region(request)
         return build_context(run_search(request))
 
     @app.post("/api/generate", response_model=GenerationResponse)
     def generate_output(request: GenerationRequest) -> GenerationResponse:
+        require_region(request)
         bundle = build_context(run_search(request))
         return run_generation(bundle, request.task)
 
     @app.post("/api/chat", response_model=GenerationResponse)
     def chat(request: ChatRequest) -> GenerationResponse:
+        require_region(request)
         bundle = build_context(run_search(request))
         return run_generation(bundle, GenerationTask.CHAT_ANSWER, request.history)
 

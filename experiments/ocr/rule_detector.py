@@ -475,7 +475,9 @@ def extend_walls(accepted, ink, shape):
     for axis in ("h", "v"):
         dim_perp = shape[0] if axis == "h" else shape[1]
         dim_along = shape[1] if axis == "h" else shape[0]
+        cross = accepted["v" if axis == "h" else "h"]
         for r in accepted[axis]:
+            frame = r[2] < 250 or r[2] > dim_perp - 250
             for side in (0, 1):
                 for _ in range(4):
                     if side == 0:
@@ -487,19 +489,48 @@ def extend_walls(accepted, ink, shape):
                     m = measure_line(ink, axis, r[2], wlo, whi, band=45)
                     if not m or not m.get("present"):
                         break
-                    cls, _why = classify_full(
-                        m, frame_zone=(r[2] < 250 or r[2] > dim_perp - 250))
-                    if cls not in RULE_CLASSES:
+                    cls, _why = classify_full(m, frame_zone=frame)
+                    # extension probes new territory: only the strong classes
+                    # count (rough_rule's isolation test admitted display-glyph
+                    # rows — p0308 y2580 grew through the yichan-du title), and
+                    # the probe must trace the SAME line (p0308 y6438 grew
+                    # along Latin text 30px off perp)
+                    if cls not in ("thin_rule", "medium_rule", "thick_band"):
                         break
+                    cl = m.get("centerline") or []
+                    if cl:
+                        # 25px: real warp drifts the p0367 divider 16px; the
+                        # p0308 false extensions die on the class gate anyway
+                        perps = sorted(p for _a, p in cl)
+                        if abs(perps[len(perps) // 2] - r[2]) > 25:
+                            break
                     alo, ahi = wlo + m["all_obj_lo"], wlo + m["all_obj_hi"]
                     if side == 0:
                         if ahi < r[0] - 100 or alo >= r[0] - 50:
                             break
-                        r[0] = alo
+                        new_end = alo
+                        clamped = False
+                        if not frame:
+                            for c in cross:
+                                if min(c[1], r[2] + 40) > max(c[0], r[2] - 40) and new_end < c[2] < r[0]:
+                                    new_end = c[2]
+                                    clamped = True
+                        r[0] = new_end
+                        if clamped:
+                            break
                     else:
                         if alo > r[1] + 100 or ahi <= r[1] + 50:
                             break
-                        r[1] = ahi
+                        new_end = ahi
+                        clamped = False
+                        if not frame:
+                            for c in cross:
+                                if min(c[1], r[2] + 40) > max(c[0], r[2] - 40) and r[1] < c[2] < new_end:
+                                    new_end = c[2]
+                                    clamped = True
+                        r[1] = new_end
+                        if clamped:
+                            break
     return accepted
 
 
@@ -702,6 +733,11 @@ def main() -> int:
                 TITLE_BOXES.append([x1 - 120, y1 - 120, x2 + 120, y2 + 120])
 
     accepted, counts = detect(src, ink, mask_boxes, image_boxes, chain_views=args.chain_views)
+    # scan-border lines at the image edge are not content rules (p0308 y=8
+    # wall let frame-snap drag every column wall to the image top)
+    for ax in ("h", "v"):
+        dim = src.shape[0] if ax == "h" else src.shape[1]
+        accepted[ax] = [r for r in accepted[ax] if 100 <= r[2] <= dim - 100]
     for ax in accepted:
         accepted[ax] = merge(ink, accepted[ax], ax)
     accepted = extend_walls(accepted, ink, src.shape)

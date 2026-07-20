@@ -9,10 +9,17 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from enum import StrEnum
-from typing import Any, Literal
-from uuid import UUID, uuid4
+from typing import Any, Literal, assert_never
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
 
 
 SCHEMA_VERSION = "1.0"
@@ -34,7 +41,9 @@ class Polygon(StrictModel):
 class SourcePointer(StrictModel):
     source_uri: str
     source_sha256: str | None = None
+    page_id: UUID | None = None
     derivative_id: UUID | None = None
+    image_uri: str | None = None
     image_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     evidence_tier: Literal[
         "screening_derivative",
@@ -46,6 +55,8 @@ class SourcePointer(StrictModel):
     publication_year: int | None = Field(default=None, ge=1800, le=2100)
     page_number: int = Field(ge=1)
     region_id: UUID | None = None
+    text_version_id: UUID | None = None
+    text_selection_id: UUID | None = None
     polygon: Polygon | None = None
     text_start: int | None = Field(default=None, ge=0)
     text_end: int | None = Field(default=None, ge=0)
@@ -54,7 +65,11 @@ class SourcePointer(StrictModel):
     def validate_offsets(self) -> "SourcePointer":
         if (self.text_start is None) != (self.text_end is None):
             raise ValueError("text_start and text_end must be provided together")
-        if self.text_start is not None and self.text_end < self.text_start:
+        if (
+            self.text_start is not None
+            and self.text_end is not None
+            and self.text_end < self.text_start
+        ):
             raise ValueError("text_end must be greater than or equal to text_start")
         return self
 
@@ -348,25 +363,186 @@ class RetrievalMode(StrEnum):
     GRAPH = "graph"
 
 
+class RetrievalSourceSpan(StrictModel):
+    citation_id: str = ""
+    document_id: UUID | None
+    sequence_number: int = Field(ge=0)
+    document_start: int = Field(ge=0)
+    document_end: int = Field(ge=0)
+    role: str = Field(min_length=1)
+    source: SourcePointer
+
+    @model_validator(mode="after")
+    def validate_document_offsets(self) -> "RetrievalSourceSpan":
+        if self.document_end < self.document_start:
+            raise ValueError(
+                "document_end must be greater than or equal to document_start"
+            )
+        citation_id = _retrieval_citation_id(
+            self.document_id, self.sequence_number, self.source
+        )
+        if self.citation_id and self.citation_id != citation_id:
+            raise ValueError(
+                "citation_id must match deterministic provenance identity"
+            )
+        self.citation_id = citation_id
+        return self
+
+
+def _retrieval_citation_id(
+    document_id: UUID | None, sequence_number: int, source: SourcePointer
+) -> str:
+    identity = "|".join(
+        (
+            str(document_id) if document_id is not None else "legacy-region",
+            str(sequence_number),
+            str(source.region_id) if source.region_id is not None else "no-region",
+            (
+                str(source.text_version_id)
+                if source.text_version_id is not None
+                else "no-text-version"
+            ),
+            source.source_uri,
+            str(source.page_number),
+            str(source.text_start) if source.text_start is not None else "no-start",
+            str(source.text_end) if source.text_end is not None else "no-end",
+        )
+    )
+    return f"citation:{uuid5(NAMESPACE_URL, identity)}"
+
+
 class RetrievalHit(StrictModel):
     rank: int = Field(ge=1)
     score: float
-    source: SourcePointer
+    target_kind: Literal["region", "reviewed_coherent_unit"] = "region"
+    target_id: UUID | None = None
+    coherent_unit_id: UUID | None = None
+    source: SourcePointer | None = None
+    sources: list[RetrievalSourceSpan] = Field(default_factory=list)
     text: str
     normalized_text: str | None = None
     entity_ids: list[UUID] = Field(default_factory=list)
     claim_ids: list[UUID] = Field(default_factory=list)
     explanation: dict[str, Any] = Field(default_factory=dict)
 
+    @model_validator(mode="after")
+    def validate_target_provenance(self) -> "RetrievalHit":
+        match self.target_kind:
+            case "region":
+                if self.source is None:
+                    raise ValueError("region hits require a singular source")
+                if self.target_id is None and self.source.region_id is not None:
+                    self.target_id = self.source.region_id
+                if (
+                    self.source.region_id is not None
+                    and self.target_id != self.source.region_id
+                ):
+                    raise ValueError("region target_id must match source.region_id")
+                if self.coherent_unit_id is not None:
+                    raise ValueError("region hits cannot have a coherent_unit_id")
+                canonical_source = RetrievalSourceSpan(
+                    document_id=self.target_id,
+                    sequence_number=0,
+                    document_start=0,
+                    document_end=len(self.text),
+                    role="region",
+                    source=self.source,
+                )
+                if not self.sources:
+                    self.sources = [canonical_source]
+                if self.sources != [canonical_source]:
+                    raise ValueError("region hits require one canonical source span")
+            case "reviewed_coherent_unit":
+                if self.target_id is None or self.coherent_unit_id is None:
+                    raise ValueError(
+                        "reviewed coherent-unit hits require target_id and coherent_unit_id"
+                    )
+                if self.source is not None:
+                    raise ValueError(
+                        "reviewed coherent-unit hits must not have a singular source"
+                    )
+                if not self.sources:
+                    raise ValueError(
+                        "reviewed coherent-unit hits require nonempty ordered sources"
+                    )
+                if any(span.document_id != self.target_id for span in self.sources):
+                    raise ValueError(
+                        "all coherent-unit sources must identify the target document"
+                    )
+                if any(
+                    span.document_end == span.document_start for span in self.sources
+                ):
+                    raise ValueError("coherent-unit sources must have nonempty spans")
+                citation_ids = [span.citation_id for span in self.sources]
+                if len(set(citation_ids)) != len(citation_ids):
+                    raise ValueError("coherent-unit citation_id values must be unique")
+                sequence_numbers = [span.sequence_number for span in self.sources]
+                if sequence_numbers != list(range(len(self.sources))):
+                    raise ValueError(
+                        "coherent-unit sources must be ordered and nonoverlapping"
+                    )
+                if any(
+                    current.document_start < previous.document_end
+                    for previous, current in zip(self.sources, self.sources[1:])
+                ):
+                    raise ValueError(
+                        "coherent-unit sources must be ordered and nonoverlapping"
+                    )
+            case unreachable:
+                assert_never(unreachable)
+        return self
+
+
+def serialize_legacy_sources(
+    sources: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    source_fields = {"page_id", "image_uri", "text_version_id", "text_selection_id"}
+    for source in sources:
+        for field in source_fields:
+            source.pop(field, None)
+    return sources
+
+
+def _serialize_legacy_hits(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    hit_fields = {"target_kind", "target_id", "coherent_unit_id", "sources"}
+    for hit in hits:
+        for field in hit_fields:
+            hit.pop(field, None)
+        hit["source"] = serialize_legacy_sources([hit["source"]])[0]
+    return hits
+
 
 class RetrievalResponse(StrictModel):
-    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    schema_version: Literal["1.0", "1.1"] = SCHEMA_VERSION
     query: str
     mode: RetrievalMode
     hits: list[RetrievalHit]
     generated_answer: str | None = None
     answer_model: str | None = None
     warnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_schema_features(self) -> "RetrievalResponse":
+        if self.schema_version == "1.0" and any(
+            hit.target_kind == "reviewed_coherent_unit" for hit in self.hits
+        ):
+            raise ValueError("reviewed coherent-unit hits require response schema 1.1")
+        return self
+
+    @model_serializer(mode="wrap")
+    def serialize_versioned(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = handler(self)
+        match self.schema_version:
+            case "1.1":
+                return payload
+            case "1.0":
+                pass
+            case unreachable:
+                assert_never(unreachable)
+        payload["hits"] = _serialize_legacy_hits(payload["hits"])
+        return payload
 
 
 class ScenarioEvidenceItem(StrictModel):
@@ -388,3 +564,15 @@ class ScenarioContextBundle(StrictModel):
         "Keep directly evidenced facts, plausible inference, and speculation visibly separate. "
         "Never present generated details as recovered historical fact."
     )
+
+    @model_serializer(mode="wrap")
+    def serialize_legacy_retrieval(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = handler(self)
+        payload["retrieved_context"] = _serialize_legacy_hits(
+            payload["retrieved_context"]
+        )
+        for item in payload["evidence_items"]:
+            item["sources"] = serialize_legacy_sources(item["sources"])
+        return payload

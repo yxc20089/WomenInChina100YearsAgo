@@ -17,6 +17,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from .reviewed_text_materializer import (
+    ReviewedSpanInput,
+    materialize_reviewed_article,
+)
+
 
 GRAPHRAG_VERSION = "3.1.1"
 GRAPHRAG_REVISION = "14a00ad88fc33cf2b52f4f113f25807556f8e25e"
@@ -126,41 +131,61 @@ def _coherent_unit_document(
     if not rows:
         raise ValueError("Cannot export an empty coherent unit")
     first = rows[0]
+    expected_span_counts = {row["expected_span_count"] for row in rows}
+    if len(expected_span_counts) != 1 or expected_span_counts != {len(rows)}:
+        raise ValueError(
+            "reviewed article span cardinality changed across provenance joins"
+        )
     document_id = str(first["revision_id"])
-    pieces: list[str] = []
+    sources = tuple(
+        ReviewedSpanInput(
+            sequence_number=row["span_sequence_number"],
+            region_id=row["region_id"],
+            page_id=row["page_id"],
+            raw_text=row["raw_text"],
+            raw_start=row["span_text_start"],
+            raw_end=row["span_text_end"],
+            selected_text_version_id=row["selected_text_version_id"],
+            selected_text_sha256=row["selected_text_sha256"],
+            selection_id=row["text_selection_id"],
+            selected_text=row["selected_text"],
+            role=row["span_role"],
+            alignment_operations=(
+                tuple(row["alignment_operations"])
+                if row["alignment_operations"] is not None
+                else None
+            ),
+        )
+        for row in rows
+    )
+    canonical = materialize_reviewed_article(
+        first["revision_id"], first["unit_kind"], sources
+    )
+    rows_by_sequence = {row["span_sequence_number"]: row for row in rows}
     citations: list[dict[str, Any]] = []
-    position = 0
-    for row in rows:
-        raw_text = row["raw_text"]
-        start_offset = row["span_text_start"]
-        end_offset = row["span_text_end"]
-        if end_offset > len(raw_text):
-            raise ValueError(f"reviewed span exceeds OCR text for region {row['region_id']}")
-        text = raw_text[start_offset:end_offset]
-        if not text:
-            continue
-        if pieces:
-            pieces.append("\n")
-            position += 1
-        start = position
-        pieces.append(text)
-        position += len(text)
+    for span in canonical.spans:
+        row = rows_by_sequence[span.sequence_number]
         citations.append(
             {
                 "document_id": document_id,
                 "coherent_unit_id": str(row["unit_id"]),
                 "coherent_unit_revision_id": document_id,
-                "region_id": str(row["region_id"]),
-                "start_char": start,
-                "end_char": position,
-                "region_text_start": start_offset,
-                "region_text_end": end_offset,
-                "sequence_number": row["span_sequence_number"],
-                "role": row["span_role"],
+                "region_id": str(span.region_id),
+                "start_char": span.composite_start,
+                "end_char": span.composite_end,
+                "region_text_start": span.selected_start,
+                "region_text_end": span.selected_end,
+                "raw_region_text_start": span.raw_start,
+                "raw_region_text_end": span.raw_end,
+                "sequence_number": span.sequence_number,
+                "role": span.role,
                 "polygon": row["polygon"],
                 "ocr_confidence": row["confidence"],
-                "raw_text": raw_text,
-                "exported_text": text,
+                "raw_text": row["raw_text"],
+                "exported_text": span.text,
+                "selected_text_version_id": str(span.selected_text_version_id),
+                "selected_text_sha256": span.selected_text_sha256,
+                "text_selection_id": str(span.selection_id),
                 "source_uri": row["source_uri"],
                 "source_sha256": row["source_sha256"],
                 "ocr_run_id": str(row["run_id"]),
@@ -181,7 +206,7 @@ def _coherent_unit_document(
     document = {
         "id": document_id,
         "title": first["title"] or f"Reviewed {first['unit_kind']} {first['unit_id']}",
-        "text": "".join(pieces),
+        "text": canonical.content,
         "metadata": {
             "coherent_unit_id": str(first["unit_id"]),
             "coherent_unit_revision_id": document_id,
@@ -190,7 +215,9 @@ def _coherent_unit_document(
             "approved_by": first["approved_by"],
             "approval_selection_id": str(first["segmentation_selection_id"]),
             "segmentation_review_id": str(first["segmentation_review_id"]),
-            "content_sha256": first["content_sha256"],
+            "content_sha256": canonical.content_sha256,
+            "input_sha256": canonical.input_sha256,
+            "segmentation_content_sha256": first["content_sha256"],
             "region_span_count": len(citations),
         },
     }
@@ -279,6 +306,19 @@ REVIEWED_UNIT_EXPORT_SQL = """
           ON segmentation_selection.selection_id = revision.approval_selection_id
          AND segmentation_selection.superseded_at IS NULL
         WHERE revision.superseded_at IS NULL
+          AND revision.unit_kind = 'article'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM evidence.coherent_unit_span required_span
+              LEFT JOIN evidence.region_text_selection required_selection
+                ON required_selection.region_id = required_span.region_id
+               AND required_selection.superseded_at IS NULL
+              LEFT JOIN evidence.text_version required_version
+                ON required_version.text_version_id = required_selection.text_version_id
+               AND required_version.review_status = 'reviewed'
+              WHERE required_span.revision_id = revision.revision_id
+                AND required_version.text_version_id IS NULL
+          )
           AND (CAST(%(volume_number)s AS integer) IS NULL
                OR volume.volume_number = CAST(%(volume_number)s AS integer))
           AND (CAST(%(page_number)s AS integer) IS NULL
@@ -287,6 +327,11 @@ REVIEWED_UNIT_EXPORT_SQL = """
     SELECT revision.revision_id, revision.unit_id, revision.issue_id,
            revision.unit_kind, revision.title, revision.content_sha256,
            revision.approved_by,
+           (
+               SELECT count(*)
+               FROM evidence.coherent_unit_span expected_span
+               WHERE expected_span.revision_id = revision.revision_id
+           ) AS expected_span_count,
            segmentation_selection.selection_id AS segmentation_selection_id,
            segmentation_selection.review_id AS segmentation_review_id,
            span.sequence_number AS span_sequence_number,
@@ -303,6 +348,11 @@ REVIEWED_UNIT_EXPORT_SQL = """
            region.region_id, region.reading_order, region.region_kind,
            COALESCE(span.polygon, region.polygon) AS polygon,
            region.raw_text, region.normalized_text, region.confidence,
+           text_selection.selection_id AS text_selection_id,
+           selected_version.text_version_id AS selected_text_version_id,
+           selected_version.text_content AS selected_text,
+           selected_version.text_sha256 AS selected_text_sha256,
+           alignment.operations AS alignment_operations,
            run.model_name AS ocr_model, run.model_revision AS ocr_model_revision
     FROM eligible_revision eligible
     JOIN evidence.coherent_unit_revision revision USING (revision_id)
@@ -312,6 +362,19 @@ REVIEWED_UNIT_EXPORT_SQL = """
     JOIN archive.volume volume USING (volume_id)
     JOIN archive.source_object source USING (source_object_id)
     JOIN evidence.processing_run run ON run.run_id = region.run_id
+    JOIN evidence.region_text_selection text_selection
+      ON text_selection.region_id = region.region_id
+     AND text_selection.superseded_at IS NULL
+    JOIN evidence.text_version selected_version
+      ON selected_version.text_version_id = text_selection.text_version_id
+     AND selected_version.review_status = 'reviewed'
+    JOIN evidence.text_version raw_version
+      ON raw_version.region_id = region.region_id
+     AND raw_version.variant = 'raw_ocr'
+     AND raw_version.text_content = region.raw_text
+    LEFT JOIN evidence.text_version_alignment alignment
+      ON alignment.source_text_version_id = raw_version.text_version_id
+     AND alignment.target_text_version_id = selected_version.text_version_id
     JOIN evidence.page_ocr_selection ocr_selection
       ON ocr_selection.page_id = region.page_id
      AND ocr_selection.run_id = region.run_id
@@ -340,7 +403,7 @@ def export_rag_corpus(
     input_unit: str = "ocr_page",
     overwrite: bool = False,
 ) -> RAGExportResult:
-    """Export authoritative OCR text and region citations, never generated claims."""
+    """Export authoritative source text with citations, never generated claims."""
     try:
         import psycopg
         from psycopg.rows import dict_row
@@ -447,10 +510,16 @@ def export_rag_corpus(
                 "reason": "No reproducible LazyGraphRAG mode is exposed by the OSS GraphRAG CLI",
             },
         },
-        "warnings": ([
-            "Page units are temporary until reviewed article segmentation exists.",
-        ] if input_unit == "ocr_page" else []) + [
-            "OCR text is machine-generated and must not be treated as a reviewed historical claim.",
+        "warnings": (
+            [
+                "Page units are temporary until reviewed article segmentation exists.",
+                "OCR text is machine-generated and must not be treated as a reviewed historical claim.",
+            ]
+            if input_unit == "ocr_page"
+            else [
+                "Article text comes only from active historian-reviewed text selections.",
+            ]
+        ) + [
             "RAG-generated entities, relations, communities, and summaries are disposable projections.",
             "OCR regions with empty normalized and raw text are omitted and counted in the manifest.",
         ],

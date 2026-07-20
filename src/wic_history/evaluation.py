@@ -104,7 +104,12 @@ def load_questions(path: Path) -> list[EvaluationQuestion]:
 def score_question(
     question: EvaluationQuestion, response: RetrievalResponse
 ) -> QuestionResult:
-    retrieved = [hit.source.region_id for hit in response.hits if hit.source.region_id is not None]
+    retrieved = [
+        span.source.region_id
+        for hit in response.hits
+        for span in hit.sources
+        if span.source.region_id is not None
+    ]
     expected = set(question.expected_region_ids)
     relevant = [region_id for region_id in retrieved if region_id in expected]
     recall = len(set(relevant)) / len(expected) if expected else None
@@ -115,19 +120,30 @@ def score_question(
             0.0,
         )
     citation_count = sum(
-        hit.source.region_id is not None and hit.source.polygon is not None
+        any(
+            span.source.region_id is not None and span.source.polygon is not None
+            for span in hit.sources
+        )
         for hit in response.hits
     )
     citation_rate = citation_count / len(response.hits) if response.hits else 1.0
     derivative_count = sum(
-        hit.source.derivative_id is not None
-        and hit.source.image_sha256 is not None
-        and hit.source.evidence_tier is not None
+        bool(hit.sources)
+        and all(
+            span.source.derivative_id is not None
+            and span.source.image_sha256 is not None
+            and span.source.evidence_tier is not None
+            for span in hit.sources
+        )
         for hit in response.hits
     )
     derivative_rate = derivative_count / len(response.hits) if response.hits else 1.0
     gold_count = sum(
-        hit.source.evidence_tier == "historian_selected_gold"
+        bool(hit.sources)
+        and all(
+            span.source.evidence_tier == "historian_selected_gold"
+            for span in hit.sources
+        )
         for hit in response.hits
     )
     gold_rate = gold_count / len(response.hits) if response.hits else 1.0
@@ -231,7 +247,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("--limit must be positive")
     questions = load_questions(args.questions)
     mode = RetrievalMode(args.mode)
-    embedder = BGEEmbedder(args.model, args.revision) if mode != RetrievalMode.LEXICAL else None
+    embedder = (
+        None
+        if mode == RetrievalMode.LEXICAL
+        else BGEEmbedder(args.model, args.revision)
+    )
 
     def retrieve(question: EvaluationQuestion) -> RetrievalResponse:
         positional: tuple[Any, ...] = (
@@ -244,6 +264,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if mode == RetrievalMode.LEXICAL:
             return lexical_search(*positional)
+        assert embedder is not None
         if mode == RetrievalMode.DENSE:
             return dense_search(
                 args.opensearch_url,

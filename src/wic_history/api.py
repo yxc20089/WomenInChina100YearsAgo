@@ -6,13 +6,19 @@ import argparse
 import os
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Callable, Literal, Sequence, assert_never
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .embedding_pipeline import BGEEmbedder
 from .claim_context import load_reviewed_claim_items
+from .coherent_search import (
+    SearchSpec,
+    coherent_dense_search,
+    coherent_hybrid_search,
+    coherent_lexical_search,
+)
 from .evidence import (
     RetrievalResponse,
     ScenarioContextBundle,
@@ -31,6 +37,7 @@ from .exploration import ExplorationReport, build_exploration_report
 from .insights import InsightReport, build_insight_report
 from .ingestion_jobs import batch_failures, batch_status
 from .search import DEFAULT_ALIAS, dense_search, hybrid_search, lexical_search
+from .search_runtime import PinnedQueryEmbedder
 from .segmentation_review import (
     SegmentationActivationRequest,
     SegmentationActivationResultView,
@@ -87,6 +94,7 @@ class SearchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=1000)
     mode: Literal["lexical", "dense", "hybrid"] = "hybrid"
+    corpus: Literal["region", "reviewed_coherent_unit"] = "region"
     limit: int = Field(default=10, ge=1, le=50)
     year_start: int | None = Field(default=None, ge=1872, le=1949)
     year_end: int | None = Field(default=None, ge=1872, le=1949)
@@ -196,6 +204,7 @@ def create_app(
     static_dir = Path(__file__).with_name("static")
     app = FastAPI(title="Women in China 100 Years Ago Research API", version="0.1.0")
     app.state.embedder = None
+    app.state.coherent_embedder = None
     app.state.generator = None
     app.state.generator_loaded = False
 
@@ -221,36 +230,106 @@ def create_app(
         if request.year_start and request.year_end and request.year_end < request.year_start:
             raise HTTPException(status_code=422, detail="year_end cannot precede year_start")
         try:
-            if request.mode == "lexical":
-                return lexical_search(
-                    search_url,
-                    request.query,
-                    index,
-                    request.limit,
-                    request.year_start,
-                    request.year_end,
-                )
-            if app.state.embedder is None:
-                app.state.embedder = embedder_factory()
-            if request.mode == "dense":
-                return dense_search(
-                    search_url,
-                    request.query,
-                    app.state.embedder,
-                    index,
-                    request.limit,
-                    request.year_start,
-                    request.year_end,
-                )
-            return hybrid_search(
-                search_url,
-                request.query,
-                app.state.embedder,
-                index,
-                request.limit,
-                year_start=request.year_start,
-                year_end=request.year_end,
-            )
+            match request.corpus, request.mode:
+                case "region", "lexical":
+                    return lexical_search(
+                        search_url,
+                        request.query,
+                        index,
+                        request.limit,
+                        request.year_start,
+                        request.year_end,
+                    )
+                case "region", "dense":
+                    if app.state.embedder is None:
+                        app.state.embedder = embedder_factory()
+                    return dense_search(
+                        search_url,
+                        request.query,
+                        app.state.embedder,
+                        index,
+                        request.limit,
+                        request.year_start,
+                        request.year_end,
+                    )
+                case "region", "hybrid":
+                    if app.state.embedder is None:
+                        app.state.embedder = embedder_factory()
+                    return hybrid_search(
+                        search_url,
+                        request.query,
+                        app.state.embedder,
+                        index,
+                        request.limit,
+                        year_start=request.year_start,
+                        year_end=request.year_end,
+                    )
+                case "reviewed_coherent_unit", mode:
+                    model_name = os.environ.get("COHERENT_EMBEDDING_MODEL")
+                    model_revision = os.environ.get("COHERENT_EMBEDDING_REVISION")
+                    configuration_sha256 = os.environ.get(
+                        "COHERENT_EMBEDDING_CONFIGURATION_SHA256"
+                    )
+                    spec = SearchSpec(
+                        request.query,
+                        limit=request.limit,
+                        year_min=request.year_start,
+                        year_max=request.year_end,
+                        model_name=model_name,
+                        model_revision=model_revision,
+                        configuration_sha256=configuration_sha256,
+                    )
+                    match mode:
+                        case "lexical":
+                            return coherent_lexical_search(search_url, spec)
+                        case "dense":
+                            if not (
+                                model_name
+                                and model_revision
+                                and configuration_sha256
+                            ):
+                                raise HTTPException(
+                                    status_code=503,
+                                    detail=(
+                                        "Coherent dense search requires pinned "
+                                        "embedding model, revision, and configuration"
+                                    ),
+                                )
+                            if app.state.coherent_embedder is None:
+                                app.state.coherent_embedder = PinnedQueryEmbedder(
+                                    model_name,
+                                    model_revision,
+                                    configuration_sha256,
+                                )
+                            return coherent_dense_search(
+                                search_url, spec, app.state.coherent_embedder
+                            )
+                        case "hybrid":
+                            if not (
+                                model_name
+                                and model_revision
+                                and configuration_sha256
+                            ):
+                                raise HTTPException(
+                                    status_code=503,
+                                    detail=(
+                                        "Coherent dense search requires pinned "
+                                        "embedding model, revision, and configuration"
+                                    ),
+                                )
+                            if app.state.coherent_embedder is None:
+                                app.state.coherent_embedder = PinnedQueryEmbedder(
+                                    model_name,
+                                    model_revision,
+                                    configuration_sha256,
+                                )
+                            return coherent_hybrid_search(
+                                search_url, spec, app.state.coherent_embedder
+                            )
+                        case unreachable:
+                            assert_never(unreachable)
+                case unreachable:
+                    assert_never(unreachable)
         except HTTPException:
             raise
         except Exception as exc:
@@ -268,6 +347,13 @@ def create_app(
             raise HTTPException(
                 status_code=503, detail=f"Reviewed claim context unavailable: {exc}"
             ) from exc
+
+    def require_region(request: SearchRequest) -> None:
+        if request.corpus != "region":
+            raise HTTPException(
+                status_code=422,
+                detail="Context and generation endpoints currently require corpus=region",
+            )
 
     def require_database() -> str:
         if not db_url:
@@ -370,15 +456,18 @@ def create_app(
 
     @app.post("/api/context", response_model=ScenarioContextBundle)
     def context(request: SearchRequest) -> ScenarioContextBundle:
+        require_region(request)
         return build_context(run_search(request))
 
     @app.post("/api/generate", response_model=GenerationResponse)
     def generate_output(request: GenerationRequest) -> GenerationResponse:
+        require_region(request)
         bundle = build_context(run_search(request))
         return run_generation(bundle, request.task)
 
     @app.post("/api/chat", response_model=GenerationResponse)
     def chat(request: ChatRequest) -> GenerationResponse:
+        require_region(request)
         bundle = build_context(run_search(request))
         return run_generation(bundle, GenerationTask.CHAT_ANSWER, request.history)
 

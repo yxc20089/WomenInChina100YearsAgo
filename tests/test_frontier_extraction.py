@@ -28,10 +28,8 @@ def _minimal_payload(region_id, text="富紳淑女固不貪便宜"):
                 "mention_form": "named",
             }
         ],
-        "event_evidence": [],
         "events": [],
         "claims": [],
-        "event_dates": [],
     }
 
 
@@ -150,10 +148,29 @@ class ExtractionValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = ArticleExtractionV2.model_validate(payload)
 
-    def test_event_date_must_reference_known_event(self):
-        payload = _minimal_payload(uuid4())
-        payload["event_dates"] = [{"event_key": "ghost", "date_iso": "1925-12"}]
-        with self.assertRaisesRegex(ValueError, "unknown event"):
+    def test_event_participant_must_reference_known_mention(self):
+        region_id = uuid4()
+        payload = _minimal_payload(region_id)
+        payload["events"] = [{
+            "event_key": "e1", "event_type": "performance",
+            "trigger": {"region_id": str(region_id), "text_start": 0,
+                        "text_end": 2, "surface": "富紳"},
+            "participants": [{"mention_key": "ghost", "role": "performer"}],
+        }]
+        with self.assertRaisesRegex(ValueError, "unknown mention"):
+            _ = ArticleExtractionV2.model_validate(payload)
+
+    def test_event_date_iso_shape_is_validated(self):
+        region_id = uuid4()
+        payload = _minimal_payload(region_id)
+        payload["events"] = [{
+            "event_key": "e1", "event_type": "performance",
+            "trigger": {"region_id": str(region_id), "text_start": 0,
+                        "text_end": 2, "surface": "富紳"},
+            "participants": [{"mention_key": "m1", "role": "performer"}],
+            "date_iso": "December 1925",
+        }]
+        with self.assertRaises(ValueError):
             _ = ArticleExtractionV2.model_validate(payload)
 
 

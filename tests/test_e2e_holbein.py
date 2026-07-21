@@ -15,7 +15,10 @@ from holbein_v219_p0308 import (  # noqa: E402
     exact_candidates,
     validate_response,
 )
-from load_holbein_candidates import build_ner_artifact  # noqa: E402
+from load_holbein_candidates import (  # noqa: E402
+    PILOT_MODEL_CONFIG_PATH,
+    build_ner_artifact,
+)
 from wic_history.model_config import load_pipeline_model_configuration
 
 
@@ -29,7 +32,7 @@ def accepted_response() -> dict[str, object]:
 
 
 def model_artifact() -> dict[str, object]:
-    configuration = load_pipeline_model_configuration()
+    configuration = load_pipeline_model_configuration(PILOT_MODEL_CONFIG_PATH)
     semantic = configuration.semantic
     return {
         "created_at": "2026-07-18T21:20:21.640716+00:00",

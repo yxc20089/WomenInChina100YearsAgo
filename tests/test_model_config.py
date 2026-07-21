@@ -72,8 +72,13 @@ def test_default_configuration_has_one_pinned_ocr_and_layout_model() -> None:
 def test_non_ocr_model_selections_remain_pinned() -> None:
     configuration = load_pipeline_model_configuration()
 
-    assert configuration.semantic.model_name == "Qwen/Qwen3.5-4B"
-    assert configuration.semantic.served_model == "qwen3.5:4b"
+    assert configuration.semantic.provider == "local_openai"
+    assert configuration.semantic.served_model.startswith("unsloth/Qwen3.6-35B")
+    assert configuration.frontier_ocr is not None
+    # the OCR pass needs a remote vision model; the exact slug is a pilot-phase
+    # decision made in config, so pin the mechanism rather than the model
+    assert configuration.frontier_ocr.provider in {"openrouter", "bedrock"}
+    assert "/" in configuration.frontier_ocr.served_model
     assert configuration.retrieval.passage_embedding.dimension == 1024
     assert configuration.identity.embedding.model_name == "Qwen/Qwen3-Embedding-0.6B"
     assert configuration.identity.reranker.model_name == "Qwen/Qwen3-Reranker-0.6B"
@@ -127,7 +132,10 @@ def test_openrouter_semantic_provider_records_unavailable_provenance(
 
 
 def test_ollama_semantic_identity_keeps_exact_local_provenance() -> None:
-    identity = load_pipeline_model_configuration().semantic.provenance_identity()
+    # the ollama provider remains supported; its exact local provenance is
+    # exercised through the frozen qwen pilot configuration
+    pilot = Path("experiments/e2e/pilot-models.toml")
+    identity = load_pipeline_model_configuration(pilot).semantic.provenance_identity()
 
     assert identity["provider"] == "ollama"
     assert identity["served_model"] == "qwen3.5:4b"
@@ -194,7 +202,7 @@ def test_configuration_hash_changes_with_complete_file(tmp_path: Path) -> None:
     changed = tmp_path / "changed.toml"
     original.write_text(source, encoding="utf-8")
     changed.write_text(
-        source.replace('keep_alive = "30m"', 'keep_alive = "20m"'),
+        source.replace('timeout_seconds = 300.0', 'timeout_seconds = 299.0'),
         encoding="utf-8",
     )
 

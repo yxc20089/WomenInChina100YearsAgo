@@ -53,20 +53,15 @@ class IngestionJobTests(unittest.TestCase):
         self.assertEqual(args.max_pages, 1000)
         self.assertEqual(args.aggregate_stages, "")
 
-    def test_default_ner_is_pinned_local_qwen_4b(self):
-        configuration = DEFAULT_CONFIGURATION["ner"]
-        self.assertEqual(configuration["adapter"], "structured_generation")
-        self.assertEqual(configuration["model"], "Qwen/Qwen3.5-4B")
-        self.assertEqual(configuration["served_model"], "qwen3.5:4b")
-        self.assertEqual(configuration["quantization"], "Q4_K_M")
-        self.assertEqual(configuration["acceleration"], "none")
-        self.assertTrue(configuration["endpoint_schema_enforcement"])
-        self.assertEqual(len(configuration["code_revision"]), 40)
-        self.assertEqual(
-            len(configuration["expected_canary_raw_output_sha256"]), 64
-        )
-
-        with self.assertRaisesRegex(ValueError, "pipeline-models.toml"):
+    def test_legacy_ner_stage_refuses_under_remote_semantic_provider(self):
+        # The pinned semantic provider is a remote frontier model with no
+        # verifiable local runtime, so the legacy in-ingestion NER stage has
+        # no profile and planning it refuses explicitly (article-level
+        # frontier extraction replaces it).
+        self.assertIsNone(DEFAULT_CONFIGURATION["ner"])
+        with self.assertRaisesRegex(ValueError, "local Ollama semantic"):
+            resolve_stage_configuration("ner")
+        with self.assertRaisesRegex(ValueError, "local Ollama semantic"):
             resolve_stage_configuration("ner", {"adapter": "rules+gliner"})
 
     def test_terminal_control_commands_require_explicit_scope(self):

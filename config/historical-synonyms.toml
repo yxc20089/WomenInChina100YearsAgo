@@ -1,0 +1,33 @@
+# Reviewed historical-synonym lexicon for archive query expansion.
+#
+# Review workflow (required for every change):
+#   1. Propose the entry in a PR touching only this file, citing at least one
+#      archive occurrence of the historical variant (volume/page/region).
+#   2. A historian reviews the mapping for period and meaning fit; directional
+#      concerns are handled by the data shape — a headword expands to its
+#      variants, never the reverse, unless the reverse entry is separately
+#      reviewed in.
+#   3. Merge records the reviewer via normal PR review; retrieval responses
+#      carry this file's version and content hash, so every synonym-assisted
+#      result is traceable to the lexicon revision that produced it.
+#
+# Entries map a modern query term (headword) to reviewed historical variants.
+# Weights are explicit lexical boosts strictly below the original term's
+# weight (1.0), so exact matches always outrank synonym-only matches.
+# This file is parsed fail-closed: any malformed entry disables expansion by
+# raising, never by silently broadening retrieval.
+#
+# This is reviewed query expansion, not model-generated semantic similarity:
+# the dense retrieval lane may surface related vocabulary statistically, but
+# only terms in this file may participate in *lexical* matching, and each is
+# individually reviewed.
+
+version = "2026-07-20.1"
+
+["女士"]
+variants = [
+  { term = "淑女", weight = 0.5, note = "gentry lady; frequent in 1920s advertisements (e.g. 富紳淑女)" },
+  { term = "士女", weight = 0.5, note = "ladies and gentlemen / gentry women; classical register" },
+  { term = "女子", weight = 0.3, note = "woman/female; broader term, lower weight" },
+  { term = "婦女", weight = 0.3, note = "women (collective); broader term, lower weight" },
+]

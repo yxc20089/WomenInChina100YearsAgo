@@ -22,43 +22,34 @@ repetition_penalty = 1.08
 confidence_status = "not_emitted_by_model"
 confidence_calibration = "not_available"
 
-# Frontier OCR for article-block crops (owner ruling 2026-07-20: frontier
-# models via OpenRouter for the two one-time ingestion passes; switch model
-# by editing served_model only).
-[frontier_ocr]
-provider = "openrouter"
-base_url = "https://openrouter.ai/api/v1"
-served_model = "google/gemini-3.5-flash"
-model_name = "Gemini 3.5 Flash"
-api_key_environment_variable = "OPENROUTER_API_KEY"
-model_revision_status = "not_available"
-weight_hash_status = "not_available"
-quantization_status = "not_disclosed_by_provider"
-temperature = 0.0
-max_output_tokens = 16384
-timeout_seconds = 300.0
-language = "zh-Hant"
-prompt = "這是一張1920年代《申報》報紙的一個版面區塊（直排繁體中文，閱讀順序由上到下、由右至左）。請完整轉錄圖中所有文字：保留繁體字形，不要簡化、不要翻譯、不要補全缺損字（無法辨認處用□表示）；按閱讀順序輸出純文字，欄與欄之間用換行分隔；不要添加任何說明或其他內容。"
-
-# Extraction pass: local Unsloth Studio serving Qwen3.6-35B-A3B (MTP GGUF).
-# Loopback-only; the API key lives in the environment (UNSLOTH_API_KEY).
 [semantic]
-provider = "local_openai"
-base_url = "http://127.0.0.1:8888/v1"
-served_model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL"
-model_name = "Qwen3.6-35B-A3B"
-api_key_environment_variable = "UNSLOTH_API_KEY"
-model_revision_status = "not_available"
-weight_hash_status = "not_available"
-quantization = "UD-Q4_K_XL"
-runtime_name = "unsloth-studio"
+provider = "ollama"
+base_url = "http://127.0.0.1:11434/v1"
+served_model = "qwen3.5:4b"
+model_name = "Qwen/Qwen3.5-4B"
+model_revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+ollama_manifest_digest = "sha256:2a654d98e6fba55d452b7043684e9b57a947e393bbffa62485a7aac05ee4eefd"
+model_blob_sha256 = "sha256:81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490"
+quantization = "Q4_K_M"
+runtime_name = "ollama"
+runtime_version = "0.32.1"
+runtime_executable = "/Applications/Ollama.app/Contents/Resources/ollama"
+runtime_executable_sha256 = "6bfd1b58ebfdbc2f2a15b6646993b01e94b42f2e76aa2f3af6b71e89dde503c9"
 thinking = false
 temperature = 0.0
 seed = 42
-context_length = 32768
-max_output_tokens = 16384
-timeout_seconds = 600.0
-structured_output = "openai_response_format_json_schema"
+context_length = 4096
+max_output_tokens = 512
+timeout_seconds = 120.0
+keep_alive = "30m"
+structured_output = "native_json_schema"
+acceleration = "none"
+mtp_environment_variable = "LLAMA_ARG_SPEC_TYPE"
+mtp_environment_value = "draft-mtp"
+schema_canary_repetitions = 3
+expected_canary_raw_output_sha256 = "ae7a10f8e04ff68d54e4f15576858cb5b0fd4c03089c1a012c130304adda71c2"
+prompt_schema_revision = "22c5166ad1e079fdf0c08507c7a4ac39ab49560e468b9877aea80b4c81c46dd7"
+response_format_sha256 = "46e997efa7e3f45493e442b08bc11217f48ab374ef45893ee61eee03b5077cc0"
 
 [retrieval.passage_embedding]
 engine = "sentence-transformers"

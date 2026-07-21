@@ -159,10 +159,128 @@ class OpenRouterSemanticModel(FrozenConfiguration):
         }
 
 
+class BedrockSemanticModel(FrozenConfiguration):
+    """Amazon Bedrock deployment via its OpenAI-compatible endpoint.
+
+    Bedrock API keys are environment-held; provenance mirrors the OpenRouter
+    posture (no immutable revision or weight hashes disclosed).
+    """
+
+    provider: Literal["bedrock"]
+    base_url: str = Field(pattern=r"^https://bedrock-runtime\.[a-z0-9-]+\.amazonaws\.com/openai/v1$")
+    served_model: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    api_key_environment_variable: str = Field(pattern=r"^[A-Z][A-Z0-9_]*$")
+    model_revision_status: Literal["not_available"]
+    weight_hash_status: Literal["not_available"]
+    quantization_status: Literal["not_disclosed_by_provider"]
+    thinking: Literal[False]
+    temperature: Literal[0.0]
+    seed: int
+    context_length: int = Field(ge=1024)
+    max_output_tokens: int = Field(gt=0, le=32768)
+    timeout_seconds: float = Field(gt=0, le=300)
+    structured_output: Literal["openai_response_format_json_schema"]
+
+    def provenance_identity(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "endpoint": self.base_url,
+            "served_model": self.served_model,
+            "model_name": self.model_name,
+            "model_revision": self.model_revision_status,
+            "weight_hashes": self.weight_hash_status,
+            "quantization": self.quantization_status,
+            "runtime_name": self.provider,
+            "runtime_version": "not_available",
+            "acceleration": "not_applicable",
+        }
+
+
+class LocalOpenAISemanticModel(FrozenConfiguration):
+    """Local OpenAI-compatible server (e.g. Unsloth Studio serving a GGUF).
+
+    Loopback-only: no data leaves the machine, so no egress consent applies.
+    The runtime offers no manifest/weight verification protocol, so those
+    provenance fields carry explicit unavailability markers; the served-model
+    slug (including its quantization tag) is the recorded identity.
+    """
+
+    provider: Literal["local_openai"]
+    base_url: str = Field(pattern=r"^http://(127\.0\.0\.1|localhost|\[::1\])(:[0-9]+)?(/.*)?$")
+    served_model: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    api_key_environment_variable: str = Field(pattern=r"^[A-Z][A-Z0-9_]*$")
+    model_revision_status: Literal["not_available"]
+    weight_hash_status: Literal["not_available"]
+    quantization: str = Field(min_length=1)
+    runtime_name: str = Field(min_length=1)
+    thinking: Literal[False]
+    temperature: Literal[0.0]
+    seed: int
+    context_length: int = Field(ge=1024)
+    max_output_tokens: int = Field(gt=0, le=32768)
+    timeout_seconds: float = Field(gt=0, le=600)
+    structured_output: Literal["openai_response_format_json_schema"]
+
+    def provenance_identity(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "endpoint": self.base_url,
+            "served_model": self.served_model,
+            "model_name": self.model_name,
+            "model_revision": self.model_revision_status,
+            "weight_hashes": self.weight_hash_status,
+            "quantization": self.quantization,
+            "runtime_name": self.runtime_name,
+            "runtime_version": "not_available",
+            "acceleration": "mtp",
+        }
+
+
 SemanticModel = Annotated[
-    OllamaSemanticModel | OpenRouterSemanticModel,
+    OllamaSemanticModel
+    | OpenRouterSemanticModel
+    | BedrockSemanticModel
+    | LocalOpenAISemanticModel,
     Field(discriminator="provider"),
 ]
+
+
+class FrontierOCRModel(FrozenConfiguration):
+    """Remote vision model transcribing one article-block crop per call.
+
+    One of the two one-time ingestion passes (owner ruling 2026-07-20). The
+    prompt is part of the pinned identity; the API key stays in the
+    environment and never enters configuration, artifacts, or logs.
+    """
+
+    provider: Literal["openrouter", "bedrock"]
+    base_url: str = Field(pattern=r"^https://")
+    served_model: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    api_key_environment_variable: str = Field(pattern=r"^[A-Z][A-Z0-9_]*$")
+    model_revision_status: Literal["not_available"]
+    weight_hash_status: Literal["not_available"]
+    quantization_status: Literal["not_disclosed_by_provider"]
+    temperature: Literal[0.0]
+    max_output_tokens: int = Field(gt=0, le=32768)
+    timeout_seconds: float = Field(gt=0, le=600)
+    language: Literal["zh-Hant"]
+    prompt: str = Field(min_length=20)
+
+    def provenance_identity(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "endpoint": self.base_url,
+            "served_model": self.served_model,
+            "model_name": self.model_name,
+            "model_revision": self.model_revision_status,
+            "weight_hashes": self.weight_hash_status,
+            "quantization": self.quantization_status,
+            "prompt_sha256": hashlib.sha256(self.prompt.encode()).hexdigest(),
+            "language": self.language,
+        }
 
 
 class EmbeddingModel(FrozenConfiguration):
@@ -192,6 +310,9 @@ class IdentityModels(FrozenConfiguration):
 class PipelineModelConfiguration(FrozenConfiguration):
     schema_version: Literal[1]
     ocr: HunyuanOCRModel
+    # optional so frozen pilot configurations (pre-frontier) still parse;
+    # frontier stages fail closed when it is absent
+    frontier_ocr: FrontierOCRModel | None = None
     semantic: SemanticModel
     retrieval: RetrievalModels
     identity: IdentityModels

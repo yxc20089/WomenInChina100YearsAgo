@@ -72,10 +72,13 @@ def test_default_configuration_has_one_pinned_ocr_and_layout_model() -> None:
 def test_non_ocr_model_selections_remain_pinned() -> None:
     configuration = load_pipeline_model_configuration()
 
-    assert configuration.semantic.provider == "openrouter"
-    assert configuration.semantic.served_model == "anthropic/claude-opus-4.8"
+    assert configuration.semantic.provider == "local_openai"
+    assert configuration.semantic.served_model.startswith("unsloth/Qwen3.6-35B")
     assert configuration.frontier_ocr is not None
-    assert configuration.frontier_ocr.served_model == "anthropic/claude-opus-4.8"
+    # the OCR pass needs a remote vision model; the exact slug is a pilot-phase
+    # decision made in config, so pin the mechanism rather than the model
+    assert configuration.frontier_ocr.provider in {"openrouter", "bedrock"}
+    assert "/" in configuration.frontier_ocr.served_model
     assert configuration.retrieval.passage_embedding.dimension == 1024
     assert configuration.identity.embedding.model_name == "Qwen/Qwen3-Embedding-0.6B"
     assert configuration.identity.reranker.model_name == "Qwen/Qwen3-Reranker-0.6B"

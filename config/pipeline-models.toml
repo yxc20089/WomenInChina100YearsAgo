@@ -40,21 +40,24 @@ timeout_seconds = 300.0
 language = "zh-Hant"
 prompt = "這是一張1920年代《申報》報紙的一個版面區塊（直排繁體中文，閱讀順序由上到下、由右至左）。請完整轉錄圖中所有文字：保留繁體字形，不要簡化、不要翻譯、不要補全缺損字（無法辨認處用□表示）；按閱讀順序輸出純文字，欄與欄之間用換行分隔；不要添加任何說明或其他內容。"
 
+# Extraction pass: local Unsloth Studio serving Qwen3.6-35B-A3B (MTP GGUF).
+# Loopback-only; the API key lives in the environment (UNSLOTH_API_KEY).
 [semantic]
-provider = "openrouter"
-base_url = "https://openrouter.ai/api/v1"
-served_model = "google/gemini-3.5-flash"
-model_name = "Gemini 3.5 Flash"
-api_key_environment_variable = "OPENROUTER_API_KEY"
+provider = "local_openai"
+base_url = "http://127.0.0.1:8888/v1"
+served_model = "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL"
+model_name = "Qwen3.6-35B-A3B"
+api_key_environment_variable = "UNSLOTH_API_KEY"
 model_revision_status = "not_available"
 weight_hash_status = "not_available"
-quantization_status = "not_disclosed_by_provider"
+quantization = "UD-Q4_K_XL"
+runtime_name = "unsloth-studio"
 thinking = false
 temperature = 0.0
 seed = 42
-context_length = 200000
+context_length = 32768
 max_output_tokens = 16384
-timeout_seconds = 300.0
+timeout_seconds = 600.0
 structured_output = "openai_response_format_json_schema"
 
 [retrieval.passage_embedding]

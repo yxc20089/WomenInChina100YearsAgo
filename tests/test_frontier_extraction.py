@@ -184,7 +184,7 @@ class ConfigurationTests(unittest.TestCase):
 
         configuration = load_pipeline_model_configuration()
         self.assertEqual(configuration.frontier_ocr.provider, "openrouter")
-        self.assertEqual(configuration.semantic.provider, "openrouter")
+        self.assertEqual(configuration.semantic.provider, "local_openai")
         self.assertEqual(configuration.semantic.temperature, 0.0)
         identity = configuration.frontier_ocr.provenance_identity()
         self.assertEqual(identity["model_revision"], "not_available")

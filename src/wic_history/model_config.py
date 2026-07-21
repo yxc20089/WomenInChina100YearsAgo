@@ -197,8 +197,52 @@ class BedrockSemanticModel(FrozenConfiguration):
         }
 
 
+class LocalOpenAISemanticModel(FrozenConfiguration):
+    """Local OpenAI-compatible server (e.g. Unsloth Studio serving a GGUF).
+
+    Loopback-only: no data leaves the machine, so no egress consent applies.
+    The runtime offers no manifest/weight verification protocol, so those
+    provenance fields carry explicit unavailability markers; the served-model
+    slug (including its quantization tag) is the recorded identity.
+    """
+
+    provider: Literal["local_openai"]
+    base_url: str = Field(pattern=r"^http://(127\.0\.0\.1|localhost|\[::1\])(:[0-9]+)?(/.*)?$")
+    served_model: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    api_key_environment_variable: str = Field(pattern=r"^[A-Z][A-Z0-9_]*$")
+    model_revision_status: Literal["not_available"]
+    weight_hash_status: Literal["not_available"]
+    quantization: str = Field(min_length=1)
+    runtime_name: str = Field(min_length=1)
+    thinking: Literal[False]
+    temperature: Literal[0.0]
+    seed: int
+    context_length: int = Field(ge=1024)
+    max_output_tokens: int = Field(gt=0, le=32768)
+    timeout_seconds: float = Field(gt=0, le=600)
+    structured_output: Literal["openai_response_format_json_schema"]
+
+    def provenance_identity(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "endpoint": self.base_url,
+            "served_model": self.served_model,
+            "model_name": self.model_name,
+            "model_revision": self.model_revision_status,
+            "weight_hashes": self.weight_hash_status,
+            "quantization": self.quantization,
+            "runtime_name": self.runtime_name,
+            "runtime_version": "not_available",
+            "acceleration": "mtp",
+        }
+
+
 SemanticModel = Annotated[
-    OllamaSemanticModel | OpenRouterSemanticModel | BedrockSemanticModel,
+    OllamaSemanticModel
+    | OpenRouterSemanticModel
+    | BedrockSemanticModel
+    | LocalOpenAISemanticModel,
     Field(discriminator="provider"),
 ]
 

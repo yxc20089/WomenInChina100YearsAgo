@@ -297,22 +297,10 @@ class OpenAICompatibleGenerator:
 
     @classmethod
     def from_environment(cls) -> "OpenAICompatibleGenerator | None":
-        names = {
-            "LLM_BASE_URL",
-            "LLM_MODEL",
-            "LLM_MODEL_REVISION",
-            "LLM_API_KEY",
-            "LLM_TIMEOUT_SECONDS",
-            "LLM_MAX_OUTPUT_TOKENS",
-            "LLM_SEED",
-            "LLM_ALLOW_REMOTE",
-            "LLM_INPUT_COST_PER_MILLION_TOKENS_USD",
-            "LLM_OUTPUT_COST_PER_MILLION_TOKENS_USD",
-        }
-        configured_names = {name for name in names if os.environ.get(name) is not None}
-        if not configured_names:
-            return None
         required = {"LLM_BASE_URL", "LLM_MODEL", "LLM_MODEL_REVISION"}
+        configured_required = {name for name in required if os.environ.get(name)}
+        if not configured_required:
+            return None
         missing = sorted(name for name in required if not os.environ.get(name))
         if missing:
             raise RuntimeError(

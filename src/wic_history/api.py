@@ -66,6 +66,11 @@ from .review_workflow import (
     review_claim,
     review_mention,
 )
+from .result_explanation import (
+    ResultExplanationResponse,
+    explain_result,
+    load_explanation_target,
+)
 
 
 PAGE_IMAGE_ROOTS = (
@@ -103,6 +108,12 @@ class GenerationRequest(SearchRequest):
 
 class ChatRequest(SearchRequest):
     history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+
+
+class ResultExplanationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    revision_id: UUID
+    query: str = Field(min_length=1, max_length=1000)
 
 
 class PageDerivativeView(BaseModel):
@@ -311,6 +322,13 @@ def create_app(
             and not has_direct_evidence(bundle)
         ):
             return generate(bundle, task, None, history)
+        generator = configured_generator()
+        try:
+            return generate(bundle, task, generator, history)
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"Generation unavailable: {exc}") from exc
+
+    def configured_generator() -> TextGenerator | None:
         if not app.state.generator_loaded:
             try:
                 app.state.generator = generator_factory()
@@ -319,10 +337,7 @@ def create_app(
                     status_code=503, detail=f"Generation configuration invalid: {exc}"
                 ) from exc
             app.state.generator_loaded = True
-        try:
-            return generate(bundle, task, app.state.generator, history)
-        except Exception as exc:
-            raise HTTPException(status_code=503, detail=f"Generation unavailable: {exc}") from exc
+        return app.state.generator
 
     def review_error(exc: Exception) -> None:
         if isinstance(exc, ReviewNotFoundError):
@@ -411,6 +426,29 @@ def create_app(
         require_region(request)
         bundle = build_context(run_search(request))
         return run_generation(bundle, GenerationTask.CHAT_ANSWER, request.history)
+
+    @app.post("/api/explain-result", response_model=ResultExplanationResponse)
+    def explain_selected_result(
+        request: ResultExplanationRequest,
+    ) -> ResultExplanationResponse:
+        try:
+            target = load_explanation_target(require_database(), request.revision_id)
+        except HTTPException:
+            raise
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Explanation target unavailable: {exc}"
+            ) from exc
+        try:
+            return explain_result(target, request.query, configured_generator())
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503, detail=f"Explanation unavailable: {exc}"
+            ) from exc
 
     @app.get("/api/review/mentions", response_model=MentionQueueResponse)
     def mention_queue(

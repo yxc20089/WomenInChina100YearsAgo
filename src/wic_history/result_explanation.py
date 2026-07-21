@@ -208,14 +208,22 @@ def prepare_explanation_messages(
         {
             "role": "user",
             "content": (
-                "Explain only the selected passage in concise modern language. Preserve names, "
-                "dates, and uncertainty. Return one JSON object with exactly these keys: "
+                "Explain only the selected passage in concise, plain modern Chinese (现代白话). "
+                "Write plain_language_gloss, every ambiguous_phrases explanation, and every "
+                "limitation in modern Chinese. Keep plain_language_gloss to at most three "
+                "sentences and do not invent anything beyond the given text. Preserve names, "
+                "dates, and uncertainty. Return one valid JSON object (escape any quotes inside "
+                "strings) with exactly these keys: "
                 "plain_language_gloss (string), ambiguous_phrases (array of objects with phrase, "
                 "explanation, evidence_ids), limitations (nonempty string array), and evidence_ids "
                 "(nonempty string array). Use only the supplied E identifiers and never emit UUID "
                 "citations. Top-level evidence_ids lists the passages the whole gloss rests on; each "
                 "ambiguous_phrases entry must additionally name the specific E identifiers its own "
-                "explanation depends on.\n\nCONTEXT_JSON\n"
+                "explanation depends on. Match these key names exactly (note evidence_ids is plural "
+                "everywhere). Example shape:\n"
+                '{"plain_language_gloss":"…","ambiguous_phrases":[{"phrase":"…","explanation":"…",'
+                '"evidence_ids":["E1"]}],"limitations":["…"],"evidence_ids":["E1"]}'
+                "\n\nCONTEXT_JSON\n"
                 + json.dumps(context, ensure_ascii=False, sort_keys=True)
             ),
         },

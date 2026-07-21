@@ -51,12 +51,21 @@ def canonical_sha256(value: Any) -> str:
     ).hexdigest()
 
 
+# The qwen3.5:4b pilot is a frozen protocol: its artifacts are validated
+# against the configuration that produced them, snapshotted next to this
+# loader, not against the live pipeline configuration (which has since moved
+# to a remote frontier provider).
+PILOT_MODEL_CONFIG_PATH = Path(__file__).resolve().parent / "pilot-models.toml"
+
+
 def build_ner_artifact(
     model_artifact: dict[str, Any],
     *,
     model_config_path: str | Path | None = None,
 ) -> NERArtifact:
-    pipeline_configuration = load_pipeline_model_configuration(model_config_path)
+    pipeline_configuration = load_pipeline_model_configuration(
+        model_config_path or PILOT_MODEL_CONFIG_PATH
+    )
     semantic = pipeline_configuration.semantic
     if model_artifact.get("source") != SOURCE:
         raise ValueError("model artifact source identity differs from the pinned example")

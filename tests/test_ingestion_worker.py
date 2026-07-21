@@ -498,10 +498,21 @@ class IngestionWorkerTests(unittest.TestCase):
                 encoding="utf-8"
             )
         ).model_copy(update={"mentions": []})
+        # The live remote semantic provider disables the entity_link stage
+        # profile (no verifiable local runtime), so the worker recovery
+        # mechanics are exercised with a frozen resolver-free configuration.
+        self.assertIsNone(DEFAULT_CONFIGURATION["entity_link"])
         baseline_configuration = {
-            **DEFAULT_CONFIGURATION["entity_link"],
             "engine": "exact-alias+character-similarity",
+            "candidate_generator_revision": "1",
+            "top_k": 5,
+            "fuzzy_threshold": 0.72,
+            "reviewed_entities_only": True,
+            "nil_required": True,
             "resolver": "none",
+            "identity_mutation": False,
+            "output_root": "artifacts/ingestion-links",
+            "status": "candidate_only",
         }
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

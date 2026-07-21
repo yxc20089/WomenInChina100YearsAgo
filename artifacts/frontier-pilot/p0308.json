@@ -1,0 +1,2621 @@
+{
+ "schema_version": "frontier-pilot/v1",
+ "status": "machine_tier",
+ "created_at": "2026-07-21T01:59:38.892625+00:00",
+ "page_image": {
+  "path": "artifacts/lossless-pilot/images/v219/p0308.png",
+  "sha256": "52ea5e9081bdc7039977670d3c0e77ec49a40f050158aa36bb298ac42a48148e"
+ },
+ "ocr_model_identity": {
+  "provider": "openrouter",
+  "endpoint": "https://openrouter.ai/api/v1",
+  "served_model": "google/gemini-3.5-flash",
+  "model_name": "Gemini 3.5 Flash",
+  "model_revision": "not_available",
+  "weight_hashes": "not_available",
+  "quantization": "not_disclosed_by_provider",
+  "prompt_sha256": "928f01b1140122e453a1510988e4e966552189f39b68655964c92451c34b8a5f",
+  "language": "zh-Hant"
+ },
+ "extraction_identity": {
+  "schema_version": "wic-article-extraction/v2",
+  "system_prompt_sha256": "254813c1fb2aad75f9feae858d7472d0f53267d5a81fd808022cece0f0a8be5b",
+  "provider": "openrouter",
+  "endpoint": "https://openrouter.ai/api/v1",
+  "served_model": "google/gemini-3.5-flash",
+  "model_name": "Gemini 3.5 Flash",
+  "model_revision": "not_available",
+  "weight_hashes": "not_available",
+  "quantization": "not_disclosed_by_provider",
+  "runtime_name": "openrouter",
+  "runtime_version": "not_available",
+  "acceleration": "not_applicable"
+ },
+ "configuration_sha256": "164227be23e2116c502a3e83043077ff81f69d92f104b41a645c289dc2fa3e6e",
+ "blocks_transcribed": 17,
+ "ocr_abstained": [
+  {
+   "block_index": 3,
+   "reason": "non-terminal finish reason 'length'"
+  },
+  {
+   "block_index": 4,
+   "reason": "non-terminal finish reason 'length'"
+  }
+ ],
+ "extractions": [
+  {
+   "block_index": 0,
+   "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "本版面包含兩家戲院的電影放映廣告。第一家是位於北四川路人德里南的奧迪安大戲院（電話3512），今晚放映派拉蒙名片《草莽英雄》，由電影明星桃樂賽寶爾登主演。廣告介紹該片展現了韃靼與游牧民族的風俗、婚姻與愛情，極具教育與娛樂價值。每日放映三次，票價日戲四角至八角，夜戲六角至一元二角，兒童半價。第二家是位於八仙橋愛多亞路的恩派亞大戲院，自12月10日（星期日）起連映四天由范朋克主演的《俠盜羅賓漢》（Robinhood）。每日放映三次（下午三點、七點、九點），票價日戲二角至八角，夜戲三角至一元。廣告盛讚范朋克的演技精妙，稱此片為其生平得意之作。",
+    "topics": [
+     {
+      "label": "電影放映",
+      "note": ""
+     },
+     {
+      "label": "戲院廣告",
+      "note": ""
+     },
+     {
+      "label": "海派文化",
+      "note": ""
+     },
+     {
+      "label": "娛樂消費",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "奧迪安大戲院",
+     "恩派亞大戲院",
+     "草莽英雄",
+     "俠盜羅賓漢",
+     "范朋克",
+     "桃樂賽寶爾登",
+     "電影廣告",
+     "票價"
+    ],
+    "mentions": [
+     {
+      "mention_key": "mention_odeon",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 0,
+      "text_end": 6,
+      "surface": "奧迪安大戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_north_sichuan_rd",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 7,
+      "text_end": 11,
+      "surface": "北四川路",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_rende_li",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 11,
+      "text_end": 14,
+      "surface": "人德里",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_dorothy",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 37,
+      "text_end": 43,
+      "surface": "桃樂賽寶爾登",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_grassland_hero",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 57,
+      "text_end": 61,
+      "surface": "草莽英雄",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_empire",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 286,
+      "text_end": 292,
+      "surface": "恩派亞大戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_baxian_bridge",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 293,
+      "text_end": 296,
+      "surface": "八仙橋",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_edward_rd",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 297,
+      "text_end": 301,
+      "surface": "愛多亞路",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_fairbanks",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 319,
+      "text_end": 322,
+      "surface": "范朋克",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_robinhood",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 326,
+      "text_end": 331,
+      "surface": "俠盜羅賓漢",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_fairbanks_2",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 412,
+      "text_end": 415,
+      "surface": "范朋克",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_odeon_show",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 23,
+      "text_end": 61,
+      "surface": "今晚開映拍拉蒙名片\n電影明星桃樂賽寶爾登女士等之\n健撥撒故事絕作\n\n草莽英雄",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_empire_show",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 302,
+      "text_end": 331,
+      "surface": "十二月十日（星期日）起連映四天\n\n范朋克氏主演\n俠盜羅賓漢",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_odeon_date",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 23,
+      "text_end": 25,
+      "surface": "今晚",
+      "evidence_role": "event_date"
+     },
+     {
+      "evidence_key": "ev_empire_date",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 302,
+      "text_end": 317,
+      "surface": "十二月十日（星期日）起連映四天",
+      "evidence_role": "event_date"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "event_odeon_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_odeon_show",
+      "participant_decisions": [
+       {
+        "mention_key": "mention_odeon",
+        "participant_role": "host_location"
+       },
+       {
+        "mention_key": "mention_grassland_hero",
+        "participant_role": "work_performed"
+       },
+       {
+        "mention_key": "mention_dorothy",
+        "participant_role": "performer"
+       }
+      ],
+      "evidence_keys": [
+       "ev_odeon_show",
+       "ev_odeon_date"
+      ],
+      "date_evidence_key": "ev_odeon_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     },
+     {
+      "event_key": "event_empire_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_empire_show",
+      "participant_decisions": [
+       {
+        "mention_key": "mention_empire",
+        "participant_role": "host_location"
+       },
+       {
+        "mention_key": "mention_robinhood",
+        "participant_role": "work_performed"
+       },
+       {
+        "mention_key": "mention_fairbanks",
+        "participant_role": "performer"
+       }
+      ],
+      "evidence_keys": [
+       "ev_empire_show",
+       "ev_empire_date"
+      ],
+      "date_evidence_key": "ev_empire_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "claim_odeon_loc_1",
+      "subject_mention_key": "mention_odeon",
+      "predicate": "位於",
+      "object_mention_key": "mention_north_sichuan_rd",
+      "object_value": null,
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 0,
+      "text_end": 11,
+      "surface": "奧迪安大戲院\n北四川路"
+     },
+     {
+      "claim_key": "claim_odeon_loc_2",
+      "subject_mention_key": "mention_odeon",
+      "predicate": "鄰近",
+      "object_mention_key": "mention_rende_li",
+      "object_value": null,
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 0,
+      "text_end": 14,
+      "surface": "奧迪安大戲院\n北四川路人德里"
+     },
+     {
+      "claim_key": "claim_empire_loc_1",
+      "subject_mention_key": "mention_empire",
+      "predicate": "位於",
+      "object_mention_key": "mention_baxian_bridge",
+      "object_value": null,
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 286,
+      "text_end": 296,
+      "surface": "恩派亞大戲院\n八仙橋"
+     },
+     {
+      "claim_key": "claim_empire_loc_2",
+      "subject_mention_key": "mention_empire",
+      "predicate": "位於",
+      "object_mention_key": "mention_edward_rd",
+      "object_value": null,
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 286,
+      "text_end": 301,
+      "surface": "恩派亞大戲院\n八仙橋\n愛多亞路"
+     },
+     {
+      "claim_key": "claim_dorothy_star",
+      "subject_mention_key": "mention_dorothy",
+      "predicate": "身分",
+      "object_mention_key": null,
+      "object_value": "電影明星",
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 33,
+      "text_end": 43,
+      "surface": "電影明星桃樂賽寶爾登"
+     },
+     {
+      "claim_key": "claim_fairbanks_star",
+      "subject_mention_key": "mention_fairbanks",
+      "predicate": "主演",
+      "object_mention_key": "mention_robinhood",
+      "object_value": null,
+      "region_id": "f9e29c22-0468-5ef2-82bd-8530546c97a3",
+      "text_start": 319,
+      "text_end": 331,
+      "surface": "范朋克氏主演\n俠盜羅賓漢"
+     }
+    ],
+    "event_dates": [
+     {
+      "event_key": "event_empire_screening",
+      "date_iso": "1922-12-10"
+     }
+    ]
+   }
+  },
+  {
+   "block_index": 1,
+   "region_id": "d5d75ee7-94ae-5150-90e4-ced94c61af36",
+   "extraction": {
+    "article_type": "listing",
+    "modern_paraphrase": "中央大戲院。",
+    "topics": [
+     {
+      "label": "戲院",
+      "note": "提及娛樂場所中央大戲院"
+     },
+     {
+      "label": "娛樂場所",
+      "note": "關於戲院或劇場"
+     }
+    ],
+    "keywords": [
+     "中央大戲院",
+     "戲院",
+     "劇場"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_central_theatre",
+      "region_id": "d5d75ee7-94ae-5150-90e4-ced94c61af36",
+      "text_start": 0,
+      "text_end": 5,
+      "surface": "中央大戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     }
+    ],
+    "event_evidence": [],
+    "events": [],
+    "claims": [],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 2,
+   "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "愛普廬影戲院今日日夜放映兩場電影。第一場於下午五點半放映，第二場於晚上九點一刻放映。放映的電影是由劉別謙（Ernst Lubitsch）導演的《重吻》（Kiss Me Again）。座位有限，歡迎各界人士光臨。",
+    "topics": [
+     {
+      "label": "電影放映",
+      "note": "戲院每日放映時間與曲目"
+     },
+     {
+      "label": "戲院廣告",
+      "note": "愛普廬影戲院的電影宣傳"
+     }
+    ],
+    "keywords": [
+     "愛普廬影戲院",
+     "劉別謙",
+     "重吻",
+     "KISS ME AGAIN",
+     "電影",
+     "默片"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_apollo_theatre",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 0,
+      "text_end": 6,
+      "surface": "愛普廬影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_lubitsch_cn",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 60,
+      "text_end": 63,
+      "surface": "劉別謙",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_lubitsch_en",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 69,
+      "text_end": 83,
+      "surface": "ERNST LUBITSCH",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_kiss_me_again_en",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 85,
+      "text_end": 98,
+      "surface": "KISS ME AGAIN",
+      "entity_type": "product",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_kiss_me_again_cn",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 99,
+      "text_end": 101,
+      "surface": "重吻",
+      "entity_type": "product",
+      "mention_form": "full_name"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_screening_trigger",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 11,
+      "text_end": 13,
+      "surface": "開演",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_screening_date",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 7,
+      "text_end": 9,
+      "surface": "今日",
+      "evidence_role": "event_date"
+     },
+     {
+      "evidence_key": "ev_screening_time1",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 18,
+      "text_end": 29,
+      "surface": "第一次 下午五時半開映",
+      "evidence_role": "event_aspect"
+     },
+     {
+      "evidence_key": "ev_screening_time2",
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 32,
+      "text_end": 44,
+      "surface": "第二次 晚間九時一刻開映",
+      "evidence_role": "event_aspect"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_screening_trigger",
+      "participant_decisions": [
+       {
+        "mention_key": "m_apollo_theatre",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "m_kiss_me_again_cn",
+        "participant_role": "performed_work"
+       }
+      ],
+      "evidence_keys": [
+       "ev_screening_trigger",
+       "ev_screening_date",
+       "ev_screening_time1",
+       "ev_screening_time2"
+      ],
+      "date_evidence_key": "ev_screening_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": "ev_screening_time1"
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_director_cn",
+      "subject_mention_key": "m_lubitsch_cn",
+      "predicate": "導演",
+      "object_mention_key": "m_kiss_me_again_cn",
+      "object_value": null,
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 60,
+      "text_end": 67,
+      "surface": "劉別謙\n導 演"
+     },
+     {
+      "claim_key": "c_director_en",
+      "subject_mention_key": "m_lubitsch_en",
+      "predicate": "director of",
+      "object_mention_key": "m_kiss_me_again_en",
+      "object_value": null,
+      "region_id": "48e66e30-1b3d-5bba-baf0-782cccf44744",
+      "text_start": 68,
+      "text_end": 98,
+      "surface": "(ERNST LUBITSCH)\nKISS ME AGAIN"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 5,
+   "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "城南通俗影戲院位於大東門以南、小南門以北，每隔四天更換一次新片。今天日夜場照常開演，放映中國影片《探、茶女》以及連台九本的《鐵血鴛鴦》（於十一月初四開映）。票價方面，包廂每位大洋一元，優等正座每位小洋四角，頭等正座每位小洋二角，幼童則減半收費。",
+    "topics": [
+     {
+      "label": "戲院廣告",
+      "note": ""
+     },
+     {
+      "label": "電影放映",
+      "note": ""
+     },
+     {
+      "label": "票價資訊",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "城南通俗影戲院",
+     "鐵血鴛鴦",
+     "探、茶女",
+     "電影",
+     "票價",
+     "大東門",
+     "小南門"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_chengnan_theater",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 0,
+      "text_end": 7,
+      "surface": "城南通俗影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_dadongmen",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 8,
+      "text_end": 11,
+      "surface": "大東門",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_xiaonanmen",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 12,
+      "text_end": 15,
+      "surface": "小南門",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_movie_tanchanyv",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 40,
+      "text_end": 44,
+      "surface": "探、茶女",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_movie_tiexue_yuanyang",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 52,
+      "text_end": 56,
+      "surface": "鐵血鴛鴦",
+      "entity_type": "product",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_today_show",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 26,
+      "text_end": 34,
+      "surface": "▲今天日夜開演▼",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_release_date",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 57,
+      "text_end": 64,
+      "surface": "十一月初四開映",
+      "evidence_role": "event_date"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_show_tanchanyv",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_today_show",
+      "participant_decisions": [
+       {
+        "mention_key": "m_chengnan_theater",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "m_movie_tanchanyv",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_today_show"
+      ],
+      "date_evidence_key": "ev_today_show",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     },
+     {
+      "event_key": "e_show_tiexue_yuanyang",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_release_date",
+      "participant_decisions": [
+       {
+        "mention_key": "m_chengnan_theater",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "m_movie_tiexue_yuanyang",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_release_date"
+      ],
+      "date_evidence_key": "ev_release_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_theater_location",
+      "subject_mention_key": "m_chengnan_theater",
+      "predicate": "位於",
+      "object_mention_key": null,
+      "object_value": "大東門南小南門北",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 0,
+      "text_end": 16,
+      "surface": "城南通俗影戲院\n大東門南小南門北"
+     },
+     {
+      "claim_key": "c_box_price",
+      "subject_mention_key": "m_chengnan_theater",
+      "predicate": "包廂票價",
+      "object_mention_key": null,
+      "object_value": "大洋一元",
+      "region_id": "e667b397-e3f5-53a2-b10d-1a986f718e7e",
+      "text_start": 68,
+      "text_end": 76,
+      "surface": "包廂每位大洋一元"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 7,
+   "region_id": "56d26479-7c60-5508-bde3-de79c9cd06a3",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "「璉瑾號」商店推廣冬至（冬節）禮品。店內提供洋裝、首飾、金銀器皿等各式日用、裝飾及陳設精品，貨源充足、物美價廉。歡迎顧客光臨選購。地址位於河南路拋球場七號，電話為中央66845。",
+    "topics": [
+     {
+      "label": "商業廣告",
+      "note": "店鋪節日禮品促銷廣告"
+     },
+     {
+      "label": "節日消費",
+      "note": "冬至節日禮品推廣"
+     },
+     {
+      "label": "珠寶首飾",
+      "note": "洋裝首飾與金銀器皿銷售"
+     }
+    ],
+    "keywords": [
+     "璉瑾號",
+     "冬節禮品",
+     "洋裝",
+     "首飾",
+     "金銀器皿",
+     "河南路",
+     "拋球場"
+    ],
+    "mentions": [
+     {
+      "mention_key": "mention_org_1",
+      "region_id": "56d26479-7c60-5508-bde3-de79c9cd06a3",
+      "text_start": 0,
+      "text_end": 3,
+      "surface": "璉瑾號",
+      "entity_type": "organization",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_address_1",
+      "region_id": "56d26479-7c60-5508-bde3-de79c9cd06a3",
+      "text_start": 68,
+      "text_end": 76,
+      "surface": "河南路拋球場七號",
+      "entity_type": "address",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [],
+    "events": [],
+    "claims": [
+     {
+      "claim_key": "claim_address",
+      "subject_mention_key": "mention_org_1",
+      "predicate": "地址",
+      "object_mention_key": "mention_address_1",
+      "object_value": null,
+      "region_id": "56d26479-7c60-5508-bde3-de79c9cd06a3",
+      "text_start": 68,
+      "text_end": 76,
+      "surface": "河南路拋球場七號"
+     },
+     {
+      "claim_key": "claim_phone",
+      "subject_mention_key": "mention_org_1",
+      "predicate": "電話",
+      "object_mention_key": null,
+      "object_value": "中央六六八四五",
+      "region_id": "56d26479-7c60-5508-bde3-de79c9cd06a3",
+      "text_start": 77,
+      "text_end": 86,
+      "surface": "電話中央六六八四五"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 8,
+   "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "這是一則位於新閘橋堍的戲院廣告。該院每逢星期四更換新片。目前放映的著名社會電影《爸爸》（共六大本，一次演完），由傑克葛根原作。另外加映著名滑稽大師西門拉電主演的滑稽戲（共二大本）。每天共有六場放映時間，分別為下午一點半、三點半、五點半，以及晚上七點半、九點半、十一點。票價為樓上小洋四角，樓下小洋二角，兒童半價。",
+    "topics": [
+     {
+      "label": "電影放映",
+      "note": ""
+     },
+     {
+      "label": "戲院廣告",
+      "note": ""
+     },
+     {
+      "label": "1920年代娛樂",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "爸爸",
+     "傑克葛根",
+     "西門拉電",
+     "新閘橋堍",
+     "電影",
+     "滑稽",
+     "開映時間",
+     "票價"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_baba",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 14,
+      "text_end": 16,
+      "surface": "爸爸",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_jack_gogan",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 38,
+      "text_end": 42,
+      "surface": "傑克葛根",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_ximen_ladian",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 57,
+      "text_end": 61,
+      "surface": "西門拉電",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_xinzhaqiao",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 157,
+      "text_end": 161,
+      "surface": "新閘橋堍",
+      "entity_type": "address",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_show_trigger",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 74,
+      "text_end": 78,
+      "surface": "每天開映",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_show_context",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 3,
+      "text_end": 12,
+      "surface": "每逢星期四更換新片",
+      "evidence_role": "event_context"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_movie_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_show_trigger",
+      "participant_decisions": [
+       {
+        "mention_key": "m_baba",
+        "participant_role": "performed_work"
+       },
+       {
+        "mention_key": "m_ximen_ladian",
+        "participant_role": "performer"
+       }
+      ],
+      "evidence_keys": [
+       "ev_show_trigger",
+       "ev_show_context"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": "m_xinzhaqiao",
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_baba_author",
+      "subject_mention_key": "m_baba",
+      "predicate": "原作是",
+      "object_mention_key": "m_jack_gogan",
+      "object_value": null,
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 38,
+      "text_end": 45,
+      "surface": "傑克葛根\n原作"
+     },
+     {
+      "claim_key": "c_baba_genre",
+      "subject_mention_key": "m_baba",
+      "predicate": "類型是",
+      "object_mention_key": null,
+      "object_value": "著名電影 社會傑作",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 28,
+      "text_end": 37,
+      "surface": "著名電影\n社會傑作"
+     },
+     {
+      "claim_key": "c_ximen_title",
+      "subject_mention_key": "m_ximen_ladian",
+      "predicate": "被譽為",
+      "object_mention_key": null,
+      "object_value": "著名笑林巨子",
+      "region_id": "8d002218-a3fa-5991-a618-739ce9e9af73",
+      "text_start": 50,
+      "text_end": 57,
+      "surface": "著名笑林巨\n子"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 9,
+   "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "位於中虹橋堍的中國大影戲院（原名萬國影戲院）將於陽曆12月13日（星期日）起，連續四天放映由著名導演葛雷菲士執導、著名悲劇女星麗琳吉許主演的二十大本巨片《重見光明》（英文名：BIRTH OF A NATION）。每日開演三次，時間分別為下午三點、晚上七點和九點。此片為麗琳吉許生平最得意之作，兩位大師合作相得益彰，極具觀賞價值。票價日夜一律分為三角、二角、一角。",
+    "topics": [
+     {
+      "label": "戲院廣告",
+      "note": ""
+     },
+     {
+      "label": "電影放映",
+      "note": ""
+     },
+     {
+      "label": "外國電影引進",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "中國大影戲院",
+     "萬國影戲院",
+     "重見光明",
+     "BIRTH OF A NATION",
+     "葛雷菲士",
+     "麗琳吉許",
+     "中虹橋"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_place_zhonghongqiao",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 0,
+      "text_end": 4,
+      "surface": "中虹橋堍",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_org_china_theater",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 5,
+      "text_end": 11,
+      "surface": "中國大影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_org_wanguo_theater",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 38,
+      "text_end": 43,
+      "surface": "萬國影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_person_griffith_1",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 65,
+      "text_end": 69,
+      "surface": "葛雷菲士",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_person_gish_1",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 71,
+      "text_end": 75,
+      "surface": "麗琳吉許",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_product_movie_cn",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 80,
+      "text_end": 84,
+      "surface": "重見光明",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_product_movie_en",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 92,
+      "text_end": 109,
+      "surface": "BIRTH OF A NATION",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_person_gish_2",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 115,
+      "text_end": 121,
+      "surface": "麗琳吉許女士",
+      "entity_type": "person",
+      "mention_form": "title_reference"
+     },
+     {
+      "mention_key": "m_person_griffith_2",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 155,
+      "text_end": 159,
+      "surface": "葛雷菲士",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_trigger_screening",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 31,
+      "text_end": 33,
+      "surface": "連映",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_date_screening",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 17,
+      "text_end": 35,
+      "surface": "陽曆十二月十三號(星期日)起連映四天",
+      "evidence_role": "event_date"
+     },
+     {
+      "evidence_key": "ev_loc_screening",
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 5,
+      "text_end": 11,
+      "surface": "中國大影戲院",
+      "evidence_role": "event_location"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_movie_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_trigger_screening",
+      "participant_decisions": [
+       {
+        "mention_key": "m_org_china_theater",
+        "participant_role": "host_venue"
+       },
+       {
+        "mention_key": "m_product_movie_cn",
+        "participant_role": "performed_work"
+       },
+       {
+        "mention_key": "m_person_griffith_1",
+        "participant_role": "director"
+       },
+       {
+        "mention_key": "m_person_gish_1",
+        "participant_role": "performer"
+       }
+      ],
+      "evidence_keys": [
+       "ev_trigger_screening",
+       "ev_date_screening",
+       "ev_loc_screening"
+      ],
+      "date_evidence_key": "ev_date_screening",
+      "location_evidence_key": "ev_loc_screening",
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_theater_rename",
+      "subject_mention_key": "m_org_china_theater",
+      "predicate": "原名",
+      "object_mention_key": "m_org_wanguo_theater",
+      "object_value": null,
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 36,
+      "text_end": 43,
+      "surface": "原名萬國影戲院"
+     },
+     {
+      "claim_key": "c_movie_director",
+      "subject_mention_key": "m_product_movie_cn",
+      "predicate": "由...導演",
+      "object_mention_key": "m_person_griffith_1",
+      "object_value": null,
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 65,
+      "text_end": 71,
+      "surface": "葛雷菲士導演"
+     },
+     {
+      "claim_key": "c_movie_star",
+      "subject_mention_key": "m_product_movie_cn",
+      "predicate": "由...主演",
+      "object_mention_key": "m_person_gish_1",
+      "object_value": null,
+      "region_id": "588e4b7f-3036-50a4-b42b-ebc377b50fc5",
+      "text_start": 71,
+      "text_end": 77,
+      "surface": "麗琳吉許主演"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 11,
+   "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "百代公司（位於四馬路五十五號，電話中央六二二八）推出新唱片，收錄了多位名家的作品，包括：鼓界大王劉寶全的《白岩》與《馬山頭》；尚小雲的《御碑亭》；朱素雲的《白門樓》；馬富祿的《八大堠》與《打刀》；梅蘭芳的《霸王別姬》；小翠花的《醉酒》；周信芳的《過五關》；余叔岩的《捉放曹》；花童的《吊金龜》；臥雲居士的《哭秦庭》等。另外，上海自來火行（寫字間位於西藏路九十號）推廣煤氣爐，宣傳其費用極省、利益極多，每月租費僅銀五角。",
+    "topics": [
+     {
+      "label": "唱片廣告",
+      "note": ""
+     },
+     {
+      "label": "戲曲唱片",
+      "note": ""
+     },
+     {
+      "label": "煤氣推廣",
+      "note": ""
+     },
+     {
+      "label": "商業廣告",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "百代公司",
+     "唱片",
+     "京劇",
+     "劉寶全",
+     "梅蘭芳",
+     "上海自來火行",
+     "煤氣爐"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_baidai_co",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 9,
+      "text_end": 13,
+      "surface": "百代公司",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_baidai_addr",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 0,
+      "text_end": 8,
+      "surface": "四馬路第五十五號",
+      "entity_type": "address",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_liu_baoquan",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 35,
+      "text_end": 38,
+      "surface": "劉寶全",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_shang_xiaoyun",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 56,
+      "text_end": 59,
+      "surface": "尚小雲",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_zhu_suyun",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 74,
+      "text_end": 77,
+      "surface": "朱素雲",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_ma_fulu_1",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 92,
+      "text_end": 95,
+      "surface": "馬富祿",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_mei_lanfang",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 110,
+      "text_end": 113,
+      "surface": "梅蘭芳",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_xiao_cuihua",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 129,
+      "text_end": 132,
+      "surface": "小翠花",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_zhou_xinfang",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 146,
+      "text_end": 149,
+      "surface": "周信芳",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_ma_fulu_2",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 154,
+      "text_end": 157,
+      "surface": "馬富祿",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_yu_shuyan",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 171,
+      "text_end": 174,
+      "surface": "余叔岩",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_woyun_jushi",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 209,
+      "text_end": 213,
+      "surface": "臥雲居士",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_sh_gas_co",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 262,
+      "text_end": 268,
+      "surface": "上海自來火行",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_sh_gas_addr",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 255,
+      "text_end": 261,
+      "surface": "西藏路九十號",
+      "entity_type": "address",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_pub_records",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 13,
+      "text_end": 18,
+      "surface": "又出新片了",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_gas_stove",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 225,
+      "text_end": 232,
+      "surface": "裝用煤氣來火爐",
+      "evidence_role": "event_trigger"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_pub_records",
+      "event_type": "publication",
+      "trigger_evidence_key": "ev_pub_records",
+      "participant_decisions": [
+       {
+        "mention_key": "m_baidai_co",
+        "participant_role": "publisher"
+       }
+      ],
+      "evidence_keys": [
+       "ev_pub_records"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     },
+     {
+      "event_key": "e_gas_stove_promo",
+      "event_type": "other",
+      "trigger_evidence_key": "ev_gas_stove",
+      "participant_decisions": [
+       {
+        "mention_key": "m_sh_gas_co",
+        "participant_role": "promoter"
+       }
+      ],
+      "evidence_keys": [
+       "ev_gas_stove"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_baidai_addr",
+      "subject_mention_key": "m_baidai_co",
+      "predicate": "located_at",
+      "object_mention_key": "m_baidai_addr",
+      "object_value": null,
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 0,
+      "text_end": 8,
+      "surface": "四馬路第五十五號"
+     },
+     {
+      "claim_key": "c_baidai_phone",
+      "subject_mention_key": "m_baidai_co",
+      "predicate": "has_phone",
+      "object_mention_key": null,
+      "object_value": "中央六二二八",
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 19,
+      "text_end": 27,
+      "surface": "電話中央六二二八"
+     },
+     {
+      "claim_key": "c_sh_gas_addr",
+      "subject_mention_key": "m_sh_gas_co",
+      "predicate": "located_at",
+      "object_mention_key": "m_sh_gas_addr",
+      "object_value": null,
+      "region_id": "9a506e3e-7b02-5ef8-86b1-0944051afac3",
+      "text_start": 255,
+      "text_end": 261,
+      "surface": "西藏路九十號"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 12,
+   "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "上海大戲院放映滑稽武俠愛情電影《牧童艷福》（由Tom Mix主演），設有週六日戲、週五夜半戲等場次。夏令配克大戲院自十二月十二號（星期六）起，連續四天放映由齊達·排拉主演的醒世社會愛情傑作《鴛鴦離合記》（The Unchastened Woman）。該片每日八時一刻開演，星期六、日五時半加演日戲一次。劇中排拉演技精湛，配角完美，深受社會推崇。票價方面，日戲為六角、八角、一元；夜戲為一元、一元五角、二元。",
+    "topics": [
+     {
+      "label": "電影廣告",
+      "note": ""
+     },
+     {
+      "label": "戲院放映",
+      "note": ""
+     },
+     {
+      "label": "外國電影",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "上海大戲院",
+     "夏令配克大戲院",
+     "牧童艷福",
+     "鴛鴦離合記",
+     "齊達排拉",
+     "Tom Mix",
+     "電影票價"
+    ],
+    "mentions": [
+     {
+      "mention_key": "shanghai_theatre",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 0,
+      "text_end": 5,
+      "surface": "上海大戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mutong_yanfu",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 52,
+      "text_end": 56,
+      "surface": "牧童艷福",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "tom_mix",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 58,
+      "text_end": 65,
+      "surface": "Tom Mix",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "olympic_theatre",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 84,
+      "text_end": 91,
+      "surface": "夏令配克大戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "theda_bara",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 111,
+      "text_end": 115,
+      "surface": "齊達排拉",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "yuanyang_liheji",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 129,
+      "text_end": 134,
+      "surface": "鴛鴦離合記",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "bara_short",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 196,
+      "text_end": 198,
+      "surface": "排拉",
+      "entity_type": "person",
+      "mention_form": "short_name"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_screening_1",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 19,
+      "text_end": 21,
+      "surface": "加演",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_screening_2",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 105,
+      "text_end": 107,
+      "surface": "連映",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_date_2",
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 93,
+      "text_end": 109,
+      "surface": "十二月十二號（星期六）起連映四天",
+      "evidence_role": "event_date"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "event_screening_mutong",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_screening_1",
+      "participant_decisions": [
+       {
+        "mention_key": "shanghai_theatre",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "mutong_yanfu",
+        "participant_role": "performance_subject"
+       },
+       {
+        "mention_key": "tom_mix",
+        "participant_role": "performer"
+       }
+      ],
+      "evidence_keys": [
+       "ev_screening_1"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     },
+     {
+      "event_key": "event_screening_yuanyang",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_screening_2",
+      "participant_decisions": [
+       {
+        "mention_key": "olympic_theatre",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "yuanyang_liheji",
+        "participant_role": "performance_subject"
+       },
+       {
+        "mention_key": "theda_bara",
+        "participant_role": "performer"
+       }
+      ],
+      "evidence_keys": [
+       "ev_screening_2",
+       "ev_date_2"
+      ],
+      "date_evidence_key": "ev_date_2",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "claim_starring_1",
+      "subject_mention_key": "theda_bara",
+      "predicate": "主演",
+      "object_mention_key": "yuanyang_liheji",
+      "object_value": null,
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 111,
+      "text_end": 117,
+      "surface": "齊達排拉主演"
+     },
+     {
+      "claim_key": "claim_starring_2",
+      "subject_mention_key": "bara_short",
+      "predicate": "在片中演此佳片",
+      "object_mention_key": "yuanyang_liheji",
+      "object_value": null,
+      "region_id": "3f07fe5f-c765-547a-abf3-e49f2ff112d6",
+      "text_start": 196,
+      "text_end": 205,
+      "surface": "排拉在片中演此佳片"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 13,
+   "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "位於卡德路中新閘路口的卡德大影戲院，自十二月十四號（星期一）起連續三天放映家庭悲情名劇《十年淚史》（英文片名：THE WOMAN HE LOVED）。該劇編排精密、用意深刻，演員演技出神入化，將悲哀與苦盡甘來的曲折情感表現得淋漓盡致。每晚七點和九點開演，星期六、日下午三點加演日戲。夜場票價為三角、二角、一角，日場票價為半角。影院電話為西二八七八號。",
+    "topics": [
+     {
+      "label": "電影放映",
+      "note": ""
+     },
+     {
+      "label": "戲院廣告",
+      "note": ""
+     },
+     {
+      "label": "1920年代電影",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "卡德大影戲院",
+     "卡德路",
+     "中新閘",
+     "十年淚史",
+     "THE WOMAN HE LOVED",
+     "電影廣告",
+     "票價"
+    ],
+    "mentions": [
+     {
+      "mention_key": "men_road",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 0,
+      "text_end": 3,
+      "surface": "卡德路",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "men_gate",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 4,
+      "text_end": 7,
+      "surface": "中新閘",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "men_theater",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 12,
+      "text_end": 18,
+      "surface": "卡德大影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "men_movie",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 67,
+      "text_end": 71,
+      "surface": "十年淚史",
+      "entity_type": "product",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "men_movie_en",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 73,
+      "text_end": 92,
+      "surface": "THE WOMAN HE LOVEDe",
+      "entity_type": "product",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "men_actor",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 140,
+      "text_end": 143,
+      "surface": "伊利沙",
+      "entity_type": "person",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_trigger",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 54,
+      "text_end": 58,
+      "surface": "連映三天",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_date",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 42,
+      "text_end": 53,
+      "surface": "十二月十四號（星期一）",
+      "evidence_role": "event_date"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "evt_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_trigger",
+      "participant_decisions": [
+       {
+        "mention_key": "men_theater",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "men_movie",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_trigger",
+       "ev_date"
+      ],
+      "date_evidence_key": "ev_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "claim_theater_loc_road",
+      "subject_mention_key": "men_theater",
+      "predicate": "位於",
+      "object_mention_key": "men_road",
+      "object_value": null,
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 0,
+      "text_end": 18,
+      "surface": "卡德路\n中新閘\n路口\n\n卡德大影戲院"
+     },
+     {
+      "claim_key": "claim_theater_loc_gate",
+      "subject_mention_key": "men_theater",
+      "predicate": "位於",
+      "object_mention_key": "men_gate",
+      "object_value": null,
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 0,
+      "text_end": 18,
+      "surface": "卡德路\n中新閘\n路口\n\n卡德大影戲院"
+     },
+     {
+      "claim_key": "claim_movie_genre",
+      "subject_mention_key": "men_movie",
+      "predicate": "是",
+      "object_mention_key": null,
+      "object_value": "家庭悲情名劇",
+      "region_id": "27fd6e3d-a9ce-535e-bca6-79220f32bb6d",
+      "text_start": 60,
+      "text_end": 71,
+      "surface": "家庭悲情名劇\n十年淚史"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 14,
+   "region_id": "15895d11-73ed-56a6-901c-bc7b0472b1a5",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "大世界遊樂場舉辦促銷活動，門票僅需小洋兩角，並贈送至尊牌香煙一包，還有其他特別贈品。文中以問答形式解釋了大世界為何如此熱鬧：一方面是價格便宜、贈品豐厚；另一方面，大世界並非只吸引貪便宜的人，其富紳、雅士、淑女、名媛等常客，看重的是大世界舉世無雙的各種遊藝節目。大世界對藝員在待遇、年限、金錢及穩健度上都有特別優待，因此吸引了頂尖的技術家和藝人爭相前來效力。",
+    "topics": [
+     {
+      "label": "遊樂場廣告",
+      "note": ""
+     },
+     {
+      "label": "商業促銷",
+      "note": ""
+     },
+     {
+      "label": "海派文化",
+      "note": ""
+     },
+     {
+      "label": "娛樂消費",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "大世界",
+     "至尊烟",
+     "遊藝",
+     "小洋兩角",
+     "促銷",
+     "上海娛樂"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_dashijie_1",
+      "region_id": "15895d11-73ed-56a6-901c-bc7b0472b1a5",
+      "text_start": 0,
+      "text_end": 3,
+      "surface": "大世界",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_zhizunyan_1",
+      "region_id": "15895d11-73ed-56a6-901c-bc7b0472b1a5",
+      "text_start": 11,
+      "text_end": 14,
+      "surface": "至尊烟",
+      "entity_type": "product",
+      "mention_form": "full_name"
+     }
+    ],
+    "event_evidence": [],
+    "events": [],
+    "claims": [
+     {
+      "claim_key": "c_ticket_price",
+      "subject_mention_key": "m_dashijie_1",
+      "predicate": "門票價格",
+      "object_mention_key": null,
+      "object_value": "小洋兩角",
+      "region_id": "15895d11-73ed-56a6-901c-bc7b0472b1a5",
+      "text_start": 5,
+      "text_end": 9,
+      "surface": "小洋兩角"
+     },
+     {
+      "claim_key": "c_gift",
+      "subject_mention_key": "m_dashijie_1",
+      "predicate": "贈送禮品",
+      "object_mention_key": "m_zhizunyan_1",
+      "object_value": null,
+      "region_id": "15895d11-73ed-56a6-901c-bc7b0472b1a5",
+      "text_start": 10,
+      "text_end": 16,
+      "surface": "送至尊烟一包"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 15,
+   "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "本版面包含兩則戲院放映廣告。第一則為虹口四卡子橋梧州路中的「中山大戲院」（電話北二二五三號）廣告，今日日夜放映由商務印書館最新拍攝的社會愛情悲劇電影《情天劫》。日間票價正廳三角、正樓二角；夜間票價正廳四角、正樓二角。每日放映三場，時間分別為下午三時、七時與九時。第二則為法租界愛多亞路（三等閣橋五洲旅館隔壁）的「五洲影戲院」廣告，自十一月二十一號起，每逢星期日、四更換新片。本次放映著名俠義愛情佳片《扮盜海》與《新新娘》（六大本一次演完），並加映西門拉電的滑稽短片《滑稽時間》。每日放映四場，時間分別為下午一時半、三時半，晚上六時一刻、九時一刻。票價為四角，兒童半價。",
+    "topics": [
+     {
+      "label": "電影廣告",
+      "note": "宣傳中山大戲院與五洲影戲院的放映戲目與票價"
+     },
+     {
+      "label": "戲院戲目",
+      "note": "放映《情天劫》、《扮盜海》、《新新娘》等影片"
+     },
+     {
+      "label": "早期國片",
+      "note": "提及商務印書館新攝的影片"
+     }
+    ],
+    "keywords": [
+     "中山大戲院",
+     "五洲影戲院",
+     "情天劫",
+     "商務印書館",
+     "扮盜海",
+     "新新娘",
+     "西門拉電",
+     "電影放映",
+     "票價"
+    ],
+    "mentions": [
+     {
+      "mention_key": "mention_zhongshan_loc",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 0,
+      "text_end": 10,
+      "surface": "虹口四卡子橋梧州路中",
+      "entity_type": "address",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_zhongshan",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 11,
+      "text_end": 16,
+      "surface": "中山大戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_qingtianjie",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 43,
+      "text_end": 46,
+      "surface": "情天劫",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_shangwu",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 47,
+      "text_end": 52,
+      "surface": "商務印書館",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_wuzhou_loc",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 127,
+      "text_end": 134,
+      "surface": "法租界愛多亞路",
+      "entity_type": "address",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_wuzhou",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 135,
+      "text_end": 140,
+      "surface": "五洲影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_wuzhou_hotel",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 145,
+      "text_end": 149,
+      "surface": "五洲旅館",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "mention_bandaohai",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 202,
+      "text_end": 205,
+      "surface": "扮盜海",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_xinxinniang",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 206,
+      "text_end": 209,
+      "surface": "新新娘",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "mention_ximon",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 233,
+      "text_end": 237,
+      "surface": "西門拉電",
+      "entity_type": "person",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_zhongshan_show",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 27,
+      "text_end": 35,
+      "surface": "▲今天日夜開映▼",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_shangwu_shoot",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 52,
+      "text_end": 54,
+      "surface": "新攝",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_wuzhou_show",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 176,
+      "text_end": 179,
+      "surface": "夜開映",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_wuzhou_date",
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 180,
+      "text_end": 189,
+      "surface": "自十一月二十一號起",
+      "evidence_role": "event_date"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "event_zhongshan_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_zhongshan_show",
+      "participant_decisions": [
+       {
+        "mention_key": "mention_zhongshan",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "mention_qingtianjie",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_zhongshan_show"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     },
+     {
+      "event_key": "event_shangwu_production",
+      "event_type": "publication",
+      "trigger_evidence_key": "ev_shangwu_shoot",
+      "participant_decisions": [
+       {
+        "mention_key": "mention_shangwu",
+        "participant_role": "publisher"
+       },
+       {
+        "mention_key": "mention_qingtianjie",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_shangwu_shoot"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     },
+     {
+      "event_key": "event_wuzhou_screening",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_wuzhou_show",
+      "participant_decisions": [
+       {
+        "mention_key": "mention_wuzhou",
+        "participant_role": "venue"
+       },
+       {
+        "mention_key": "mention_bandaohai",
+        "participant_role": "work_performed"
+       },
+       {
+        "mention_key": "mention_xinxinniang",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_wuzhou_show",
+       "ev_wuzhou_date"
+      ],
+      "date_evidence_key": "ev_wuzhou_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": null
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "claim_zhongshan_loc",
+      "subject_mention_key": "mention_zhongshan",
+      "predicate": "位於",
+      "object_mention_key": "mention_zhongshan_loc",
+      "object_value": null,
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 0,
+      "text_end": 16,
+      "surface": "虹口四卡子橋梧州路中\n中山大戲院"
+     },
+     {
+      "claim_key": "claim_wuzhou_loc",
+      "subject_mention_key": "mention_wuzhou",
+      "predicate": "位於",
+      "object_mention_key": "mention_wuzhou_loc",
+      "object_value": null,
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 127,
+      "text_end": 140,
+      "surface": "法租界愛多亞路\n五洲影戲院"
+     },
+     {
+      "claim_key": "claim_wuzhou_neighbor",
+      "subject_mention_key": "mention_wuzhou",
+      "predicate": "鄰近",
+      "object_mention_key": "mention_wuzhou_hotel",
+      "object_value": null,
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 135,
+      "text_end": 151,
+      "surface": "五洲影戲院\n三等閣橋五洲旅館隔壁"
+     },
+     {
+      "claim_key": "claim_qingtianjie_producer",
+      "subject_mention_key": "mention_qingtianjie",
+      "predicate": "由...拍攝",
+      "object_mention_key": "mention_shangwu",
+      "object_value": null,
+      "region_id": "62cad492-b074-5226-b067-16569d71fc04",
+      "text_start": 43,
+      "text_end": 54,
+      "surface": "情天劫\n商務印書館新攝"
+     }
+    ],
+    "event_dates": [
+     {
+      "event_key": "event_wuzhou_screening",
+      "date_iso": "1926-11-21"
+     }
+    ]
+   }
+  },
+  {
+   "block_index": 16,
+   "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "新世界娛樂場設有南北地道交通，門票為小洋二角。場內由義豐公司裝設了無線電設備，每日播報歐美等各國的時事新聞。該無線電設備設在北部自由廳旁，供人免費參觀，不收取任何費用。",
+    "topics": [
+     {
+      "label": "娛樂場所",
+      "note": ""
+     },
+     {
+      "label": "無線電廣播",
+      "note": ""
+     },
+     {
+      "label": "科技推廣",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "新世界",
+     "地道",
+     "無線電",
+     "義豐公司",
+     "自由廳",
+     "時事新聞"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_new_world",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 7,
+      "text_end": 10,
+      "surface": "新世界",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_yifeng_co",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 19,
+      "text_end": 23,
+      "surface": "義豐公司",
+      "entity_type": "organization",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_oumei",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 30,
+      "text_end": 32,
+      "surface": "歐美",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_radio",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 33,
+      "text_end": 36,
+      "surface": "無線電",
+      "entity_type": "product",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_north_hall",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 45,
+      "text_end": 50,
+      "surface": "北部自由廳",
+      "entity_type": "place",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_trigger_exhibit",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 53,
+      "text_end": 55,
+      "surface": "參觀",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_loc_hall",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 44,
+      "text_end": 51,
+      "surface": "在北部自由廳旁",
+      "evidence_role": "event_location"
+     },
+     {
+      "evidence_key": "ev_install",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 18,
+      "text_end": 25,
+      "surface": "由義豐公司裝設",
+      "evidence_role": "event_aspect"
+     },
+     {
+      "evidence_key": "ev_news",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 26,
+      "text_end": 43,
+      "surface": "逐日報告歐美\n無線電\n各國時事新聞",
+      "evidence_role": "event_aspect"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_radio_exhibition",
+      "event_type": "other",
+      "trigger_evidence_key": "ev_trigger_exhibit",
+      "participant_decisions": [
+       {
+        "mention_key": "m_yifeng_co",
+        "participant_role": "installer"
+       },
+       {
+        "mention_key": "m_radio",
+        "participant_role": "exhibited_product"
+       },
+       {
+        "mention_key": "m_new_world",
+        "participant_role": "venue"
+       }
+      ],
+      "evidence_keys": [
+       "ev_trigger_exhibit",
+       "ev_loc_hall",
+       "ev_install",
+       "ev_news"
+      ],
+      "date_evidence_key": null,
+      "location_evidence_key": "ev_loc_hall",
+      "aspect_evidence_key": "ev_news"
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_ticket_price",
+      "subject_mention_key": "m_new_world",
+      "predicate": "門票價格",
+      "object_mention_key": null,
+      "object_value": "小洋二角",
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 11,
+      "text_end": 17,
+      "surface": "門票小洋二角"
+     },
+     {
+      "claim_key": "c_install_relation",
+      "subject_mention_key": "m_yifeng_co",
+      "predicate": "裝設",
+      "object_mention_key": "m_radio",
+      "object_value": null,
+      "region_id": "87158771-4c1d-54c1-83d4-141c663b1df6",
+      "text_start": 18,
+      "text_end": 25,
+      "surface": "由義豐公司裝設"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 17,
+   "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "本廣告預告自本月十四號（星期一）起，連續三天上演戲劇《奉直大血戰》。劇中展現去年今日張作霖攻打九門口、搶奪山海關、圍困石門寨、大破灤州城等歷史戰爭場面。日戲時間為下午三時，票價為二角至四角；夜戲時間為晚上七時及九時一刻，票價為二角至六角。",
+    "topics": [
+     {
+      "label": "戲劇廣告",
+      "note": ""
+     },
+     {
+      "label": "奉直戰爭",
+      "note": ""
+     },
+     {
+      "label": "張作霖",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "奉直大血戰",
+     "張作霖",
+     "九門口",
+     "山海關",
+     "石門寨",
+     "灤州城",
+     "日戲",
+     "夜戲",
+     "票價"
+    ],
+    "mentions": [
+     {
+      "mention_key": "m_zhang_zuolin",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 34,
+      "text_end": 37,
+      "surface": "張作霖",
+      "entity_type": "person",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "m_jiumenkou",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 41,
+      "text_end": 44,
+      "surface": "九門口",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_shanhaiguan",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 47,
+      "text_end": 50,
+      "surface": "山海關",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_shimenzhai",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 53,
+      "text_end": 56,
+      "surface": "石門寨",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "m_luanzhoucheng",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 59,
+      "text_end": 62,
+      "surface": "灤州城",
+      "entity_type": "place",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_perf_trigger",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 13,
+      "text_end": 17,
+      "surface": "續演三天",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_perf_date",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 1,
+      "text_end": 6,
+      "surface": "本月十四號",
+      "evidence_role": "event_date"
+     },
+     {
+      "evidence_key": "ev_perf_aspect",
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 20,
+      "text_end": 25,
+      "surface": "奉直大血戰",
+      "evidence_role": "event_aspect"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "e_performance",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_perf_trigger",
+      "participant_decisions": [],
+      "evidence_keys": [
+       "ev_perf_trigger",
+       "ev_perf_date",
+       "ev_perf_aspect"
+      ],
+      "date_evidence_key": "ev_perf_date",
+      "location_evidence_key": null,
+      "aspect_evidence_key": "ev_perf_aspect"
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "c_attack_jiumenkou",
+      "subject_mention_key": "m_zhang_zuolin",
+      "predicate": "攻打",
+      "object_mention_key": "m_jiumenkou",
+      "object_value": null,
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 34,
+      "text_end": 44,
+      "surface": "張作霖\n\n攻打九門口"
+     },
+     {
+      "claim_key": "c_seize_shanhaiguan",
+      "subject_mention_key": "m_zhang_zuolin",
+      "predicate": "搶奪",
+      "object_mention_key": "m_shanhaiguan",
+      "object_value": null,
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 45,
+      "text_end": 50,
+      "surface": "搶奪山海關"
+     },
+     {
+      "claim_key": "c_besiege_shimenzhai",
+      "subject_mention_key": "m_zhang_zuolin",
+      "predicate": "圍困",
+      "object_mention_key": "m_shimenzhai",
+      "object_value": null,
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 51,
+      "text_end": 56,
+      "surface": "圍困石門寨"
+     },
+     {
+      "claim_key": "c_defeat_luanzhou",
+      "subject_mention_key": "m_zhang_zuolin",
+      "predicate": "大破",
+      "object_mention_key": "m_luanzhoucheng",
+      "object_value": null,
+      "region_id": "736bac22-f256-5044-8e5a-175d5a30845e",
+      "text_start": 57,
+      "text_end": 62,
+      "surface": "大破灤州城"
+     }
+    ],
+    "event_dates": []
+   }
+  },
+  {
+   "block_index": 18,
+   "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+   "extraction": {
+    "article_type": "advertisement",
+    "modern_paraphrase": "位於閘北寶興路中段的寶興影戲院發布廣告，宣布自十二月十三日起，日夜放映哀情悲慘電影《落花淚》（全片共七大本，一次放映完畢）。每日共放映四場，時間分別為下午一點半、下午三點四十五分（三刻）、晚上六點四十五分（三刻）及晚上九點。票價分為二角與四角，兒童票價減半。此外，該影院每逢星期四會更換新片。",
+    "topics": [
+     {
+      "label": "電影放映",
+      "note": ""
+     },
+     {
+      "label": "戲院廣告",
+      "note": ""
+     },
+     {
+      "label": "早期電影",
+      "note": ""
+     }
+    ],
+    "keywords": [
+     "寶興影戲院",
+     "落花淚",
+     "閘北",
+     "寶興路",
+     "電影廣告",
+     "哀情片"
+    ],
+    "mentions": [
+     {
+      "mention_key": "men_zhabei",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 3,
+      "text_end": 5,
+      "surface": "閘北",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "men_baoxing_cinema",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 6,
+      "text_end": 11,
+      "surface": "寶興影戲院",
+      "entity_type": "organization",
+      "mention_form": "full_name"
+     },
+     {
+      "mention_key": "men_baoxing_road",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 12,
+      "text_end": 15,
+      "surface": "寶興路",
+      "entity_type": "place",
+      "mention_form": "named"
+     },
+     {
+      "mention_key": "men_luohualei",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 52,
+      "text_end": 55,
+      "surface": "落花淚",
+      "entity_type": "product",
+      "mention_form": "named"
+     }
+    ],
+    "event_evidence": [
+     {
+      "evidence_key": "ev_trigger_1",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 40,
+      "text_end": 42,
+      "surface": "開映",
+      "evidence_role": "event_trigger"
+     },
+     {
+      "evidence_key": "ev_date_1",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 31,
+      "text_end": 44,
+      "surface": "十二月十三號起日夜開映四次",
+      "evidence_role": "event_date"
+     },
+     {
+      "evidence_key": "ev_loc_1",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 6,
+      "text_end": 11,
+      "surface": "寶興影戲院",
+      "evidence_role": "event_location"
+     },
+     {
+      "evidence_key": "ev_aspect_1",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 52,
+      "text_end": 55,
+      "surface": "落花淚",
+      "evidence_role": "event_aspect"
+     }
+    ],
+    "events": [
+     {
+      "event_key": "evt_performance_1",
+      "event_type": "performance",
+      "trigger_evidence_key": "ev_trigger_1",
+      "participant_decisions": [
+       {
+        "mention_key": "men_baoxing_cinema",
+        "participant_role": "host"
+       },
+       {
+        "mention_key": "men_luohualei",
+        "participant_role": "work_performed"
+       }
+      ],
+      "evidence_keys": [
+       "ev_trigger_1",
+       "ev_date_1",
+       "ev_loc_1",
+       "ev_aspect_1"
+      ],
+      "date_evidence_key": "ev_date_1",
+      "location_evidence_key": "ev_loc_1",
+      "aspect_evidence_key": "ev_aspect_1"
+     }
+    ],
+    "claims": [
+     {
+      "claim_key": "claim_loc_1",
+      "subject_mention_key": "men_baoxing_cinema",
+      "predicate": "位於",
+      "object_mention_key": null,
+      "object_value": "閘北寶興路中",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 0,
+      "text_end": 16,
+      "surface": "開設 閘北\n寶興影戲院\n寶興路中"
+     },
+     {
+      "claim_key": "claim_genre_1",
+      "subject_mention_key": "men_luohualei",
+      "predicate": "類型為",
+      "object_mention_key": null,
+      "object_value": "哀情悲慘佳片",
+      "region_id": "f759e213-8533-5f21-beac-2dee9ffcb3ac",
+      "text_start": 45,
+      "text_end": 55,
+      "surface": "哀情悲慘佳片\n落花淚"
+     }
+    ],
+    "event_dates": []
+   }
+  }
+ ],
+ "extraction_abstained": [
+  {
+   "block_index": 6,
+   "reason": "non-terminal finish reason 'length'"
+  },
+  {
+   "block_index": 10,
+   "reason": "non-terminal finish reason 'length'"
+  }
+ ]
+}

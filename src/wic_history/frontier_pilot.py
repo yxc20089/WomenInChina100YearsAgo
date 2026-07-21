@@ -31,22 +31,31 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", required=True, help="lossless page image")
     parser.add_argument(
-        "--cells", required=True, help="rule-detector output JSON (cells list)"
+        "--cells", default=None, help="rule-detector output JSON (cells list)"
     )
     parser.add_argument("--output", required=True)
     parser.add_argument("--limit", type=int, default=None, help="first N blocks only")
     parser.add_argument("--skip-extraction", action="store_true")
+    parser.add_argument(
+        "--ocr-artifact",
+        default=None,
+        help="reuse an existing frontier-ocr artifact instead of re-transcribing",
+    )
     args = parser.parse_args()
 
     image_path = Path(args.image)
     output_path = Path(args.output)
-    cells = _cells_from_detector(Path(args.cells))
-    ocr_artifact = transcribe_page_blocks(
-        image_path,
-        cells,
-        output_path.with_suffix(".ocr.json"),
-        limit=args.limit,
-    )
+    if args.ocr_artifact:
+        ocr_artifact = json.loads(Path(args.ocr_artifact).read_text())
+        cells = [tuple(b["bbox_source_xyxy"]) for b in ocr_artifact["blocks"]]
+    else:
+        cells = _cells_from_detector(Path(args.cells))
+        ocr_artifact = transcribe_page_blocks(
+            image_path,
+            cells,
+            output_path.with_suffix(".ocr.json"),
+            limit=args.limit,
+        )
     page_sha256 = ocr_artifact["page_image"]["sha256"]
 
     extractions = []

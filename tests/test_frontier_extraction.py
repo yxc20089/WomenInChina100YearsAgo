@@ -65,16 +65,45 @@ class ExtractionValidationTests(unittest.TestCase):
         self.assertEqual(result.topics[0].label, "商業廣告")
         self.assertEqual(result.mentions[0].surface, "淑女")
 
-    def test_surface_offset_mismatch_abstains(self):
+    def test_wrong_offsets_are_resolved_by_code_from_the_surface(self):
         import json
 
         region_id = uuid4()
         text = "富紳淑女固不貪便宜"
         payload = _minimal_payload(region_id, text)
-        payload["mentions"][0]["surface"] = "婦女"  # not what the offsets say
-        with self.assertRaisesRegex(ExtractionAbstention, "surface"):
+        # model claims wrong offsets for a real surface: code relocates it
+        payload["mentions"][0]["surface"] = "貪便宜"
+        result = extract_article(
+            FakeGenerator(json.dumps(payload, ensure_ascii=False)), text, region_id
+        )
+        mention = result.mentions[0]
+        self.assertEqual(
+            text[mention.text_start:mention.text_end], "貪便宜"
+        )
+
+    def test_fabricated_surface_abstains(self):
+        import json
+
+        region_id = uuid4()
+        text = "富紳淑女固不貪便宜"
+        payload = _minimal_payload(region_id, text)
+        payload["mentions"][0]["surface"] = "婦女"  # absent from the text
+        with self.assertRaisesRegex(ExtractionAbstention, "absent"):
             _ = extract_article(
                 FakeGenerator(json.dumps(payload, ensure_ascii=False)), text, region_id
+            )
+
+    def test_out_of_ontology_type_is_schema_invalid(self):
+        import json
+
+        region_id = uuid4()
+        payload = _minimal_payload(region_id)
+        payload["mentions"][0]["entity_type"] = "event"
+        with self.assertRaisesRegex(ExtractionAbstention, "schema"):
+            _ = extract_article(
+                FakeGenerator(json.dumps(payload, ensure_ascii=False)),
+                "富紳淑女固不貪便宜",
+                region_id,
             )
 
     def test_foreign_region_id_abstains(self):

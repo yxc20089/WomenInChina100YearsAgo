@@ -133,7 +133,11 @@ def transcribe_block(
         }
     ]
     try:
-        completion = generator.complete(messages)
+        # minimal reasoning: transcription is perception, not deliberation,
+        # and reasoning tokens count against the output budget; some hosted
+        # models refuse to disable reasoning entirely (Gemini 3.5 Flash:
+        # "Reasoning is mandatory for this endpoint"), so "low" is the floor
+        completion = generator.complete(messages, reasoning_effort="low")
     except RuntimeError as exc:
         raise FrontierOCRAbstention(f"provider call failed: {exc}") from exc
     finish_reason = getattr(completion, "finish_reason", None)

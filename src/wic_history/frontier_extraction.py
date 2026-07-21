@@ -21,7 +21,6 @@ from pydantic import Field, model_validator
 from .semantic_tasks import (
     ExtractedEvent,
     ExtractedEventEvidence,
-    ExtractedMention,
     StrictModel,
 )
 
@@ -30,6 +29,27 @@ EXTRACTION_SCHEMA_VERSION = "wic-article-extraction/v2"
 ArticleType = Literal[
     "article", "advertisement", "notice", "listing", "table", "image_caption", "other"
 ]
+
+# the ontology constraint lives in the schema the model sees, so it cannot
+# emit out-of-ontology types that would only fail post-hoc (pilot finding)
+NamedEntityType = Literal[
+    "person", "place", "address", "organization", "school", "publication", "product"
+]
+MentionFormV2 = Literal[
+    "full_name", "short_name", "title_reference", "kinship_reference", "pronoun", "named"
+]
+
+
+class MentionV2(StrictModel):
+    """Named-entity occurrence; offsets are model hints, resolved by code."""
+
+    mention_key: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_.:-]{0,63}$")
+    region_id: UUID
+    text_start: int = Field(ge=0)
+    text_end: int = Field(gt=0)
+    surface: str = Field(min_length=1, max_length=300)
+    entity_type: NamedEntityType
+    mention_form: MentionFormV2
 
 
 class TopicItem(StrictModel):
@@ -69,7 +89,7 @@ class ArticleExtractionV2(StrictModel):
     modern_paraphrase: str = Field(max_length=4000)
     topics: list[TopicItem] = Field(max_length=12)
     keywords: list[str] = Field(max_length=20)
-    mentions: list[ExtractedMention]
+    mentions: list[MentionV2]
     event_evidence: list[ExtractedEventEvidence]
     events: list[ExtractedEvent]
     claims: list[ExtractedClaim]
@@ -149,19 +169,41 @@ def extraction_identity(model_identity: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _verify_offsets(result: ArticleExtractionV2, text: str) -> None:
-    def check(kind: str, start: int, end: int, surface: str) -> None:
-        if end > len(text):
-            raise ExtractionAbstention(f"{kind} offsets exceed the article text")
-        if text[start:end] != surface:
-            raise ExtractionAbstention(f"{kind} surface does not match its offsets")
+def _resolved_offsets(kind: str, item, text: str):
+    """Authoritative offsets come from code, never the model (v1 lesson:
+    models read surfaces correctly but cannot count CJK offsets). The model's
+    claimed start only disambiguates repeated surfaces; a surface absent from
+    the text is fabrication and abstains the whole article."""
+    if text[item.text_start:item.text_end] == item.surface:
+        return item
+    starts = []
+    position = text.find(item.surface)
+    while position != -1:
+        starts.append(position)
+        position = text.find(item.surface, position + 1)
+    if not starts:
+        raise ExtractionAbstention(f"{kind} surface is absent from the article text")
+    start = min(starts, key=lambda value: abs(value - item.text_start))
+    return item.model_copy(
+        update={"text_start": start, "text_end": start + len(item.surface)}
+    )
 
-    for mention in result.mentions:
-        check("mention", mention.text_start, mention.text_end, mention.surface)
-    for item in result.event_evidence:
-        check("event evidence", item.text_start, item.text_end, item.surface)
-    for claim in result.claims:
-        check("claim", claim.text_start, claim.text_end, claim.surface)
+
+def _verify_offsets(result: ArticleExtractionV2, text: str) -> ArticleExtractionV2:
+    return result.model_copy(
+        update={
+            "mentions": [
+                _resolved_offsets("mention", item, text) for item in result.mentions
+            ],
+            "event_evidence": [
+                _resolved_offsets("event evidence", item, text)
+                for item in result.event_evidence
+            ],
+            "claims": [
+                _resolved_offsets("claim", item, text) for item in result.claims
+            ],
+        }
+    )
 
 
 def extract_article(
@@ -196,5 +238,4 @@ def extract_article(
     for mention in result.mentions:
         if mention.region_id != region_id:
             raise ExtractionAbstention("mention cites a foreign region id")
-    _verify_offsets(result, article_text)
-    return result
+    return _verify_offsets(result, article_text)
